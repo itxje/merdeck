@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest'
+import { originalFlowSource } from '../../test/original-flow'
+import { sanitizeSvg, validateSource } from './renderer'
+
+describe('untrusted render boundary', () => {
+  it.each(['<br>', '<br/>', '<br />', '<BR>', '<BR/>', '<BR />', '<bR/>'])('accepts ordinary label breaks: %s', (tag) => {
+    expect(() => validateSource(`flowchart LR\nA["First${tag}Second"] -->|"Accept${tag}Continue"| B[Final]`)).not.toThrow()
+  })
+  it('accepts the unchanged original Unicode topology', () => {
+    expect(() => validateSource(originalFlowSource)).not.toThrow()
+  })
+  it.each([
+    '<br onclick="alert(1)">',
+    '<br/onload=alert(1)>',
+    '<br style="color:red">',
+    '<br src="/probe">',
+    '<br href="/probe">',
+    '<br//>',
+    '<br / >',
+    '<br >',
+    '< br/>',
+    '</br>',
+    '<br\n/>',
+    '<br\t/>',
+    '<br\0/>',
+    '<<br/>>',
+    '&lt;br/&gt;',
+    '&#60;br/&#62;',
+    '#60;br/#62;',
+    '<br>&lt;img src=x&gt;',
+    '<br/><script>alert(1)</script>',
+    '<br/><svg onload="alert(1)">',
+  ])('rejects neighboring HTML or encoded forms: %s', (label) => {
+    expect(() => validateSource(`flowchart LR\nA["First${label}Second"]`)).toThrow('plain Mermaid')
+  })
+  it.each([
+    '%%{init: {"securityLevel":"loose"}}%%\nflowchart LR\nA-->B',
+    '---\nconfig:\n  securityLevel: loose\n---\nflowchart LR\nA-->B',
+    'flowchart LR\nA[<img src=x onerror=alert(1)>]',
+    'flowchart LR\nA-->B\nclick A callback',
+    'flowchart LR\nA@{ img: "https://example.test/track" }',
+    'flowchart LR\nA-->B\nclassDef default fill:url(https://example.test/track)',
+    'flowchart LR\nA[&lt;script&gt;]',
+    'flowchart LR\nA[#60;script#62;]',
+    'flowchart LR\nA["`![image](/diagram-resource-probe)`"]',
+    'sequenceDiagram\nlink A: external @ https://example.test',
+    '$$\\href{https://example.test}{x}$$',
+  ])('rejects active source before Mermaid receives it: %s', (source) => {
+    expect(() => validateSource(source)).toThrow('plain Mermaid')
+  })
+  it('bounds rendering separately from editing', () => {
+    expect(() => validateSource('x'.repeat(32001))).toThrow('32,000')
+    expect(() => validateSource('sequenceDiagram\nA->>B: Hello')).not.toThrow()
+    expect(() => validateSource(`<br/>${'x'.repeat(31996)}`)).toThrow('32,000')
+    expect(() => validateSource(`flowchart LR\nA["${'x'.repeat(31976)}<br/>B"]`)).not.toThrow()
+    expect(() => validateSource('%%<br/>{init: {}}%%\nflowchart LR\nA-->B')).toThrow('plain Mermaid')
+  })
+  it('removes executable SVG, resources, CSS, events and external references from actual output', () => {
+    const svg = sanitizeSvg(`<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(1)</script><foreignObject><img src="https://example.test/a" /></foreignObject><style>@import url(https://example.test/a);</style><image href="https://example.test/a"/><use href="https://example.test/a"/><a href="javascript:alert(1)"><text onclick="alert(1)">safe text</text></a><animate attributeName="href" values="javascript:alert(1)"/><path style="fill:url(https://example.test/a)" fill="url(https://example.test/a)" marker-end="url(https://example.test/a)"/><path marker-end="url(#arrow)"/></svg>`)
+    const node = new DOMParser().parseFromString(svg, 'image/svg+xml')
+    expect(node.querySelector('script, foreignObject, style, image, use, a, animate')).toBeNull()
+    expect(svg).not.toMatch(/onload|onclick|https:|javascript:|style=/)
+    expect(node.querySelector('text')?.textContent).toBe('safe text')
+    expect(svg).toContain('url(#arrow)')
+  })
+  it('refuses malformed renderer output', () => {
+    expect(() => sanitizeSvg('<p>not svg</p>')).toThrow('invalid diagram')
+  })
+})

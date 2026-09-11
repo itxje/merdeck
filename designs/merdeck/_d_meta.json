@@ -1,0 +1,27 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "Merdeck": {
+      "versions": [
+        {
+          "path": "Merdeck.html",
+          "createdAt": "2026-09-07T18:22:42.004Z",
+          "status": "needs-review"
+        }
+      ]
+    },
+    "Brand mark sheet": {
+      "versions": [
+        {
+          "path": "brand.html",
+          "createdAt": "2026-09-09T09:12:00.000Z",
+          "status": "approved"
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-09-07T18:22:42.004Z",
+  "updatedAt": "2026-09-09T17:40:07.000Z"
+}

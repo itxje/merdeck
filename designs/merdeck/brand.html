@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Merdeck — Brand mark sheet</title>
+<link rel="icon" href="data:,">
+<style>
+  /* Token values mirror designs/merdeck/style.css, which imports web/src/index.css. */
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --border: oklch(0.922 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --sidebar: oklch(0.985 0 0);
+    --radius: 0.625rem;
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --sidebar: oklch(0.205 0 0);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 32px 72px;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    background: oklch(0.985 0 0);
+    color: oklch(0.145 0 0);
+  }
+  .sheet { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+  h1 { font-size: 22px; font-weight: 650; letter-spacing: -.6px; margin: 0; }
+  h2 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: oklch(0.556 0 0); margin: 0 0 14px; }
+  p { margin: 0; line-height: 1.6; max-width: 68ch; color: oklch(0.371 0 0); }
+  code { font: 11px var(--font-mono); }
+
+  .surface {
+    background: var(--background);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 26px 28px;
+  }
+  .surface-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 20px; }
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; }
+
+  .sizes { display: flex; align-items: flex-end; gap: 34px; flex-wrap: wrap; }
+  .size { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .size figcaption { font: 10px var(--font-mono); color: var(--muted-foreground); }
+  .mark { color: var(--foreground); display: block; }
+  .s16 { width: 16px; height: 16px; }
+  .s24 { width: 24px; height: 24px; }
+  .s32 { width: 32px; height: 32px; }
+  .s64 { width: 64px; height: 64px; }
+  .s128 { width: 128px; height: 128px; }
+
+  /* Lockup and tile reproduce .brand, .brand-name and .brand-symbol from style.css. */
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-name { font-size: 16px; font-weight: 650; letter-spacing: -.6px; }
+  .brand-symbol { background: var(--primary); color: var(--primary-foreground); padding: 7px; width: 32px; height: 32px; border-radius: var(--radius-md); }
+  .lockup-row { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
+  .lockup-lg .brand-name { font-size: 30px; letter-spacing: -1.1px; }
+  .lockup-lg .mark { width: 44px; height: 44px; }
+  .header-strip {
+    display: flex; align-items: center; gap: 12px;
+    height: 64px; padding: 0 22px;
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--sidebar);
+  }
+  .crumb { margin-left: 4px; color: var(--muted-foreground); font-size: 12px; }
+
+  .alternates { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+  .alt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .alt-head h3 { font-size: 13px; font-weight: 600; margin: 0; }
+  .tag {
+    font-size: 9px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 3px 7px; color: var(--muted-foreground); white-space: nowrap;
+  }
+  .alt-sizes { display: flex; align-items: flex-end; gap: 22px; margin-bottom: 14px; }
+  .alt-note { font-size: 12px; line-height: 1.55; color: var(--muted-foreground); margin: 0; }
+
+  .status {
+    border: 1px solid oklch(0.922 0 0); border-radius: var(--radius-lg);
+    background: oklch(1 0 0); padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .status strong { font-weight: 650; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <!-- Chosen mark. Geometry is identical to web/src/shared/components/brand/merdeck-mark.tsx
+       and web/public/favicon.svg. -->
+  <symbol id="merdeck-mark" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.6 8.6V17.6M19.4 8.6V17.6M5.62 8.24 10.98 14.76M18.38 8.24 13.02 14.76"/>
+      <path d="M2.6 17.6H21.4"/>
+      <circle cx="4.6" cy="7" r="1.6"/>
+      <circle cx="12" cy="16" r="1.6"/>
+      <circle cx="19.4" cy="7" r="1.6"/>
+    </g>
+  </symbol>
+
+  <!-- Alternate A: same geometry, solid nodes. Not chosen. -->
+  <symbol id="merdeck-alt-solid" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.6 6.6V15.6M19.4 6.6V15.6M5.62 6.24 10.98 12.76M18.38 6.24 13.02 12.76"/>
+      <path d="M2.6 15.6H21.4"/>
+      <path d="M3 20q4.5-1.5 9 0t9 0"/>
+      <circle cx="4.6" cy="5" r="1.6" fill="currentColor"/>
+      <circle cx="12" cy="14" r="1.6" fill="currentColor"/>
+      <circle cx="19.4" cy="5" r="1.6" fill="currentColor"/>
+    </g>
+  </symbol>
+
+  <!-- Alternate B: former primary, deck with wave. Not chosen. -->
+  <symbol id="merdeck-alt-wave" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.6 6.6V15.6M19.4 6.6V15.6M5.62 6.24 10.98 12.76M18.38 6.24 13.02 12.76"/>
+      <path d="M2.6 15.6H21.4"/>
+      <path d="M3 20q4.5-1.5 9 0t9 0"/>
+      <circle cx="4.6" cy="5" r="1.6"/>
+      <circle cx="12" cy="14" r="1.6"/>
+      <circle cx="19.4" cy="5" r="1.6"/>
+    </g>
+  </symbol>
+</svg>
+
+<main class="sheet">
+
+  <header>
+    <h1>Merdeck brand mark</h1>
+    <p style="margin-top:10px">
+      Merdeck reads as Mermaid plus deck. Three flowchart nodes and their edges form an
+      <strong>M</strong> standing on a deck bar. The mark is stroke-only in
+      <code>currentColor</code>, drawn on a <code>0 0 24 24</code> viewBox at stroke width
+      <code>1.7</code> with round caps and joins, so it drops into the same sizing and theming
+      as the icon set already used in the product. Approved by the project owner on
+      2026-09-09.
+    </p>
+  </header>
+
+  <section>
+    <h2>Sizes — light and dark surfaces</h2>
+    <div class="pair">
+      <div class="surface">
+        <div class="surface-label">Light surface</div>
+        <div class="sizes">
+          <figure class="size" style="margin:0"><svg class="mark s16"><use href="#merdeck-mark"/></svg><figcaption>16 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s24"><use href="#merdeck-mark"/></svg><figcaption>24 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s32"><use href="#merdeck-mark"/></svg><figcaption>32 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s64"><use href="#merdeck-mark"/></svg><figcaption>64 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s128"><use href="#merdeck-mark"/></svg><figcaption>128 px</figcaption></figure>
+        </div>
+      </div>
+      <div class="surface dark">
+        <div class="surface-label">Dark surface</div>
+        <div class="sizes">
+          <figure class="size" style="margin:0"><svg class="mark s16"><use href="#merdeck-mark"/></svg><figcaption>16 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s24"><use href="#merdeck-mark"/></svg><figcaption>24 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s32"><use href="#merdeck-mark"/></svg><figcaption>32 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s64"><use href="#merdeck-mark"/></svg><figcaption>64 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s128"><use href="#merdeck-mark"/></svg><figcaption>128 px</figcaption></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Wordmark lockup</h2>
+    <div class="pair">
+      <div class="surface">
+        <div class="surface-label">Light surface</div>
+        <div class="lockup-row">
+          <div class="brand lockup-lg"><svg class="mark"><use href="#merdeck-mark"/></svg><span class="brand-name">Merdeck</span></div>
+          <div class="brand"><svg class="mark s24"><use href="#merdeck-mark"/></svg><span class="brand-name">Merdeck</span></div>
+        </div>
+      </div>
+      <div class="surface dark">
+        <div class="surface-label">Dark surface</div>
+        <div class="lockup-row">
+          <div class="brand lockup-lg"><svg class="mark"><use href="#merdeck-mark"/></svg><span class="brand-name">Merdeck</span></div>
+          <div class="brand"><svg class="mark s24"><use href="#merdeck-mark"/></svg><span class="brand-name">Merdeck</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Header tile treatment — as the application header uses it</h2>
+    <div class="pair">
+      <div class="surface">
+        <div class="surface-label">Light surface</div>
+        <div class="header-strip">
+          <svg class="mark brand-symbol"><use href="#merdeck-mark"/></svg>
+          <span class="brand-name">Merdeck</span>
+          <span class="crumb">/ Project files</span>
+        </div>
+      </div>
+      <div class="surface dark">
+        <div class="surface-label">Dark surface</div>
+        <div class="header-strip">
+          <svg class="mark brand-symbol"><use href="#merdeck-mark"/></svg>
+          <span class="brand-name">Merdeck</span>
+          <span class="crumb">/ Project files</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Alternate directions — for review only</h2>
+    <div class="alternates">
+      <div class="surface">
+        <div class="alt-head">
+          <h3>Alternate A — solid nodes</h3>
+          <span class="tag">Alternate · not chosen</span>
+        </div>
+        <div class="alt-sizes">
+          <figure class="size" style="margin:0"><svg class="mark s16"><use href="#merdeck-alt-solid"/></svg><figcaption>16 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s32"><use href="#merdeck-alt-solid"/></svg><figcaption>32 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s64"><use href="#merdeck-alt-solid"/></svg><figcaption>64 px</figcaption></figure>
+        </div>
+        <p class="alt-note">
+          Keeps the wave line beneath the deck and fills the three nodes solid. Holds more
+          weight at 16 px, but reads heavier than the stroke-only icon set already in the
+          header and loses the open-node flowchart reading at large sizes.
+        </p>
+      </div>
+      <div class="surface">
+        <div class="alt-head">
+          <h3>Alternate B — deck with wave</h3>
+          <span class="tag">Alternate · not chosen</span>
+        </div>
+        <div class="alt-sizes">
+          <figure class="size" style="margin:0"><svg class="mark s16"><use href="#merdeck-alt-wave"/></svg><figcaption>16 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s32"><use href="#merdeck-alt-wave"/></svg><figcaption>32 px</figcaption></figure>
+          <figure class="size" style="margin:0"><svg class="mark s64"><use href="#merdeck-alt-wave"/></svg><figcaption>64 px</figcaption></figure>
+        </div>
+        <p class="alt-note">
+          The former primary direction: an extra wave line beneath the deck carries the
+          Mermaid half of the name directly, but at small sizes the added band around the
+          nodes can read as a crown rather than a flowchart. That reading is why the
+          deck-without-wave direction was chosen instead.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="status">
+    <p>
+      <strong>Status: mark approved, layout still under review.</strong> The project owner
+      reviewed this sheet and chose the deck-without-wave direction as the product mark on
+      2026-09-09. Its visual defaults — stroke weight, node radius, spacing and both surface
+      treatments — were chosen from the design tokens already in this project (the shadcn
+      base-nova palette and radius scale in <code>web/src/index.css</code>, mirrored by
+      <code>designs/merdeck/style.css</code>).
+    </p>
+    <p>
+      No colour is hardcoded: the mark inherits <code>currentColor</code>, so the header tile
+      renders it in <code>--primary-foreground</code> on <code>--primary</code>, and standalone
+      placements follow <code>--foreground</code> in both themes. The two alternates above were
+      reviewed and not chosen; they are kept here so the direction can be compared rather than
+      assumed. The prototype layout as a whole — density, hierarchy and every surface besides
+      the mark itself — remains a proposal and is still under review.
+    </p>
+  </section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,63 @@
+# Dependencies and tool caches
+node_modules/
+.npm/
+.bun/
+.cache/
+.vite/
+.eslintcache
+*.tsbuildinfo
+
+# Application build and test output
+/dist/
+/build/
+/web/dist/
+/web/build/
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+test-results/
+*.tgz
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+secrets/
+*.key
+*.pem
+*.p12
+*.pfx
+.npmrc
+http-client.private.env.json
+
+# Runtime state, logs and scratch
+tmp/
+logs/
+*.log
+*.pid
+*.pid.lock
+*.seed
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sql.gz
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+__MACOSX/
+.directory
+.Trash-*
+.nfs*
+.fuse_hidden*
+nohup.out
+
+# Design source, bundled HTML and asset metadata remain tracked.

@@ -1,0 +1,110 @@
+export const previewLimit = 32000
+export const bareLabelBreak = /<br(?: ?\/)?>/gi
+export const flowchartHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph)\b/
+const identifier = '[a-z_][\\w-]*'
+const identifiers = `${identifier}(?:,${identifier})*`
+const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
+const assignment = new RegExp(`^class[ \\t]+${identifiers}[ \\t]+${identifier}$`, 'i')
+const inlineClass = new RegExp(`:::${identifier}(?=[ \\t;[\\]{}()&]|$)`, 'gi')
+const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
+const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
+const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
+function refuse(): never {
+  throw new Error(message)
+}
+
+function validateDefinition(statement: string) {
+  const match = definition.exec(statement)
+  if (!match)
+    refuse()
+  for (const declaration of match[1]!.split(',')) {
+    const parts = declaration.trim().split(':')
+    if (parts.length !== 2)
+      refuse()
+    const property = parts[0]!.trim()
+    const value = parts[1]!.trim()
+    switch (property) {
+      case 'fill':
+      case 'stroke':
+        if (!colors.test(value))
+          refuse()
+        break
+      case 'stroke-width':
+        if (!pixelNumber.test(value) || Number.parseFloat(value) <= 0 || Number.parseFloat(value) > 10)
+          refuse()
+        break
+      case 'stroke-dasharray': {
+        const lengths = value.split(/[ \t]+/)
+        if (lengths.length > 8 || !lengths.every(part => pixelNumber.test(part)) || !lengths.some(part => Number.parseFloat(part) > 0))
+          refuse()
+        break
+      }
+      default: refuse()
+    }
+  }
+}
+
+// Split only at syntax boundaries, never inside a quoted label or line comment.
+function maskFlowchart(source: string) {
+  let statement = ''
+  let masked = ''
+  let quoted = false
+  const finish = () => {
+    const text = statement.trim()
+    if (/^classDef\b/.test(text)) {
+      validateDefinition(text)
+      masked += ' '
+    }
+    else if (/^class\b/.test(text)) {
+      if (!assignment.test(text))
+        refuse()
+      masked += ' '
+    }
+    else {
+      masked += statement.replace(/"[^"]*"/g, (label) => {
+        // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
+        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(label))
+          refuse()
+        return label.replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
+      }).replace(inlineClass, ' ').replace(/<(?=--|==|-\.)/g, ' ')
+    }
+    statement = ''
+  }
+  for (let index = 0; index < source.length; index++) {
+    const character = source[index]!
+    if (!quoted && source.startsWith('%%', index)) {
+      finish()
+      const end = source.indexOf('\n', index)
+      // Keep comment tails subject to global checks; do not assume upstream discards inline comments.
+      masked += `${source.slice(index, end === -1 ? source.length : end)}\n`
+      index = end === -1 ? source.length : end
+    }
+    else if (!quoted && /[;\r\n]/.test(character)) {
+      finish()
+      masked += character
+    }
+    else {
+      if (character === '"')
+        quoted = !quoted
+      statement += character
+    }
+  }
+  finish()
+  // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
+  if (/\b(?:classDef|class)\b|:::/.test(masked))
+    refuse()
+  return masked.replaceAll('&', ' ')
+}
+
+export function validateSource(source: string) {
+  if (source.length > previewLimit)
+    throw new Error('Live preview is limited to 32,000 characters. You can still edit and save this file.')
+  const plain = source.replace(bareLabelBreak, ' ')
+  // These checks precede every context mask and Mermaid/CSS/measurement-host operation.
+  if (/%%\s*\{|^\s*---|\\|!\[|\]\s*\(|#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im.test(plain) || [...plain].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character)))
+    refuse()
+  const flowchart = flowchartHeader.test(plain)
+  const checked = flowchart ? maskFlowchart(plain) : plain
+  if (/[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i.test(checked))
+    refuse()
+}
