@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-11 11:45 [progress]
+
+The next workflow run passed the release manifest and embedded asset checks, then failed in the browser suite against the traced executable: the file management test read a folder before its deletion request had finished, because the open dialog hides the explorer from role queries. The test now waits for the dialog to close, as its file deletion step already did. See [CI-002](task/CI-002.md).
+
 ## 2026-09-11 11:25 [progress]
 
 The `Verify and release` workflow failed on the published `main` because release manifests refused the root-level `/favicon.svg`. Manifests now admit exactly that icon beside the page shell and the asset directory, and compilation records the page shell with its build identity even when the build output lacks it, so the embedded inventory matches what the executable serves. See [CI-002](task/CI-002.md).

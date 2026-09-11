@@ -114,6 +114,8 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await page.keyboard.press('Delete')
     await expect(dialog).toContainText(`Permanently delete the empty folder ${folder}/empty?`)
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    // The open dialog hides the explorer from role queries until the deletion finishes.
+    await expect(dialog).toHaveCount(0)
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toHaveCount(0)
     expect(await readdir(join(root, folder))).toEqual([])
 
