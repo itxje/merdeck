@@ -321,7 +321,7 @@ These commands describe future reviewed candidate updates and failed-run diagnos
 
 ## Version-tag releases and running the executable
 
-**The first release version is unchosen. No initial tag or release is created by this change.** Once a reviewed commit has actually passed the matching Linux x64/native gates, a maintainer selects a version and pushes a tag `vMAJOR.MINOR.PATCH` at that commit. SemVer prerelease suffixes such as `-rc.1` are supported and set the GitHub prerelease flag; leading-zero numeric identifiers, build metadata and malformed versions are rejected. A tag is immutable release identity: do not move it to different bytes. Main commits, candidate branches and manual runs do not publish.
+**The first release is [`v0.1.0`](https://github.com/itxje/merdeck/releases/tag/v0.1.0), tagged at `be42c59` on 2026-09-11.** For each later release, once a reviewed commit has actually passed the matching Linux x64/native gates, a maintainer selects a version and pushes a tag `vMAJOR.MINOR.PATCH` at that commit. SemVer prerelease suffixes such as `-rc.1` are supported and set the GitHub prerelease flag; leading-zero numeric identifiers, build metadata and malformed versions are rejected. A tag is immutable release identity: do not move it to different bytes. Main commits, candidate branches and manual runs do not publish.
 
 After selecting the real version and reviewed commit, the maintainer process is:
 
@@ -334,7 +334,7 @@ git tag -a "$release_tag" "$reviewed_release_commit" -m "Release $release_tag" &
 git push origin "refs/tags/$release_tag"
 ```
 
-The placeholder is deliberately invalid until a version is chosen. These documented commands have not been executed for an initial release.
+The placeholders are deliberately invalid until a version and commit are chosen. The first release, `v0.1.0`, was tagged and pushed with these commands.
 
 The tag workflow repeats all required checks on that exact commit. Only successful native source and binary/browser acceptance permits draft creation, complete attachment upload/checksum verification and final publication. An identical rerun reuses existing matching outputs; conflicts fail without deleting or replacing unrelated assets. A failed upload leaves a draft and can resume with identical artifacts. Only the automated publisher uses the standard GITHUB_TOKEN; no new credentials or registry are required. Local tests and fixture versions never publish.
 

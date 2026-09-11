@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-11 14:40 [progress]
+
+At the project owner's request, the first version-tag release [`v0.1.0`](https://github.com/itxje/merdeck/releases/tag/v0.1.0) was published from `be42c59`. The tag workflow repeated all native checks before it published `merdeck-0.1.0-linux-x64` with its `SHA256SUMS`. See [RELEASE-001](task/RELEASE-001.md).
+
 ## 2026-09-11 11:45 [progress]
 
 The next workflow run passed the release manifest and embedded asset checks, then failed in the browser suite against the traced executable: the file management test read a folder before its deletion request had finished, because the open dialog hides the explorer from role queries. The test now waits for the dialog to close, as its file deletion step already did. See [CI-002](task/CI-002.md).
