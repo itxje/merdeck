@@ -2,7 +2,7 @@ import { readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from 'bun:test'
 import { packageRelease } from '../../scripts/package-release'
-import { releaseFiles } from '../../scripts/release/manifest'
+import { readManifest, releaseFiles } from '../../scripts/release/manifest'
 import { fixtureCommit, fixtureTag, releaseFixture } from './fixtures'
 
 test('package checks assert tag, commit, checksum, exact inventory and ELF architecture', async () => {
@@ -25,6 +25,18 @@ test('package checks assert tag, commit, checksum, exact inventory and ELF archi
     await rm(join(directory, filename))
     await symlink(join(directory, 'manifest.json'), join(directory, filename))
     await expect(releaseFiles(directory, fixtureTag)).rejects.toThrow('regular')
+  }
+  finally { await rm(directory, { recursive: true, force: true }) }
+})
+
+test('manifest inventories admit only the page shell, the root brand icon and the asset directory', async () => {
+  const { directory, manifest } = await releaseFixture()
+  try {
+    expect((await readManifest(directory, fixtureTag)).assets.map(asset => asset.path)).toEqual(['/index.html', '/favicon.svg', '/assets/app.js'])
+    for (const path of ['/favicon.ico', '/robots.txt', '/assets', '/other/app.js']) {
+      await writeFile(join(directory, 'manifest.json'), JSON.stringify({ ...manifest, assets: [...manifest.assets, { ...manifest.assets[0]!, path }] }))
+      await expect(readManifest(directory, fixtureTag)).rejects.toThrow('pattern')
+    }
   }
   finally { await rm(directory, { recursive: true, force: true }) }
 })

@@ -15,7 +15,7 @@ export const manifestSchema = z.strictObject({
   target: targetSchema,
   filename: z.string(),
   bun: z.literal('1.4.2'),
-  assets: z.array(z.strictObject({ path: z.string().regex(/^\/(?:index\.html|assets\/[\w./-]+)$/), contentType: z.string(), size: z.number().int().positive(), sha256: digest })).min(2).max(4096),
+  assets: z.array(z.strictObject({ path: z.string().regex(/^\/(?:index\.html|favicon\.svg|assets\/[\w./-]+)$/), contentType: z.string(), size: z.number().int().positive(), sha256: digest })).min(2).max(4096),
 })
 export type ReleaseManifest = z.infer<typeof manifestSchema>
 

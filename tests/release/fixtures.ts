@@ -15,7 +15,7 @@ export async function releaseFixture() {
   const binary = new Uint8Array(64)
   binary.set([0x7F, 69, 76, 70, 2, 1])
   binary[18] = 62
-  const assets = ['/index.html', '/assets/app.js'].map(path => ({ path, contentType: 'text/plain', size: 1, sha256: sha256('x') }))
+  const assets = ['/index.html', '/favicon.svg', '/assets/app.js'].map(path => ({ path, contentType: 'text/plain', size: 1, sha256: sha256('x') }))
   const manifest = { schemaVersion: 1, tag: fixtureTag, version: fixtureTag.slice(1), prerelease: true, commit: fixtureCommit, target: 'bun-linux-x64', filename, bun: '1.4.2', assets }
   await writeFile(join(directory, filename), binary)
   await writeFile(join(directory, 'manifest.json'), JSON.stringify(manifest))

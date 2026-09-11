@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-11 11:25 [progress]
+
+The `Verify and release` workflow failed on the published `main` because release manifests refused the root-level `/favicon.svg`. Manifests now admit exactly that icon beside the page shell and the asset directory, and compilation records the page shell with its build identity even when the build output lacks it, so the embedded inventory matches what the executable serves. See [CI-002](task/CI-002.md).
+
 ## 2026-09-11 10:18 [progress]
 
 At the project owner's request, the hosted instance's hostnames and network addresses no longer appear in the repository. Documentation uses the reserved names `merdeck.example.test`, `diag.example.test` and `*.example.test` and documentation addresses in `192.0.2.0/24` instead, and the published history was reset to a single commit. Commit identifiers cited in earlier records refer to the previous history, which is kept privately. See [DOC-003](task/DOC-003.md).

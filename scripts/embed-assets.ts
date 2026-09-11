@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { snapshotBuildAssets } from '../src/shared/application-build'
 import { loadStaticAssets } from '../src/shared/static-assets'
 
 export async function embedAssets(directory: string, scratch: string) {
-  const assets = await loadStaticAssets(resolve(directory))
+  // The executable serves the shell with its build identity; record those bytes even when the build output lacks it.
+  const { assets } = snapshotBuildAssets(await loadStaticAssets(resolve(directory)))
   const inventory = [...assets].sort(([a], [b]) => a.localeCompare(b)).map(([path, asset]) => ({ path, contentType: asset.contentType, size: asset.body.byteLength, sha256: createHash('sha256').update(asset.body).digest('hex') }))
   await mkdir(join(scratch, 'assets'))
   const imports: string[] = []

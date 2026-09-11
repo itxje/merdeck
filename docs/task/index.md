@@ -44,3 +44,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**DOC-002 Correct stale integration and authentication statements**](DOC-002.md) `P3`
 - [x] [**UPDATE-001 Detect deployed application updates safely**](UPDATE-001.md) `P2`
 - [x] [**DOC-003 Keep hosted instance hostnames and addresses out of the repository**](DOC-003.md) `P1`
+- [x] [**CI-002 Accept the root brand icon in release manifests**](CI-002.md) `P1`
