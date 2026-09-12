@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-11
+> Updated: 2026-09-12
 
 ## Usage
 
@@ -27,3 +27,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-017 List only the chosen file types in the explorer**](PLAN-017.md) `2026-09-12`
 - [x] [**PLAN-018 Publish one stable release archive**](PLAN-018.md) `2026-09-12`
 - [x] [**PLAN-019 Publish one architecture-independent bundle**](PLAN-019.md) `2026-09-12`
+- [ ] [**PLAN-020 Admit host-shared storage under a content identity model**](PLAN-020.md) `2026-09-12`
