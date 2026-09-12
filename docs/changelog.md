@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 13:45 [progress]
+
+The file bar is gone. The header now carries the open file, the save state and the Save button beside the brand, the theme switch and log out, so the panes gained the whole bar: the preview surface grew from 685 to 731 pixels at 1440 by 900. With no file open the header names none. See [LAYOUT-008](task/LAYOUT-008.md).
+
 ## 2026-09-12 13:20 [progress]
 
 The file bar lost its second line and thirty pixels of height, which the panes gained. The file name, the save state and the Save button stay; the file kind moved into the heading's hover text and the instruction to choose a diagram remains in the empty state. See [LAYOUT-008](task/LAYOUT-008.md).

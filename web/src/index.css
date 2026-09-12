@@ -149,7 +149,8 @@ button:disabled { cursor: default; }
 .workspace { height: 100dvh; min-height: 480px; display: flex; flex-direction: column; font-size: 13px; }
 .muted { color: var(--muted-foreground); }
 .app-header { height: 64px; flex: 0 0 auto; padding: 0 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); gap: 20px; }
-.brand, .header-actions, .file-title, .file-actions { display: flex; align-items: center; gap: 12px; }
+.brand, .header-actions, .header-file { display: flex; align-items: center; gap: 12px; }
+.header-file { flex: 1; min-width: 0; }
 .brand-name { font-size: 16px; font-weight: 650; letter-spacing: -.6px; }
 .brand-symbol { background: var(--primary); color: var(--primary-foreground); padding: 7px; width: 32px; height: 32px; border-radius: var(--radius-md); }
 .header-actions { gap: 8px; }
@@ -195,13 +196,12 @@ button:disabled { cursor: default; }
 .file-count { margin-left: auto; font-size: 10px; color: var(--muted-foreground); }
 .tree-bottom { padding: 16px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; font-size: 11px; }
 .editor-workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.file-bar { min-height: 46px; border-bottom: 1px solid var(--border); padding: 6px 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.file-title h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.25px; }
-.file-title svg { width: 18px; color: var(--muted-foreground); }
+.header-file h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.25px; }
+.header-file > svg { width: 18px; color: var(--muted-foreground); }
 .save-status { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; }
 .save-status svg { width: 13px; height: 13px; }
 .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--foreground); }
-.file-actions kbd { opacity: .6; font-size: 10px; margin-left: 12px; }
+.header-actions kbd { opacity: .6; font-size: 10px; margin-left: 12px; }
 .panes { flex: 1; min-height: 0; }
 .pane-slot { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .pane-slot > section { flex: 1; }
@@ -258,15 +258,13 @@ button:disabled { cursor: default; }
   .app-header { padding: 0 12px; height: 58px; gap: 8px; }
   .brand { gap: 8px; }
   .brand-name { font-size: 15px; }
-  .prototype-tag, .header-actions .theme-label, .file-actions kbd, .status-bar .desktop-only { display: none; }
+  .prototype-tag, .brand-name, .header-actions .theme-label, .header-actions kbd, .status-bar .desktop-only { display: none; }
   .header-actions { gap: 2px; }
   .theme-switch button { width: 44px; height: 44px; }
   .tree-item > .tree-row { padding-right: 46px; }
   .tree-item .row-actions { opacity: 1; width: 40px; height: 40px; }
-  .file-bar { padding: 12px; min-height: 72px; gap: 8px; }
-  .file-title { gap: 8px; }
-  .file-title h1 { font-size: 14px; }
-  .file-actions { gap: 8px; }
+  .header-file { gap: 4px; }
+  .header-file h1 { font-size: 13px; }
   .save-status { font-size: 10px; }
   .save-status svg { display: none; }
   .mobile-panes { display: flex !important; padding: 8px 12px; border-bottom: 1px solid var(--border); }
@@ -285,10 +283,9 @@ button:disabled { cursor: default; }
 
 /* Workspace compositions retain the prototype's semantic palette and density. */
 .workspace { overflow: hidden; }
-.app-header, .file-bar, .status-bar { min-width: 0; }
-.file-title { min-width: 0; }
-.file-title h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-actions { flex-shrink: 0; }
+.app-header, .status-bar { min-width: 0; }
+.header-file h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.header-actions { flex-shrink: 0; }
 .tree-hint { padding: 8px; font-size: 12px; color: var(--muted-foreground); }
 .login-page { flex: 1; display: grid; place-items: center; overflow: auto; padding: 24px; background: var(--sidebar); }
 .login-card { width: min(100%, 400px); display: flex; flex-direction: column; gap: 20px; }
@@ -313,8 +310,8 @@ button:disabled { cursor: default; }
 .diagram-space { margin: auto; }
 .render-scratch { position: fixed; left: -100000px; top: 0; width: 1600px; visibility: hidden; pointer-events: none; }
 @media (max-width: 700px) {
-  .file-title .desktop-only, .file-actions kbd, .pane-footer .desktop-only { display: none; }
-  .file-title h1 { max-width: 180px; }
+  .header-file .desktop-only, .header-actions kbd, .pane-footer .desktop-only { display: none; }
+  .header-file h1 { max-width: 180px; }
   .save-status { display: none; }
   .status-bar { font-size: 10px; }
 }

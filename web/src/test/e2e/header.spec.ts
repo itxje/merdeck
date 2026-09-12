@@ -8,7 +8,7 @@ async function size(locator: Locator) {
   return box
 }
 
-test('header keeps the brand, a theme switch and log out, and the explorer offers refresh', async ({ page }) => {
+test('header keeps the brand, the open file, saving, a theme switch and log out, and the explorer offers refresh', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page)
   const header = page.getByRole('banner')
@@ -19,8 +19,12 @@ test('header keeps the brand, a theme switch and log out, and the explorer offer
   const dark = theme.getByRole('button', { name: 'Dark theme', exact: true })
   const system = theme.getByRole('button', { name: 'System theme', exact: true })
   const logout = header.getByRole('button', { name: 'Log out', exact: true })
+  const save = header.getByRole('button', { name: /Save/ })
   await expect(system).toHaveAttribute('aria-pressed', 'true')
-  await expect(header.getByRole('button')).toHaveCount(4)
+  // The brand, the open file and saving share the header; no second bar takes height from the diagram.
+  await expect(header.getByRole('button')).toHaveCount(5)
+  await expect(save).toBeDisabled()
+  await expect(header.getByRole('heading', { level: 1 })).toHaveCount(0)
 
   // Icon controls share one height and render their icons at the design-system size.
   expect((await size(theme)).height).toBeCloseTo(32, 0)

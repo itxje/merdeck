@@ -161,7 +161,48 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
           <MerdeckMark className="brand-symbol" aria-hidden="true" />
           <span className="brand-name">Merdeck</span>
         </div>
+        {/* The open file and its save controls share the header, so no second bar takes height from the diagram. */}
+        {state.session && (
+          <div className="header-file">
+            <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
+            {/* Without an open file the header names nothing: the explorer and the empty state already say what to do. */}
+            {path && (
+              <>
+                <FileCode2 className="desktop-only" />
+                <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : path}>{path}</h1>
+              </>
+            )}
+          </div>
+        )}
         <div className="header-actions">
+          {state.session && (
+            <>
+              <span className="save-status" role="status">
+                {file?.saving
+                  ? 'Saving…'
+                  : changed
+                    ? (
+                        <>
+                          <span className="dirty-dot" />
+                          Unsaved
+                        </>
+                      )
+                    : selected
+                      ? (
+                          <>
+                            <Check />
+                            {file?.saved ? 'Saved' : 'Up to date'}
+                          </>
+                        )
+                      : ''}
+              </span>
+              <Button disabled={!canSave} onClick={doSave}>
+                Save
+                <kbd>⌘ / Ctrl S</kbd>
+              </Button>
+              <span className="control-divider" aria-hidden="true" />
+            </>
+          )}
           <ThemeToggle />
           {state.session?.access === 'token' && (
             <>
@@ -234,41 +275,6 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                   }}
                 />
                 <main className="editor-workspace">
-                  <div className="file-bar">
-                    <div className="file-title">
-                      <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
-                      <FileCode2 className="desktop-only" />
-                      <div className="min-w-0">
-                        {/* The kind and the instruction live in the explorer and the empty state; the bar keeps the name only, so the diagram gets the height. */}
-                        <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : path}>{path || 'Project files'}</h1>
-                      </div>
-                    </div>
-                    <div className="file-actions">
-                      <span className="save-status" role="status">
-                        {file?.saving
-                          ? 'Saving…'
-                          : changed
-                            ? (
-                                <>
-                                  <span className="dirty-dot" />
-                                  Unsaved
-                                </>
-                              )
-                            : selected
-                              ? (
-                                  <>
-                                    <Check />
-                                    {file?.saved ? 'Saved' : 'Up to date'}
-                                  </>
-                                )
-                              : ''}
-                      </span>
-                      <Button disabled={!canSave} onClick={doSave}>
-                        Save
-                        <kbd>⌘ / Ctrl S</kbd>
-                      </Button>
-                    </div>
-                  </div>
                   {!state.session.storage.writable && <div className="notice" role="status"><span>Read-only storage. Browsing and drafts are available; saving is disabled. Ask the operator to verify write support for this project.</span></div>}
                   {disconnected && (
                     <div className="notice" role="alert">
