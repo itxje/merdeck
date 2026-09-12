@@ -325,6 +325,8 @@ These commands describe future reviewed candidate updates and failed-run diagnos
 
 **The first release is [`v0.1.0`](https://github.com/itxje/merdeck/releases/tag/v0.1.0), tagged at `be42c59` on 2026-09-11.** For each later release, once a reviewed commit has actually passed the matching Linux x64/native gates, a maintainer selects a version and pushes a tag `vMAJOR.MINOR.PATCH` at that commit. SemVer prerelease suffixes such as `-rc.1` are supported and set the GitHub prerelease flag; leading-zero numeric identifiers, build metadata and malformed versions are rejected. A tag is immutable release identity: do not move it to different bytes. Main commits, candidate branches and manual runs do not publish.
 
+Before 1.0, the maintainer chooses the position to raise by what an operator has to notice. The **patch** position covers ordinary work: fixed defects, interface adjustments, a widened preview policy, documentation. The **minor** position is for a release that changes what a deployment must account for: the published artifact's form, a default configuration value, storage admission, or the API and session contracts. The major position stays at zero until 1.0. An earlier release that used the wrong position is left as published, because a tag is not moved.
+
 After selecting the real version and reviewed commit, the maintainer process is:
 
 ```bash
