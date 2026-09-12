@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 13:20 [progress]
+
+The file bar lost its second line and thirty pixels of height, which the panes gained. The file name, the save state and the Save button stay; the file kind moved into the heading's hover text and the instruction to choose a diagram remains in the empty state. See [LAYOUT-008](task/LAYOUT-008.md).
+
 ## 2026-09-12 13:00 [decision]
 
 The default tree scan became wide and shallow: 8,000 entries across four complete levels, instead of 1,000 entries of a walk up to sixteen levels deep. A root that also holds unrelated directories now lists its diagrams instead of spending the budget inside the first large subtree; diagrams kept deeper than four levels need an explicit `MERDECK_MAX_TREE_DEPTH`. Both maximums are unchanged. See [CONFIG-001](task/CONFIG-001.md).

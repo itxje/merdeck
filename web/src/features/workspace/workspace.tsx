@@ -239,8 +239,8 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                       <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
                       <FileCode2 className="desktop-only" />
                       <div className="min-w-0">
-                        <h1 title={path}>{path || 'Project files'}</h1>
-                        <p>{selected ? `${selected.label} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : 'Choose a diagram to begin'}</p>
+                        {/* The kind and the instruction live in the explorer and the empty state; the bar keeps the name only, so the diagram gets the height. */}
+                        <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : path}>{path || 'Project files'}</h1>
                       </div>
                     </div>
                     <div className="file-actions">

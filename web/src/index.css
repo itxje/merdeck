@@ -195,10 +195,9 @@ button:disabled { cursor: default; }
 .file-count { margin-left: auto; font-size: 10px; color: var(--muted-foreground); }
 .tree-bottom { padding: 16px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; font-size: 11px; }
 .editor-workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.file-bar { min-height: 76px; border-bottom: 1px solid var(--border); padding: 14px 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.file-bar { min-height: 46px; border-bottom: 1px solid var(--border); padding: 6px 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .file-title h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.25px; }
 .file-title svg { width: 18px; color: var(--muted-foreground); }
-.file-title p { margin: 5px 0 0; color: var(--muted-foreground); font-size: 11px; }
 .save-status { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; }
 .save-status svg { width: 13px; height: 13px; }
 .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--foreground); }
@@ -288,7 +287,7 @@ button:disabled { cursor: default; }
 .workspace { overflow: hidden; }
 .app-header, .file-bar, .status-bar { min-width: 0; }
 .file-title { min-width: 0; }
-.file-title h1, .file-title p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-title h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-actions { flex-shrink: 0; }
 .tree-hint { padding: 8px; font-size: 12px; color: var(--muted-foreground); }
 .login-page { flex: 1; display: grid; place-items: center; overflow: auto; padding: 24px; background: var(--sidebar); }
