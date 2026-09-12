@@ -1,13 +1,16 @@
-export const previewLimit = 32000
+export const previewLimit = 100000
 export const bareLabelBreak = /<br(?: ?\/)?>/gi
 export const flowchartHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph)\b/
 const sequenceHeader = /^\s*(?:%%[^\n]*\n\s*)*sequenceDiagram\b/
 const classHeader = /^\s*(?:%%[^\n]*\n\s*)*classDiagram\b/
+// Families whose `class` statement assigns a style class; in a class diagram it declares a class.
+const assignmentHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph|stateDiagram|erDiagram|block-beta|block|requirementDiagram)\b/
 const identifier = '[a-z_][\\w-]*'
 const identifiers = `${identifier}(?:,${identifier})*`
 const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
 const styling = new RegExp(`^style[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
 const assignment = new RegExp(`^class[ \\t]+${identifiers}[ \\t]+${identifier}$`, 'i')
+const cssAssignment = new RegExp(`^cssClass[ \\t]+"${identifier}(?:[ \\t]*,[ \\t]*${identifier})*"[ \\t]+${identifier}$`, 'i')
 const inlineClass = new RegExp(`:::${identifier}(?=[ \\t;[\\]{}()&]|$)`, 'gi')
 // A click may only name a diagram file inside this project; callbacks, addresses and every other
 // form stay refused, and following one is the application's navigation, never a rendered link.
@@ -15,7 +18,10 @@ const linkStatement = new RegExp(`^click[ \\t]+(${identifier})[ \\t]+"([^"]*)"$`
 const linkFile = /\.(?:mmd|mermaid|md)$/i
 const linkSegment = /^[\w.-]+$/
 const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
-const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
+const sizeNumber = /^(\d{1,3}(?:\.\d{1,2})?)(px|pt|em|rem|%)?$/
+const fraction = /^(?:[01](?:\.0{1,3})?|0?\.\d{1,3})$/
+const hexColor = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i
+const namedColors = new Set('aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen transparent currentcolor none'.split(' '))
 // A leading front matter block may carry a title and a bounded configuration, in either order and
 // at most once each. `config` there is the same surface as a configuration directive, so it admits
 // only a diagram section holding switches and bounded whole numbers: no value may carry text, and
@@ -24,35 +30,47 @@ const frontMatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
 const frontMatterEntry = /^([ \t]*)([a-z][\w-]*):(.*)$/i
 const configSections = new Set(['flowchart', 'sequence', 'gantt', 'state', 'er', 'class', 'journey', 'pie', 'timeline', 'mindmap'])
 const configNumber = /^\d{1,4}$/
-const literalPlaceholder = /<([^<>\r\n]+)>/gu
 const namedPlaceholder = /^(?:net|label|product-domain)$/i
-const htmlElements = new Set('a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd legend li link main map mark math menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' '))
-// A numeric character reference is text that follows other text; a colour declaration follows its
-// property, so `fill:#0c4a6e;` is an ordinary statement rather than an entity.
-const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|\burl\s*\(|@\{|\$\$|@import|expression\s*\(/im
-const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
-const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes, and sequence diagrams support bidirectional messages. A leading front matter block may carry a title and a bounded diagram configuration of switches and whole numbers. Configuration directives, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
+const markupElements = new Set('a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd legend li link main map mark math menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr animate animatemotion animatetransform feimage filter foreignobject image set use'.split(' '))
+// The preview's security boundary: configuration directives, entities and Mermaid escape codes,
+// resource references, script schemes, shape metadata and math. A numeric character reference is
+// text that follows other text; a colour declaration follows its property, so `fill:#0c4a6e;` is
+// an ordinary statement rather than an entity.
+const boundary = /%%\s*\{|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:^|[^:&])#\w+;|!\[|\]\s*\(|\burl\s*\(|image-set\s*\(|@import|expression\s*\(|(?:javascript|vbscript):|@\{|\$\$/im
+const secondBlock = /^\s*---/m
+const c4Reference = /\$\w*(?:link|sprite)\w*\s*=/i
+// Statements whose values reach raw CSS or attributes, where a backslash can spell `url(`.
+const rawStyle = /^(?:todayMarker|box|rect|Update\w*)\b|\$\w+\s*=|\]\s*(?:radius|color|stroke-color|stroke-width)\s*:/i
+const message = 'Preview uses plain Mermaid only. Configuration directives, links and callbacks, HTML tags, entity codes, resource references, shape metadata, math and styles outside the bounded declarations are disabled.'
 function refuse(): never {
   throw new Error(message)
 }
 
+// A placeholder such as `<Node>` is text unless its first word is an element or custom element.
 function inertPlaceholder(body: string) {
-  if (!/^[\p{L}\p{N}_(). -]+$/u.test(body))
+  if (!/^[\p{L}\p{N}_(). ,-]+$/u.test(body))
     return false
   if (namedPlaceholder.test(body))
     return true
-  if (htmlElements.has(body.toLowerCase()) || body.includes('-'))
-    return false
-  return /[\p{Script=Han}\p{Lu}\p{N}()]/u.test(body)
+  const name = body.split(/[ ,().]/)[0]!
+  return !markupElements.has(name.toLowerCase()) && !name.includes('-')
 }
 
-// Mermaid renders these bounded placeholders as text with HTML labels disabled. Masking them only
-// affects the policy scan; the original source is still what Mermaid receives.
-function maskLiteralPlaceholders(text: string) {
-  return text.replace(literalPlaceholder, (placeholder, body: string) => inertPlaceholder(body) ? ' '.repeat(placeholder.length) : placeholder)
+// HTML opens a tag only where `<` is immediately followed by an ASCII letter, `/`, `!` or `?`;
+// every other `<` is text to a conforming parser, and the render pipeline has no other kind.
+function markup(text: string) {
+  for (const match of text.matchAll(/<(?=[a-z!/?])/gi)) {
+    const placeholder = /^<([a-z][^<>\r\n]*)>/i.exec(text.slice(match.index))
+    if (!placeholder || !inertPlaceholder(placeholder[1]!))
+      return true
+  }
+  return false
 }
 
-// classDef and style carry the same declarations, so both take the same bounded properties.
+function unsafeText(text: string) {
+  return boundary.test(text) || c4Reference.test(text) || markup(text) || [...text].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character))
+}
+
 function fileLink(statement: string): [string, string] | undefined {
   const match = linkStatement.exec(statement)
   const target = match?.[2]
@@ -95,35 +113,51 @@ export function renderSource(source: string): string {
   return source.slice(0, source.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
 }
 
+function declaration(property: string, value: string) {
+  switch (property) {
+    case 'fill':
+    case 'stroke':
+    case 'color':
+    case 'stroke-color':
+      return hexColor.test(value) || namedColors.has(value.toLowerCase())
+    case 'stroke-width':
+      return pixelNumber.test(value) && Number.parseFloat(value) > 0 && Number.parseFloat(value) <= 10
+    case 'stroke-dasharray': {
+      const lengths = value.split(/[ \t]+/)
+      return lengths.length <= 8 && lengths.every(part => pixelNumber.test(part)) && lengths.some(part => Number.parseFloat(part) > 0)
+    }
+    case 'font-weight':
+      return /^(?:normal|bold|bolder|lighter|[1-9]00)$/i.test(value)
+    case 'font-style':
+      return /^(?:normal|italic|oblique)$/i.test(value)
+    case 'font-size': {
+      const size = sizeNumber.exec(value)
+      const amount = Number.parseFloat(size?.[1] ?? '0')
+      const limit = size?.[2] === 'em' || size?.[2] === 'rem' ? 10 : size?.[2] === '%' ? 1000 : 100
+      return !!size && amount > 0 && amount <= limit
+    }
+    case 'opacity':
+    case 'fill-opacity':
+    case 'stroke-opacity':
+      return fraction.test(value) || (/^\d{1,3}%$/.test(value) && Number.parseInt(value, 10) <= 100)
+    case 'rx':
+    case 'ry':
+    case 'radius':
+      return pixelNumber.test(value)
+    default:
+      return false
+  }
+}
+
+// classDef and style carry the same declarations in every family, so both take the same bounded properties.
 function validateDeclarations(statement: string, shape: RegExp) {
   const match = shape.exec(statement)
   if (!match)
     refuse()
-  for (const declaration of match[1]!.split(',')) {
-    const parts = declaration.trim().split(':')
-    if (parts.length !== 2)
+  for (const item of match[1]!.split(',')) {
+    const parts = item.trim().split(':')
+    if (parts.length !== 2 || !declaration(parts[0]!.trim().toLowerCase(), parts[1]!.trim()))
       refuse()
-    const property = parts[0]!.trim()
-    const value = parts[1]!.trim()
-    switch (property) {
-      case 'fill':
-      case 'stroke':
-      case 'color':
-        if (!colors.test(value))
-          refuse()
-        break
-      case 'stroke-width':
-        if (!pixelNumber.test(value) || Number.parseFloat(value) <= 0 || Number.parseFloat(value) > 10)
-          refuse()
-        break
-      case 'stroke-dasharray': {
-        const lengths = value.split(/[ \t]+/)
-        if (lengths.length > 8 || !lengths.every(part => pixelNumber.test(part)) || !lengths.some(part => Number.parseFloat(part) > 0))
-          refuse()
-        break
-      }
-      default: refuse()
-    }
   }
 }
 
@@ -159,75 +193,58 @@ function mapFlowchart(source: string, visit: (statement: string) => string) {
   return mapped
 }
 
-// Plain node/group labels render as SVG text. Mask only address tokens for the resource check;
-// markup, entities, scripts and CSS remain visible to validation, and draft/render bytes are intact.
-function maskAddresses(text: string) {
-  return text.replace(/https?:\/\/|\/\//gi, token => ' '.repeat(token.length))
-}
-
-function maskLabelAddresses(source: string) {
-  return mapFlowchart(source, (statement) => {
-    if (/^\s*(?:click|classDef|class|style|linkStyle)\b/i.test(statement))
-      return statement
-    return statement.replace(/\[\s*"[^"]*"\s*\]|\(\s*"[^"]*"\s*\)|\{\s*"[^"]*"\s*\}/g, label => label.includes('`') ? label : maskAddresses(label))
-  })
-}
-
 function mapClassNotes(source: string, visit: (note: string) => string) {
   return source.replace(/^[ \t]*note(?:[ \t]+for[ \t]+[\w-]+)?[ \t]+"[^"\r\n]*"[ \t]*$/gim, visit)
 }
 
-function maskDisplayText(source: string) {
-  // Whole-line citations are inert; directive-shaped comments keep every original check.
-  const comments = source.replace(/^[ \t]*%%(?![ \t]*\{)[^\r\n]*/gm, maskAddresses)
-  if (flowchartHeader.test(comments))
-    return maskLabelAddresses(comments)
-  if (sequenceHeader.test(comments))
-    return comments.replace(/^[ \t]*note[ \t]+(?:over|left[ \t]+of|right[ \t]+of)[ \t]+[\w-]+(?:[ \t]*,[ \t]*[\w-]+)?[ \t]*:[^\r\n]*/gim, note => note.includes('`') ? note : maskAddresses(note))
-  if (classHeader.test(comments))
-    return mapClassNotes(comments, note => note.includes('`') ? note : note.replace(/\\n/g, '  '))
-  return comments
+interface Family { flowchart: boolean, sequence: boolean, classes: boolean, assigns: boolean }
+
+function checkStatement(text: string, family: Family, comment: boolean) {
+  if (/^click\b/i.test(text)) {
+    // Only a statement is projected and extracted as a link, so a link inside a comment stays refused.
+    if (comment || !family.flowchart || !fileLink(text))
+      refuse()
+  }
+  else if (/^linkStyle\b/i.test(text) || (family.sequence && /^(?:links?|properties|details)\b/i.test(text)) || (family.classes && /^(?:callback|link)\b/i.test(text))) {
+    refuse()
+  }
+  else if (/^classDef\b/i.test(text)) {
+    validateDeclarations(text, definition)
+  }
+  else if (/^style\b/i.test(text)) {
+    validateDeclarations(text, styling)
+  }
+  else if (family.assigns && /^class\b/i.test(text) && !assignment.test(text)) {
+    refuse()
+  }
+  else if (family.classes && /^cssClass\b/i.test(text) && !cssAssignment.test(text)) {
+    refuse()
+  }
 }
 
-function maskFlowchart(source: string) {
-  const masked = mapFlowchart(source, (statement) => {
-    const text = statement.trim()
-    if (/^classDef\b/.test(text)) {
-      validateDeclarations(text, definition)
-      return ' '
+// Statements are read by line and `;` without regard to quotes, so an unbalanced quote cannot hide one.
+// A comment body is read as a statement too; nothing upstream is assumed to discard it.
+function checkStatements(plain: string) {
+  const family = { flowchart: flowchartHeader.test(plain), sequence: sequenceHeader.test(plain), classes: classHeader.test(plain), assigns: assignmentHeader.test(plain) }
+  for (const line of plain.split(/\r?\n/)) {
+    if (line.includes('\\') && rawStyle.test(line.trim()))
+      refuse()
+    // An inline class names an identifier; any other `:::` in a flowchart is refused.
+    if (family.flowchart && line.replace(inlineClass, ' ').includes(':::'))
+      refuse()
+    // Everything after the first `%%` on a line is comment, including text after a `;`.
+    const comment = line.indexOf('%%')
+    for (const segment of (comment === -1 ? line : line.slice(0, comment)).split(';'))
+      checkStatement(segment.trim(), family, false)
+    if (comment !== -1) {
+      for (const segment of line.slice(comment + 2).split(';'))
+        checkStatement(segment.trim(), family, true)
     }
-    else if (/^style\b/.test(text)) {
-      validateDeclarations(text, styling)
-      return ' '
-    }
-    else if (/^class\b/.test(text)) {
-      if (!assignment.test(text))
-        refuse()
-      return ' '
-    }
-    else if (/^click\b/i.test(text)) {
-      if (!fileLink(text))
-        refuse()
-      return ' '
-    }
-    else {
-      return statement.replace(/"[^"]*"/g, (label) => {
-        // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
-        const display = maskLiteralPlaceholders(label)
-        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(display))
-          refuse()
-        return display.replace(/\blink\b/gi, word => ' '.repeat(word.length)).replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
-      }).replace(inlineClass, ' ').replace(/<(?=--|==|-\.)/g, ' ')
-    }
-  })
-  // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
-  if (/\b(?:classDef|class|style|click)\b|:::/.test(masked))
-    refuse()
-  return maskLiteralPlaceholders(masked).replaceAll('&', ' ')
+  }
 }
 
 // Reads a front matter block, refusing anything outside the admitted shape, and returns its title
-// for the ordinary label checks. A configuration reaches Mermaid through the same entry a directive
+// for the ordinary text checks. A configuration reaches Mermaid through the same entry a directive
 // uses, so the shape itself, not the host's own key filtering, is what keeps it harmless.
 function frontMatterTitle(body: string) {
   let title: string | undefined
@@ -268,29 +285,18 @@ function frontMatterTitle(body: string) {
   return title ?? ''
 }
 
-// These checks precede every context mask and Mermaid/CSS/measurement-host operation.
-function unsupported(text: string) {
-  return unsafe.test(text) || [...text].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character))
-}
-
 export function validateSource(source: string) {
   if (source.length > previewLimit)
-    throw new Error('Live preview is limited to 32,000 characters. You can still edit and save this file.')
+    throw new Error('Live preview is limited to 100,000 characters. You can still edit and save this file.')
   const full = source.replace(bareLabelBreak, ' ')
   const block = frontMatter.exec(full)
   const plain = block ? full.slice(block[0].length) : full
-  // The title is ordinary text and takes every check that a label takes.
-  const title = block ? frontMatterTitle(block[1]!) : ''
-  if (unsupported(title) || disabled.test(title))
+  if (block) {
+    // YAML double-quoted scalars decode escapes, so a backslash could spell what the text check never sees.
+    if (block[0].includes('\\') || unsafeText(frontMatterTitle(block[1]!)))
+      refuse()
+  }
+  if (secondBlock.test(plain) || unsafeText(plain))
     refuse()
-  const flowchart = flowchartHeader.test(plain)
-  if (unsupported(maskDisplayText(plain)))
-    refuse()
-  // Bidirectional messages are the only sequence arrows carrying an angle bracket, and the pair is
-  // syntax rather than markup, so it is masked exactly like the flowchart arrows already are.
-  const checked = flowchart
-    ? maskFlowchart(plain)
-    : sequenceHeader.test(plain) ? maskLiteralPlaceholders(plain).replace(/<<(?=--?>>)/g, '  ') : plain
-  if (disabled.test(checked))
-    refuse()
+  checkStatements(plain)
 }

@@ -252,13 +252,13 @@ test('ordinary comparison and style variants retain safe presentation while near
   const valid = await page.locator('.diagram-graphic').innerHTML()
   for (const statement of [
     'A --> B %% classDef evil background-image:image-set("/diagram-resource-probe")',
-    '%% classDef evil opacity:0',
+    '%% classDef evil font-family:remote',
     'classDef evil fill:url(/diagram-resource-probe)',
     'classDef evil fill:#fff; @import "/diagram-resource-probe"',
     'classDef evil font-family:remote',
     'classDef evil fill:#fff!important',
     'classDef evil stroke-width:2px trailing',
-    'classDef evil stroke-dasharray:5 5; style A fill:red',
+    'classDef evil stroke-dasharray:5 5; style A background:red',
     'classDef evil fill:expression(alert(1))',
     'classDef evil fill:#fff\\;background:red',
     'classDef x}body{ fill:#fff',

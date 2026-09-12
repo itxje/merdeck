@@ -66,3 +66,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**PREVIEW-009 Accept bidirectional sequence messages and bounded front matter configuration**](PREVIEW-009.md) `P2`
 - [x] [**PREVIEW-010 Preserve inert addresses and note text in diagram previews**](PREVIEW-010.md) `P2`
 - [x] [**LAYOUT-009 Distinguish folders from files in the explorer**](LAYOUT-009.md) `P2`
+- [x] [**PREVIEW-011 Refuse only the preview security boundary and admit the remaining Mermaid syntax**](PREVIEW-011.md) `P1`

@@ -17,7 +17,7 @@ const settings: MermaidConfig = {
   suppressErrorRendering: true,
   secure: ['secure', 'securityLevel', 'startOnLoad', 'maxTextSize', 'maxEdges', 'htmlLabels', 'suppressErrorRendering', 'theme', 'themeVariables', 'fontFamily'],
   maxTextSize: previewLimit,
-  maxEdges: 500,
+  maxEdges: 1000,
   theme: 'base',
   fontFamily: 'ui-sans-serif, system-ui, sans-serif',
   flowchart: { htmlLabels: false, curve: 'basis', padding: 16, nodeSpacing: 30, rankSpacing: 40 },
@@ -75,6 +75,19 @@ function tokenHex(name: string) {
   context.fillRect(0, 0, 1, 1)
   return `#${Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3).map(value => value.toString(16).padStart(2, '0')).join('')}`
 }
+// With HTML labels off, Mermaid writes a class's font weight and style on the label text but marks
+// every word span `normal`, which hides them; a word span of such a label inherits instead.
+function inheritLabelFont(svg: Element) {
+  for (const text of svg.querySelectorAll('text[style]')) {
+    const style = text.getAttribute('style') ?? ''
+    for (const property of ['font-weight', 'font-style']) {
+      if (!style.includes(property))
+        continue
+      for (const span of text.querySelectorAll(`tspan.text-inner-tspan[${property}="normal"]`))
+        span.removeAttribute(property)
+    }
+  }
+}
 async function render(source: string): Promise<string> {
   const projected = renderSource(source)
   mermaid.initialize({
@@ -96,6 +109,7 @@ async function render(source: string): Promise<string> {
     const node = host.querySelector('svg')
     if (!node)
       throw new Error('No diagram was produced.')
+    inheritLabelFont(node)
     for (const element of [node, ...node.querySelectorAll('*')]) {
       const computed = getComputedStyle(element)
       for (const property of safeProperties) {

@@ -9,6 +9,12 @@ it.each([
   'sequenceDiagram\nparticipant A\nNote right of A: https://example.invalid/a',
   'sequenceDiagram\nparticipant A\nnote left of A: http://example.invalid',
   'classDiagram\nclass A\nnote "First\\nSecond"',
+  // PREVIEW-011: backslashes and addresses in note text are text.
+  'sequenceDiagram\nNote over A,B: `https://example.invalid`',
+  'classDiagram\nclass A\nnote for A "First\\u003cimg"',
+  'classDiagram\nclass A\nnote for A "First\\x3cimg"',
+  'classDiagram\nclass A\nnote for A "First\\\\nSecond"',
+  'classDiagram\nclass A\nnote for A "`First\\nSecond`"',
 ])('preserves inert notes and reference comments: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
   expect(renderSource(source)).toBe(source.includes('classDiagram') ? source.replaceAll('\\n', '<br/>') : source)
@@ -29,17 +35,12 @@ it.each([
   'sequenceDiagram\nlink A: Address @ https://example.invalid',
   'sequenceDiagram\nNote over A,B: [Address](https://example.invalid)',
   'sequenceDiagram\nNote over A,B: <a>https://example.invalid</a>',
-  'sequenceDiagram\nNote over A,B: `https://example.invalid`',
   'sequenceDiagram\nNote over A,B: https://example.invalid; links A: Address',
   'sequenceDiagram\nNote over A,B: javascript:alert(1)',
   'classDiagram\nclass A\nnote for A "First\\n<img src=x>"',
   'classDiagram\nclass A\nnote for A "First\\n&#60;img"',
-  'classDiagram\nclass A\nnote for A "First\\u003cimg"',
-  'classDiagram\nclass A\nnote for A "First\\x3cimg"',
-  'classDiagram\nclass A\nnote for A "First\\\\nSecond"',
   'classDiagram\nclass A\nnote for A "First\\njavascript:alert(1)"',
   'classDiagram\nclass A\nnote for A "First\\n![image](https://example.invalid)"',
-  'classDiagram\nclass A\nnote for A "`First\\nSecond`"',
   'classDiagram\nclass A\nnote for A "First\\nSecond"; click A "https://example.invalid"',
 ])('refuses active syntax and other escapes around notes: %s', (source) => {
   expect(() => validateSource(source)).toThrow('plain Mermaid')

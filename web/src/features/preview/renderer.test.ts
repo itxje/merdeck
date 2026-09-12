@@ -18,12 +18,10 @@ describe('untrusted render boundary', () => {
     '<br//>',
     '<br / >',
     '<br >',
-    '< br/>',
     '</br>',
     '<br\n/>',
     '<br\t/>',
     '<br\0/>',
-    '<<br/>>',
     '&lt;br/&gt;',
     '&#60;br/&#62;',
     '#60;br/#62;',
@@ -48,11 +46,15 @@ describe('untrusted render boundary', () => {
   ])('rejects active source before Mermaid receives it: %s', (source) => {
     expect(() => validateSource(source)).toThrow('plain Mermaid')
   })
+  // A `<` followed by a space or another `<` opens no tag, so these break forms are text (PREVIEW-011).
+  it.each(['< br/>', '<<br/>>'])('accepts a break beside a `<` that opens no tag: %s', (label) => {
+    expect(() => validateSource(`flowchart LR\nA["First${label}Second"]`)).not.toThrow()
+  })
   it('bounds rendering separately from editing', () => {
-    expect(() => validateSource('x'.repeat(32001))).toThrow('32,000')
+    expect(() => validateSource('x'.repeat(100001))).toThrow('100,000')
     expect(() => validateSource('sequenceDiagram\nA->>B: Hello')).not.toThrow()
-    expect(() => validateSource(`<br/>${'x'.repeat(31996)}`)).toThrow('32,000')
-    expect(() => validateSource(`flowchart LR\nA["${'x'.repeat(31976)}<br/>B"]`)).not.toThrow()
+    expect(() => validateSource(`<br/>${'x'.repeat(99996)}`)).toThrow('100,000')
+    expect(() => validateSource(`flowchart LR\nA["${'x'.repeat(99976)}<br/>B"]`)).not.toThrow()
     expect(() => validateSource('%%<br/>{init: {}}%%\nflowchart LR\nA-->B')).toThrow('plain Mermaid')
   })
   it('removes executable SVG, resources, CSS, events and external references from actual output', () => {

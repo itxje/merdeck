@@ -49,7 +49,7 @@ describe('flowchart label editing through the real Mermaid parser', () => {
     ['Say "hi"', 'double quotes'],
     ['`code`', 'backticks'],
     ['  \n ', 'Enter a label'],
-    ['Click here', 'not allowed'],
+    ['&lt;b&gt;', 'not allowed'],
     ['<img src=x>', 'not allowed'],
   ])('refuses %j', async (value, message) => {
     await expect(editFlowchartLabel('flowchart LR\nA[One] --> B', 'A', value)).rejects.toThrow(message)

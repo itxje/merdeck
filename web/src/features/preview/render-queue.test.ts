@@ -38,7 +38,7 @@ it('normalizes only bare break tokens in private render input and retains truste
   expect(draft.source).toBe('flowchart LR\nA["First<BR />Second<br>Third"]')
   await renderDiagram(originalFlowSource)
   expect(mermaid.render).toHaveBeenLastCalledWith(expect.any(String), originalFlowSource, expect.any(HTMLElement))
-  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ securityLevel: 'strict', htmlLabels: false, maxTextSize: 32000, maxEdges: 500, flowchart: expect.objectContaining({ htmlLabels: false }) }))
+  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ securityLevel: 'strict', htmlLabels: false, maxTextSize: 100000, maxEdges: 1000, flowchart: expect.objectContaining({ htmlLabels: false }) }))
   await expect(renderDiagram('flowchart LR\nA[First<br onload=alert(1)>Second]')).rejects.toThrow('plain Mermaid')
   expect(mermaid.render).toHaveBeenCalledTimes(2)
   expect(document.querySelector('.render-scratch')).toBeNull()

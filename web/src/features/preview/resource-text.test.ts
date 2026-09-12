@@ -17,6 +17,13 @@ it.each([
   'A[ "https://example.invalid" ]',
   'A["First<br/>https://example.invalid<br/>Last"]',
   'subgraph G["https://example.invalid"]\nA --> B\nend',
+  // PREVIEW-011: addresses, backslashes and `data:` are text wherever they appear.
+  'A["`https://example.invalid`"]',
+  'A["https://example.invalid/\\u003cimg"]',
+  'A["data:image/svg+xml,example"]',
+  'A["https://example.invalid"] %% https://example.invalid',
+  'A -->|"https://example.invalid"| B',
+  'A[https://example.invalid] --> B',
 ])('accepts inert quoted node and group text: %s', (statement) => {
   expect(() => validateSource(`flowchart LR\n${statement}`)).not.toThrow()
 })
@@ -30,20 +37,17 @@ it.each([
   'classDef a fill:url("https://example.invalid/a")',
   'linkStyle 0 stroke:url(https://example.invalid/a)',
   'A@{ img: "https://example.invalid/a" }',
-  'A["`https://example.invalid`"]',
   'A["[Map](https://example.invalid)"]',
   'A["![Map](https://example.invalid)"]',
   'A["https://example.invalid<br src=x>"]',
   'A["https://example.invalid<svg onload=alert(1)>"]',
   'A["https://example.invalid/&lt;img&gt;"]',
   'A["https://example.invalid/&#60;img"]',
-  'A["https://example.invalid/\\u003cimg"]',
   'A["https://example.invalid/javascript:alert(1)"]',
-  'A["data:image/svg+xml,example"]',
   'A["url(https://example.invalid)"]',
+  'A["image-set(https://example.invalid)"]',
   'A["https://example.invalid/@import"]',
   'A["https://example.invalid/expression(1)"]',
-  'A["https://example.invalid"] %% https://example.invalid',
   '%% <img src="https://example.invalid">',
   'A["https://example.invalid"]\n%%{init: {"themeCSS":"url(https://example.invalid)"}}%%',
 ])('retains resource and unsafe syntax refusals beside allowed text: %s', (statement) => {
@@ -53,7 +57,10 @@ it.each([
   expect([...fileLinks(source)]).toEqual([])
 })
 
-it('does not exempt other diagram families or front matter', () => {
-  expect(() => validateSource('sequenceDiagram\nA->>B: https://example.invalid')).toThrow('plain Mermaid')
-  expect(() => validateSource('---\ntitle: https://example.invalid\n---\nflowchart LR\nA --> B')).toThrow('plain Mermaid')
+it('treats addresses as text in every family and in titles, and keeps script schemes refused', () => {
+  expect(() => validateSource('sequenceDiagram\nA->>B: https://example.invalid')).not.toThrow()
+  expect(() => validateSource('---\ntitle: https://example.invalid\n---\nflowchart LR\nA --> B')).not.toThrow()
+  expect(() => validateSource('stateDiagram-v2\nA --> B: https://example.invalid')).not.toThrow()
+  expect(() => validateSource('sequenceDiagram\nA->>B: javascript:alert(1)')).toThrow('plain Mermaid')
+  expect(() => validateSource('---\ntitle: vbscript:msgbox\n---\nflowchart LR\nA --> B')).toThrow('plain Mermaid')
 })

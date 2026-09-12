@@ -22,7 +22,7 @@ export interface FlowchartModel {
 
 export class LabelEditError extends Error {}
 export const sourceOnlyLabelMessage = 'This label can only be edited in the source.'
-export const refusedLabelMessage = 'This text is not allowed in preview labels. Avoid HTML, links, entity codes and keywords such as click, link or style.'
+export const refusedLabelMessage = 'This text is not allowed in preview labels. Avoid HTML tags, entity codes and resource references such as url( or ![.'
 export const unsafeLabelMessage = 'This label could not be changed safely on the diagram. Edit it in the source instead.'
 
 // Token names from Mermaid's flowchart grammar. A vertex definition is an id immediately followed by a shape.

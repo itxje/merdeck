@@ -33,15 +33,37 @@ it.each([
   expect(() => validateSource(source)).not.toThrow()
 })
 
+// PREVIEW-011: bounded declarations and text that is not a tag open are outside the security boundary.
 it.each([
   'classDef safe fill:red',
+  'classDef safe fill:#ffff',
+  'classDef safe color:red',
+  'classDef safe opacity:0',
+  'classDef safe fill:#fff; style A fill:red',
+  'style A fill:red',
+  'style A opacity:0',
+  'A["Value < img src=x >"]',
+  'classDef safe font-weight:bold,font-style:italic,font-size:14px,opacity:0.5,rx:10,ry:10,fill:#ff000080,stroke:transparent',
+])('accepts what the owner moved out of the boundary: %s', (statement) => {
+  expect(() => validateSource(`flowchart LR\nA --> B\n${statement}`)).not.toThrow()
+})
+
+it.each([
   'classDef safe fill:#fff garbage',
   'classDef safe fill:#fff!important',
   'classDef safe fill:#fff,',
-  'classDef safe fill:#ffff',
   'classDef safe fill:var(--probe)',
-  'classDef safe color:red',
+  'classDef safe fill:rgb(1 2 3)',
   'classDef safe color:#12345',
+  'classDef safe font-weight:950',
+  'classDef safe font-size:0',
+  'classDef safe font-size:101px',
+  'classDef safe font-size:11em',
+  'classDef safe opacity:1.5',
+  'classDef safe rx:101',
+  'classDef safe filter:blur(1px)',
+  'classDef safe fill:#fff:bad',
+  'classDef safe',
   'classDef safe background-image:url(/probe)',
   'classDef safe stroke-width:0',
   'classDef safe stroke-width:11px',
@@ -52,11 +74,9 @@ it.each([
   'classDef safe stroke-dasharray:101 2',
   'classDef safe stroke-dasharray:5px trailing',
   'classDef safe font-family:probe',
-  'classDef safe opacity:0',
   'classDef x}body{ fill:#fff',
   'classDef x:hover fill:#fff',
   'classDef safe fill:#fff; @import "/probe"',
-  'classDef safe fill:#fff; style A fill:red',
   'classDef safe fill:#fff; click A callback',
   'click A "https://example.test"',
   'click A "../secret.mmd"',
@@ -67,10 +87,8 @@ it.each([
   'click A href "a.mmd"',
   'click A call open()',
   'click A ""',
-  'style A fill:red',
   'style A fill:#fff!important',
   'style A background-image:url(/probe)',
-  'style A opacity:0',
   'style A stroke-width:11px',
   'style A fill:#fff garbage',
   'style A',
@@ -82,7 +100,6 @@ it.each([
   'class A,something[onclick] safe',
   'A:::safe.evil',
   'A["Value <img"]',
-  'A["Value < img src=x >"]',
   'A["Value <br onload=alert(1)>"]',
   'A["Value &lt;img&gt;"]',
   'A["Value &#x3c;img"]',
@@ -117,9 +134,10 @@ it.each([
 it.each([
   '---\nconfig:\n  theme: base\n---\nflowchart LR\nA --> B',
   '---\ntitle: A plan\ndisplayMode: compact\n---\nflowchart LR\nA --> B',
-  '---\ntitle: Value < 250V\n---\nflowchart LR\nA --> B',
-  '---\ntitle: See https://example.test\n---\nflowchart LR\nA --> B',
-  '---\ntitle: Style guide\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Value <b>250V</b>\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Value &lt;b&gt;\n---\nflowchart LR\nA --> B',
+  '---\ntitle: "\\u003cb\\u003e"\n---\nflowchart LR\nA --> B',
+  '---\ntitle: javascript:alert(1)\n---\nflowchart LR\nA --> B',
   '---\ntitle: A plan\n---\n---\ntitle: Another\n---\nflowchart LR\nA --> B',
   'flowchart LR\nA --> B\n---\ntitle: A plan\n---',
   '---\nflowchart LR\nA --> B',
@@ -158,15 +176,29 @@ it.each([
   expect(() => validateSource(source)).not.toThrow()
 })
 
+// PREVIEW-011: a `<` that opens no tag and an `&` that starts no entity are text; Mermaid reports its own syntax errors.
 it.each([
+  '---\ntitle: Value < 250V\n---\nflowchart LR\nA --> B',
+  '---\ntitle: See https://example.test\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Style guide & R&D\n---\nflowchart LR\nA --> B',
   'sequenceDiagram\nA->>B: Value < 250V',
   'sequenceDiagram\nA<<->B: Exchange',
   'sequenceDiagram\nA<->>B: Exchange',
-  'sequenceDiagram\nparticipant A as <b>One',
   'sequenceDiagram\nNote over A,B: A & B',
   'flowchart LR\nA<<->>B',
   'stateDiagram-v2\n[*] <<->> Ready',
-])('refuses every other angle bracket and ampersand outside a flowchart: %s', (source) => {
+])('accepts angle brackets, ampersands and words that are text: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  'sequenceDiagram\nparticipant A as <b>One',
+  'sequenceDiagram\nA->>B: </b>',
+  'stateDiagram-v2\nA --> B: <img src=x>',
+  'erDiagram\nA ||--o{ B : "<a>"',
+  'classDiagram\nclass A {\n  <script>\n}',
+  'mindmap\n  root\n    <!-- note -->',
+])('refuses HTML tags in every family: %s', (source) => {
   expect(() => validateSource(source)).toThrow('plain Mermaid')
 })
 
@@ -180,11 +212,11 @@ it('keeps links and the render projection aligned with a configured front matter
   expect(rendered).not.toContain('click')
 })
 
-it.each(['&ltimg src=x', '&lt', '&GT', '&amp#60;img', '&quotonclick', '<br/><img', 'classDef safe fill:#fff:bad', 'classDef safe'])('refuses incomplete encoding and declarations: %s', (text) => {
+it.each(['&ltimg src=x', '&lt', '&GT', '&amp#60;img', '&quotonclick', '<br/><img'])('refuses incomplete encoding: %s', (text) => {
   expect(() => validateSource(`flowchart LR\nA["${text}"]`)).toThrow('plain Mermaid')
 })
 
-it.each(['A --> B %% classDef evil background-image:image-set("/probe")', '%% classDef evil opacity:0'])('retains global checks on comment tails: %s', (statement) => {
+it.each(['A --> B %% classDef evil background-image:image-set("/probe")', '%% classDef evil font-family:probe', '%% linkStyle 0 stroke:#fff', '%% note; click A "a.mmd"'])('retains global checks on comment tails: %s', (statement) => {
   expect(() => validateSource(`flowchart LR\n${statement}`)).toThrow('plain Mermaid')
 })
 it('accepts an ordinary comment at end of input', () => {

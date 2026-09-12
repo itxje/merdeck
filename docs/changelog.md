@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 21:30 [decision]
+
+The preview policy now refuses only its security boundary. The owner kept configuration directives and configuration beyond the bounded front matter, links and callbacks, HTML tags, entities and Mermaid escape codes, resource and style injection, `@{}` metadata and math, and released everything else. Ordinary syntax that used to collide with broad character and word refusals now renders in every family: class relations and `<<interface>>`, state `<<choice>>`, comparisons, `&`, addresses, backslashes, words such as `style` or `CSS`, lowercase placeholders, and `classDef` and `style` in state, class, ER, block, requirement and quadrant diagrams. Styling takes one bounded list everywhere, now including named colours, four- and eight-digit hex, `font-weight`, `font-style`, a bounded `font-size`, opacities and corner radii, and a class's font weight and style now reach its label text. Of the 67 valid constructs the policy used to refuse, 44 render and the 23 the owner kept stay refused. The preview limits rose from 32,000 characters and 500 edges to 100,000 and 1,000. See [PREVIEW-011](task/PREVIEW-011.md) and [PLAN-025](plan/PLAN-025.md).
+
 ## 2026-09-12 19:40 [progress]
 
 Folders and files in the explorer are told apart at a glance. Every level now indents clear of the chevron column, so a file starts to the right of its folder instead of to its left, files and folders at one depth share an icon column, and a thin guide runs through each ancestor. A folder shows a closed or open folder by its state, with a filled icon and a medium-weight name, while files keep their outline icons. Selection, hover, row menus and the narrow drawer are unchanged. See [LAYOUT-009](task/LAYOUT-009.md) and [PLAN-026](plan/PLAN-026.md).
