@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 19:40 [progress]
+
+Folders and files in the explorer are told apart at a glance. Every level now indents clear of the chevron column, so a file starts to the right of its folder instead of to its left, files and folders at one depth share an icon column, and a thin guide runs through each ancestor. A folder shows a closed or open folder by its state, with a filled icon and a medium-weight name, while files keep their outline icons. Selection, hover, row menus and the narrow drawer are unchanged. See [LAYOUT-009](task/LAYOUT-009.md) and [PLAN-026](plan/PLAN-026.md).
+
 ## 2026-09-12 16:20 [progress]
 
 Plain flowchart node/group labels, sequence notes and reference comments can display HTTP(S) addresses without opening links or loading resources. The CSS resource check no longer mistakes `base64url(...)` for `url(...)`, and quoted class notes accept escaped newlines. Original source bytes and strict rendering remain intact. Generic regressions cover unsafe neighboring syntax, visible text, geometry and exact saves; supplied diagrams remain local evidence. See [PREVIEW-010](task/PREVIEW-010.md) and [PLAN-024](plan/PLAN-024.md) for verification and the existing backend gate limitation.

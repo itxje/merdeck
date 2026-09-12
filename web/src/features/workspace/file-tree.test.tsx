@@ -38,6 +38,25 @@ it('lists every supported file, its folders and an empty folder by default', () 
   unmount()
 })
 
+it('draws a folder by its state and keeps files in the same icon column', async () => {
+  const { container, unmount } = renderTree('all')
+  const user = userEvent.setup()
+  const folder = screen.getByRole('button', { name: 'docs' })
+  expect(folder.querySelector('.lucide-folder-open')).not.toBeNull()
+  await user.click(folder)
+  expect(folder).toHaveAttribute('aria-expanded', 'false')
+  expect(folder.querySelector('.lucide-folder-open')).toBeNull()
+  expect(folder.querySelector('.lucide-folder')).not.toBeNull()
+  await user.click(folder)
+  // A file row reserves the chevron column so its icon lines up with a folder's at the same depth.
+  expect(screen.getByRole('button', { name: 'welcome.mmd' }).firstElementChild).toHaveClass('tree-twistie')
+  expect(folder.firstElementChild).toHaveClass('tree-twistie')
+  const depth = (path: string) => container.querySelector(`button[title="${path}"]`)!.closest('li')!.style.getPropertyValue('--depth')
+  expect(depth('welcome.mmd')).toBe('0')
+  expect(depth('docs/overview.md')).toBe('1')
+  unmount()
+})
+
 it('lists only diagram files and their folders when diagram files are chosen', () => {
   const { unmount } = renderTree('mermaid')
   expect(screen.getByRole('button', { name: 'welcome.mmd' })).toBeVisible()

@@ -178,9 +178,14 @@ button:disabled { cursor: default; }
 .tree-kinds [data-slot="toggle-group-item"] { flex: 1; min-width: 0; font-size: 11px; }
 .file-tree nav { padding: 0 10px; flex: 1; overflow: auto; }
 .file-tree ul { list-style: none; padding: 0; margin: 0; }
-.file-tree .nested { margin: 3px 0 10px 13px; padding-left: 9px; border-left: 1px solid var(--border); }
+.file-tree .nested { margin: 3px 0 10px 37px; padding-left: 9px; border-left: 1px solid var(--border); }
 .file-tree .tree-row { width: 100%; justify-content: flex-start; padding: 0 9px; gap: 8px; font-size: 12px; height: 34px; font-weight: 400; border-radius: var(--radius-sm); }
 .file-tree .tree-row svg { color: var(--muted-foreground); width: 14px; }
+/* One level clears the chevron column; each ancestor draws a guide through its chevron's centre. */
+.file-tree .tree-entry { display: flow-root; padding-left: calc(var(--depth) * 16px); background: repeating-linear-gradient(to right, transparent 0 15px, var(--border) 15px 16px) 0 0 / calc(var(--depth) * 16px) 100% no-repeat; }
+.file-tree .tree-twistie { display: inline-flex; flex: none; width: 14px; }
+.file-tree .tree-row .folder-icon { color: var(--foreground); fill: color-mix(in oklch, var(--foreground) 14%, transparent); }
+.file-tree .tree-row[aria-expanded] .truncate { font-weight: 500; }
 /* Row actions stay out of the way until the row is hovered or focused, or its menu is open. */
 .tree-item { position: relative; }
 .tree-item > .tree-row { padding-right: 30px; }

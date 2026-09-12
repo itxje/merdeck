@@ -2,7 +2,7 @@ import type { DiagramBlockSummary, TreeSnapshot } from '../../../../src/shared/c
 import type { Drafts, FileDraft } from './drafts'
 import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
-import { ChevronDown, ChevronRight, FileCode2, FilePlus2, FileText, FolderOpen, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileCode2, FilePlus2, FileText, Folder, FolderOpen, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
@@ -155,18 +155,21 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
             if (!filter && parts.slice(0, -1).some((_, index) => collapsed.has(parts.slice(0, index + 1).join('/'))))
               return null
             const depth = Math.min(parts.length - 1, 6)
+            // Indentation and its guides come from the depth, so every row at one level shares a column.
+            const indent = { '--depth': depth } as React.CSSProperties
             const name = parts.at(-1)!
             const menuState = rowMenu(entry.path)
             if (entry.kind === 'directory') {
+              const expanded = !collapsed.has(entry.path)
               const rename: MenuItem = { label: 'Rename or move…', disabled: !canChange, separated: true, onSelect: () => onAction({ type: 'move', kind: 'directory', path: entry.path }) }
               const remove: MenuItem = { label: 'Delete…', destructive: true, disabled: !canChange || entries.some(item => item.path.startsWith(`${entry.path}/`)), onSelect: () => onAction({ type: 'delete', kind: 'directory', path: entry.path }) }
               return (
-                <li key={entry.path} style={{ paddingLeft: depth * 12 }}>
+                <li key={entry.path} className="tree-entry" style={indent}>
                   <div className="tree-item" onContextMenu={menuState.onContextMenu}>
                     <Button
                       variant="ghost"
                       className="tree-row"
-                      aria-expanded={!collapsed.has(entry.path)}
+                      aria-expanded={expanded}
                       onKeyDown={shortcuts(rename, remove)}
                       onClick={() => setCollapsed((previous) => {
                         const next = new Set(previous)
@@ -178,8 +181,8 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
                         return next
                       })}
                     >
-                      {collapsed.has(entry.path) ? <ChevronRight /> : <ChevronDown />}
-                      <FolderOpen />
+                      <span className="tree-twistie">{expanded ? <ChevronDown /> : <ChevronRight />}</span>
+                      {expanded ? <FolderOpen className="folder-icon" /> : <Folder className="folder-icon" />}
                       <span className="truncate">{name}</span>
                     </Button>
                     <RowMenu
@@ -207,9 +210,11 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
             const rename: MenuItem = { label: 'Rename or move…', disabled: !changeable, onSelect: () => onAction({ type: 'move', kind: 'file', path: entry.path, ...(version ? { version } : {}) }) }
             const remove: MenuItem = { label: 'Delete…', destructive: true, disabled: !changeable, onSelect: () => onAction({ type: 'delete', kind: 'file', path: entry.path, unsaved: !!draft && (dirty(draft) || draft.locked), ...(version ? { version } : {}) }) }
             return (
-              <li key={entry.path} style={{ paddingLeft: depth * 12 }}>
+              <li key={entry.path} className="tree-entry" style={indent}>
                 <div className="tree-item" onContextMenu={menuState.onContextMenu}>
                   <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} title={entry.path} onKeyDown={shortcuts(rename, remove)} onClick={() => select(entry.path)}>
+                    {/* An empty chevron column keeps a file's icon in line with the folders beside it. */}
+                    <span className="tree-twistie" />
                     {entry.fileKind === 'markdown' ? <FileText /> : <FileCode2 />}
                     <span className="truncate">{name}</span>
                     {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
@@ -233,6 +238,7 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
                 return (
                   <li key={name}>
                     <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} onClick={() => select(name)}>
+                      <span className="tree-twistie" />
                       <FileText />
                       <span className="truncate">{name}</span>
                       <span className="dirty-dot" />
