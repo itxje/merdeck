@@ -23,7 +23,7 @@ An exemption that consumes arbitrary quoted strings could admit resource-bearing
 
 The preview source policy, related regression support and documentation form one repair. Existing front matter support, internal navigation, security settings, sanitizers, size limits and backend behavior remain unchanged. Broadly permitting URLs, anchors, HTML or arbitrary CSS is unnecessary. Editing the user's diagram text would leave the source defect unresolved.
 
-Publication, deployment and native delivery acceptance are outside this repair.
+Publication and native delivery acceptance were initially outside this repair; the subsequent release authorization below extends that scope. Running-service deployment remains outside this repair.
 
 ## Authorized scope extension
 
@@ -31,4 +31,8 @@ The owner requested checking the remaining diagrams in the supplied directory. E
 
 ## Outcome
 
-Implemented and self-reviewed. All eight unchanged supplied files pass real built-source browser verification, all 342 frontend tests pass, and both final local artifact variants pass 53 browser cases plus their asset/cleanup checks. The existing backend read-churn failure continues to prevent a passing standard aggregate. Detailed RED/GREEN, correction, source preservation and review evidence is recorded in [PREVIEW-010](../task/PREVIEW-010.md). No publication or deployment is included.
+Implemented and self-reviewed. All eight unchanged supplied files pass real built-source browser verification, all 342 frontend tests pass, and both final local artifact variants pass 53 browser cases plus their asset/cleanup checks. The existing backend read-churn failure continues to prevent a passing local standard aggregate. Detailed RED/GREEN, correction, source preservation and review evidence is recorded in [PREVIEW-010](../task/PREVIEW-010.md).
+
+## Release authorization
+
+The owner subsequently requested integration, push and release. Select `v0.8.2` under the documented patch-version rule. Integrate the reviewed change without rewriting published history, require the hosted native gate on the exact candidate, and use the normal annotated-tag workflow for checked artifact publication. Keep the existing local failure evidence and verify the published attachment checksums and source identity. This authorization does not include a running-service update.
