@@ -26,7 +26,7 @@ export async function compile(tag: string, target: ReleaseTarget, options: { bui
       await run(['run', '--cwd', 'web', 'build'])
     const inventory = await embedAssets(join(project, 'web/dist'), scratch)
     const entry = join(scratch, 'entry.ts')
-    await writeFile(entry, `import { startService } from ${JSON.stringify(join(project, 'src/index.ts'))};\nimport { assets } from './assets';\nawait startService({ assets, buildInfo: ${JSON.stringify(info)} });\n${options.failBuild ? 'import "./intentional-missing-build-input";' : ''}\n`)
+    await writeFile(entry, `import { startService } from ${JSON.stringify(join(project, 'src/service.ts'))};\nimport { assets } from './assets';\nawait startService({ assets, buildInfo: ${JSON.stringify(info)} });\n${options.failBuild ? 'import "./intentional-missing-build-input";' : ''}\n`)
     options.signal?.throwIfAborted()
     const child = Bun.spawn([process.execPath, 'build', '--compile', `--target=${target}`, '--minify', '--no-compile-autoload-dotenv', '--no-compile-autoload-bunfig', entry, '--outfile', staged], { cwd: project, stdout: 'inherit', stderr: 'inherit', timeout: 180000 })
     const cancel = () => child.kill('SIGTERM')

@@ -8,16 +8,17 @@ import { sha256 } from '../../scripts/release/manifest'
 import { fixtureTag } from './fixtures'
 
 const compileScratch = async () => (await readdir(join(project, 'tmp'))).filter(name => name.startsWith('compile-')).sort()
+const startupSources = async () => Object.fromEntries(await Promise.all(['src/index.ts', 'src/service.ts'].map(async path => [path, sha256(await readFile(join(project, path)))])))
 
 test('real bundler failure removes generated inputs and partial output without rewriting startup', async () => {
   const output = await mkdtemp(join(project, 'tmp/compile-failure-test-'))
   const before = await compileScratch()
-  const startup = sha256(await readFile(join(project, 'src/index.ts')))
+  const startup = await startupSources()
   try {
     await expect(compile(fixtureTag, process.arch === 'arm64' ? 'bun-linux-arm64' : 'bun-linux-x64', { built: true, output, failBuild: true })).rejects.toThrow('compilation failed')
     expect(await readdir(output)).toEqual([])
     expect(await compileScratch()).toEqual(before)
-    expect(sha256(await readFile(join(project, 'src/index.ts')))).toBe(startup)
+    expect(await startupSources()).toEqual(startup)
   }
   finally { await rm(output, { recursive: true, force: true }) }
 })

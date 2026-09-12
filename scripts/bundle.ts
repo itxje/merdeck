@@ -27,7 +27,7 @@ export async function bundleRelease(tag: string, options: { built?: boolean, out
       await run(['run', 'build'])
     const buildInfo = { version: info.version, prerelease: info.prerelease, tag: info.tag, commit, target: 'bundle' }
     const entry = join(scratch, bundleEntry.replace(/\.js$/, '.ts'))
-    await writeFile(entry, `import { dirname, resolve } from 'node:path';\nimport { startService } from ${JSON.stringify(join(project, 'src/index.ts'))};\nimport { loadStaticAssets } from ${JSON.stringify(join(project, 'src/shared/static-assets.ts'))};\nconst directory = dirname(resolve(process.argv[1] ?? ${JSON.stringify(bundleEntry)}));\nawait startService({ assets: await loadStaticAssets(resolve(directory, 'web')), buildInfo: ${JSON.stringify(buildInfo)} });\n`)
+    await writeFile(entry, `import { dirname, resolve } from 'node:path';\nimport { startService } from ${JSON.stringify(join(project, 'src/service.ts'))};\nimport { loadStaticAssets } from ${JSON.stringify(join(project, 'src/shared/static-assets.ts'))};\nconst directory = dirname(resolve(process.argv[1] ?? ${JSON.stringify(bundleEntry)}));\nawait startService({ assets: await loadStaticAssets(resolve(directory, 'web')), buildInfo: ${JSON.stringify(buildInfo)} });\n`)
     const built = await Bun.build({ entrypoints: [entry], outdir: join(scratch, 'out'), target: 'bun', minify: true })
     if (!built.success)
       throw new Error('Bundle build failed')
