@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/
 import { absoluteSourceLimit, errorMessage } from './api'
 import { warningMessage } from './drafts'
 import { EntryDialog } from './entry-dialog'
+import { boundedWidth, explorerWidth as explorerBounds, useExplorerWidth } from './explorer-width'
 import { useFileFilter } from './file-filter'
 import { FileTree } from './file-tree'
 import { useWorkspace } from './use-workspace'
@@ -49,6 +50,22 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
   }, [])
   const sourcePanel = usePanelRef()
   const [sourceCollapsed, setSourceCollapsed] = React.useState(false)
+  const [explorerWidth, resizeExplorer] = useExplorerWidth()
+  const dragExplorer = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const handle = event.currentTarget
+    const origin = event.clientX
+    const start = explorerWidth
+    handle.setPointerCapture(event.pointerId)
+    const move = (moved: PointerEvent) => resizeExplorer(start + moved.clientX - origin)
+    const stop = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', stop)
+      handle.removeEventListener('pointercancel', stop)
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', stop)
+    handle.addEventListener('pointercancel', stop)
+  }, [explorerWidth, resizeExplorer])
   const paneLayout = useDefaultLayout({ id: 'merdeck-panes', storage: localStorage })
   const file = state.file
   const selected = file?.baseline.blocks[block]
@@ -184,8 +201,28 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
           )
         : (
             <>
-              <div className="workspace-body">
+              <div className="workspace-body" style={{ '--explorer-width': `${explorerWidth}px` } as React.CSSProperties}>
                 <FileTree {...treeProps} />
+                {/* An ordinary window splitter: drag with a pointer, or step it with the arrow keys. */}
+                <div
+                  className="explorer-resizer"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize project files"
+                  aria-valuenow={explorerWidth}
+                  aria-valuemin={explorerBounds.minimum}
+                  aria-valuemax={explorerBounds.maximum}
+                  tabIndex={0}
+                  onPointerDown={dragExplorer}
+                  onDoubleClick={() => resizeExplorer(explorerBounds.default)}
+                  onKeyDown={(event) => {
+                    const step = event.key === 'ArrowLeft' ? -16 : event.key === 'ArrowRight' ? 16 : 0
+                    if (!step)
+                      return
+                    event.preventDefault()
+                    resizeExplorer(boundedWidth(explorerWidth + step))
+                  }}
+                />
                 <main className="editor-workspace">
                   <div className="file-bar">
                     <div className="file-title">

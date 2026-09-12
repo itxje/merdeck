@@ -9,6 +9,11 @@ const assignment = new RegExp(`^class[ \\t]+${identifiers}[ \\t]+${identifier}$`
 const inlineClass = new RegExp(`:::${identifier}(?=[ \\t;[\\]{}()&]|$)`, 'gi')
 const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
 const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
+// A leading front matter block may carry a title and nothing else; `config` there is the same
+// configuration surface as a directive and stays refused with every other key.
+const frontMatterTitle = /^---\r?\n[ \t]*title:([^\n\r]*)\r?\n---(?:\r?\n|$)/
+const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im
+const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
 const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {
   throw new Error(message)
@@ -103,15 +108,24 @@ function maskFlowchart(source: string) {
   return masked.replaceAll('&', ' ')
 }
 
+// These checks precede every context mask and Mermaid/CSS/measurement-host operation.
+function unsupported(text: string) {
+  return unsafe.test(text) || [...text].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character))
+}
+
 export function validateSource(source: string) {
   if (source.length > previewLimit)
     throw new Error('Live preview is limited to 32,000 characters. You can still edit and save this file.')
-  const plain = source.replace(bareLabelBreak, ' ')
-  // These checks precede every context mask and Mermaid/CSS/measurement-host operation.
-  if (/%%\s*\{|^\s*---|\\|!\[|\]\s*\(|#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im.test(plain) || [...plain].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character)))
+  const full = source.replace(bareLabelBreak, ' ')
+  const titled = frontMatterTitle.exec(full)
+  const plain = titled ? full.slice(titled[0].length) : full
+  // The title is ordinary text and takes every check that a label takes.
+  if (titled && (unsupported(titled[1]!) || disabled.test(titled[1]!)))
+    refuse()
+  if (unsupported(plain))
     refuse()
   const flowchart = flowchartHeader.test(plain)
   const checked = flowchart ? maskFlowchart(plain) : plain
-  if (/[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i.test(checked))
+  if (disabled.test(checked))
     refuse()
 }

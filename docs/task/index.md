@@ -55,3 +55,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`
 - [x] [**STORAGE-002 Admit host-shared storage under a content identity model**](STORAGE-002.md) `P2`
 - [x] [**PREVIEW-006 Fit a Gantt chart to its bars, not to its today marker**](PREVIEW-006.md) `P3`
+- [x] [**PREVIEW-007 Accept a title-only front matter**](PREVIEW-007.md) `P3`
+- [x] [**LAYOUT-007 Let the explorer be resized**](LAYOUT-007.md) `P3`

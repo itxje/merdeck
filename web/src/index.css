@@ -160,8 +160,11 @@ button:disabled { cursor: default; }
 .theme-switch button:not([data-pressed]):hover { background: transparent; color: var(--foreground); }
 .theme-switch button[data-pressed] { background: var(--muted); color: var(--foreground); }
 .prototype-tag { border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 10px; padding: 2px 6px; letter-spacing: .04em; color: var(--muted-foreground); }
-.workspace-body { display: flex; flex: 1; min-height: 0; }
-.file-tree { width: 232px; flex: 0 0 232px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.workspace-body { display: flex; flex: 1; min-height: 0; --explorer-width: 232px; }
+.file-tree { width: var(--explorer-width); flex: 0 0 var(--explorer-width); background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+/* The splitter sits on the explorer border and widens only under the pointer. */
+.explorer-resizer { flex: 0 0 5px; margin-left: -5px; cursor: col-resize; background: transparent; touch-action: none; z-index: 1; }
+.explorer-resizer:hover, .explorer-resizer:focus-visible { background: var(--ring); outline: none; }
 .tree-heading { padding: 16px 10px 8px 18px; min-height: 52px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--muted-foreground); }
 .tree-heading-actions { display: flex; align-items: center; gap: 2px; }
 .tree-heading-actions button { color: var(--muted-foreground); }
@@ -248,7 +251,7 @@ button:disabled { cursor: default; }
 .file-drawer { width: 300px !important; max-width: calc(100% - 32px) !important; grid-template-columns: minmax(0, 1fr); }
 .file-drawer .file-tree { width: 100%; border: none; height: 64dvh; }
 @media (max-width: 1100px) {
-  .workspace-body > .file-tree { display: none; }
+  .workspace-body > .file-tree, .explorer-resizer { display: none; }
   .tree-toggle { display: inline-flex !important; }
 }
 @media (max-width: 700px) {

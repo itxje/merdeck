@@ -70,6 +70,27 @@ it.each([
   expect(() => validateSource(`flowchart LR\nA --> B\n${statement}`)).toThrow('plain Mermaid')
 })
 
+it.each([
+  '---\ntitle: Mesh client lifecycle\n---\nstateDiagram-v2\n[*] --> Ready',
+  '---\ntitle: A plan\n---\nflowchart LR\nA & B --> C\nclassDef warm fill:#fff\nclass A warm',
+  '---\ntitle:\n---\nflowchart LR\nA --> B',
+])('accepts a title-only front matter: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  '---\nconfig:\n  theme: base\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\ndisplayMode: compact\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Value < 250V\n---\nflowchart LR\nA --> B',
+  '---\ntitle: See https://example.test\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Style guide\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\n---\n---\ntitle: Another\n---\nflowchart LR\nA --> B',
+  'flowchart LR\nA --> B\n---\ntitle: A plan\n---',
+  '---\nflowchart LR\nA --> B',
+])('refuses front matter beyond one title: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
 it.each(['&ltimg src=x', '&lt', '&GT', '&amp#60;img', '&quotonclick', '<br/><img', 'classDef safe fill:#fff:bad', 'classDef safe'])('refuses incomplete encoding and declarations: %s', (text) => {
   expect(() => validateSource(`flowchart LR\nA["${text}"]`)).toThrow('plain Mermaid')
 })

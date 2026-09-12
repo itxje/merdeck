@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 11:20 [progress]
+
+The preview accepts a front matter block that carries only a diagram title, so a titled state diagram renders instead of being refused for its `---` lines; `config` and every other key stay refused. The explorer border became an ordinary window splitter: drag it, step it with the arrow keys or double click it back to the default, and the width is kept per browser between 180 and 520 pixels. See [PREVIEW-007](task/PREVIEW-007.md) and [LAYOUT-007](task/LAYOUT-007.md).
+
 ## 2026-09-12 10:45 [progress]
 
 Gantt charts fit their bars. The preview already accepted the family and rendered it, but a chart whose tasks sit away from the current date was fitted around Mermaid's today marker and appeared at single-digit zoom; the marker is now measured out of the fitted size while staying in the diagram. A chart that includes today is unchanged. See [PREVIEW-006](task/PREVIEW-006.md).
