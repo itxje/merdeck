@@ -25,8 +25,10 @@ const environmentSchema = z.object({
   MERDECK_API_MODE: z.enum(['prefixed', 'stripped']).default('prefixed'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('production'),
   MERDECK_MAX_FILE_BYTES: integer(1024, 8 * 1024 * 1024, 1024 * 1024),
-  MERDECK_MAX_TREE_ENTRIES: integer(1, 10000, 1000),
-  MERDECK_MAX_TREE_DEPTH: integer(1, 32, 16),
+  // A project root often sits beside unrelated directories, so the default scan is wide but shallow:
+  // it lists four levels completely rather than a thousand entries of an arbitrarily deep walk.
+  MERDECK_MAX_TREE_ENTRIES: integer(1, 10000, 8000),
+  MERDECK_MAX_TREE_DEPTH: integer(1, 32, 4),
   MERDECK_MAX_BLOCKS: integer(1, 1000, 100),
   MERDECK_POLL_INTERVAL_MS: integer(1000, 30000, 3000),
   MERDECK_SESSION_TTL_SECONDS: integer(60, 86400, 3600),

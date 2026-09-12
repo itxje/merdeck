@@ -24,6 +24,15 @@ afterAll(async () => {
 })
 
 describe('startup configuration', () => {
+  test('defaults the tree scan to a wide, shallow walk', async () => {
+    const config = await loadConfig(env())
+    expect(config.limits.maxTreeEntries).toBe(8000)
+    expect(config.limits.maxTreeDepth).toBe(4)
+    const raised = await loadConfig({ ...env(), MERDECK_MAX_TREE_DEPTH: '16', MERDECK_MAX_TREE_ENTRIES: '1000' })
+    expect(raised.limits.maxTreeDepth).toBe(16)
+    expect(raised.limits.maxTreeEntries).toBe(1000)
+  })
+
   test('requires an explicit absolute root and a valid token when one is set', async () => {
     for (const value of [{}, { ...env(), MERDECK_ROOT: '.' }, { ...env(), MERDECK_TOKEN: 'short' }])
       await expect(loadConfig(value)).rejects.toBeInstanceOf(ConfigError)

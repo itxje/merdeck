@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 13:00 [decision]
+
+The default tree scan became wide and shallow: 8,000 entries across four complete levels, instead of 1,000 entries of a walk up to sixteen levels deep. A root that also holds unrelated directories now lists its diagrams instead of spending the budget inside the first large subtree; diagrams kept deeper than four levels need an explicit `MERDECK_MAX_TREE_DEPTH`. Both maximums are unchanged. See [CONFIG-001](task/CONFIG-001.md).
+
 ## 2026-09-12 12:30 [progress]
 
 Discovery now skips a Rust `target` and a Python `__pycache__` directory, like the other generated output it already ignored, so build artefacts no longer compete with diagrams for the entry budget. See [FILE-004](task/FILE-004.md).
