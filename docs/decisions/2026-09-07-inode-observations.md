@@ -87,3 +87,11 @@ git diff --check
 ```
 
 The full application gate is not repeated for diagnostic-only work. Earlier passing gate results are historical evidence, not acceptance of this reliability issue. The separate final publication-window investigation is unaffected.
+
+## Host-shared virtiofs measurement (2026-09-12)
+
+A later, separately scoped investigation ([STORAGE-001](../task/STORAGE-001.md)) measured the same failure class on a different host-shared mount: statfs type `0x65735546`, mount type `virtiofs`, carrying the configured project of a container deployment. It does not reopen the closed matrix above; it is its own finite experiment on different storage.
+
+One publish cycle is stable there: 320 raw cycles, in-process and across twenty separate processes, published without a mismatch, and an isolating probe over the absolute path, the descriptor anchor and the temporary file's metadata calls found no inode change in 600 cycles. Consecutive publication is not: the protocol's read, stage, re-read and rename cycle, repeated twenty times per fixture over twenty fixtures, produced 7 mismatches in 400 cycles against 0 in 400 on an overlay control. Each mismatch carried identical bytes, identical size and identical modification and change times to the nanosecond, with only the inode number different, so the instability follows an intervening atomic replacement in the same directory rather than a read.
+
+With admission temporarily extended to that type in a throwaway checkout, the real file tests failed 5 of 80 runs, all in consecutive-save cases, with the content version matching and the identity comparison failing. Write admission is unchanged: the type stays refused, saves on it keep failing closed with `filesystem_unsupported`, and reads keep their existing containment checks. Whether the identity model should stop depending on inode stability is a separate question with its own cost, recorded in that task and not decided here.

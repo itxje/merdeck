@@ -52,4 +52,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**LAYOUT-006 Show the running version in the status bar**](LAYOUT-006.md) `P3`
 - [x] [**RELEASE-003 Publish one architecture-independent bundle**](RELEASE-003.md) `P1`
 - [x] [**PREVIEW-005 Accept bounded node styling in the preview**](PREVIEW-005.md) `P3`
-- [ ] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`
+- [x] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`

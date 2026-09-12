@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 09:10 [decision]
+
+Write admission keeps refusing host-shared `virtiofs` storage. The evaluation found every save primitive behaving as on an admitted filesystem, and a single publish cycle stable across 320 raw cycles, but consecutive publication reported a new inode number for unchanged bytes, size and timestamps in 7 of 400 cycles, against 0 of 400 on an overlay control; with admission temporarily extended, the real file tests failed 5 of 80 runs with false conflicts. Saving there stays refused and fail-closed; browsing and drafts are unaffected. See [STORAGE-001](task/STORAGE-001.md).
+
 ## 2026-09-12 08:35 [progress]
 
 The preview now accepts bounded `style` statements. A node style and a class definition carry the same declarations in Mermaid, so they now share one validated property list: hex colours, positive widths up to ten pixels and bounded dash lengths. One `style` line no longer rejects a whole diagram, while `linkStyle`, configuration directives, entities and every other property stay refused. See [PREVIEW-005](task/PREVIEW-005.md).
