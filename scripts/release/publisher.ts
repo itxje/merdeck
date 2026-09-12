@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { releaseVersion } from '../release-version'
+import { archiveEntryName, archiveName } from './archive'
 import { releaseFiles, sha256 } from './manifest'
 
 export type Transport = (path: string, method?: string, data?: unknown) => Promise<unknown>
@@ -35,7 +36,7 @@ export async function publishRelease(directory: string, tag: string, commit: str
   let release: z.infer<typeof releaseSchema>
   if (existing === null) {
     const notes = z.object({ body: z.string() }).parse(await transport('/releases/generate-notes', 'POST', { tag_name: tag, target_commitish: commit }))
-    const body = `${notes.body}\n\nLinux x64 executable with embedded runtime and all frontend assets. Requires Linux procfs and verified project storage; no installed Bun/Node or source checkout. Verify SHA256SUMS before running. Read the tagged README and All rights reserved LICENSE.\n\n${marker}`
+    const body = `${notes.body}\n\n\`${archiveName}\` extracts to one Linux x64 executable named \`${archiveEntryName}\`, with the runtime and all frontend assets embedded. It requires Linux procfs and verified project storage; no installed Bun/Node or source checkout. Verify SHA256SUMS before extracting. Read the tagged README and All rights reserved LICENSE.\n\n${marker}`
     release = releaseSchema.parse(await transport('/releases', 'POST', { tag_name: tag, target_commitish: commit, name: `Merdeck ${version.version}`, body, draft: true, prerelease: version.prerelease }))
   }
   else { release = releaseSchema.parse(existing) }

@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto'
-import { chmod, copyFile, cp, lstat, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, lstat, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { basename, join } from 'node:path'
 import { project, quote, requireSession, run, session, tmux } from './ci/process'
 import { releaseArguments } from './release-version'
+import { archiveEntryName, archiveName, singleFileArchiveEntry } from './release/archive'
 import { lazyBrowser } from './release/browser'
 import { releaseFiles, sha256 } from './release/manifest'
 import { auditTrace } from './release/trace'
@@ -46,8 +47,9 @@ export async function smokeRelease(directory: string, tag: string) {
   const evidence = await mkdtemp(join(project, 'tmp/release-smoke-'))
   const runtime = join(scratch, 'runtime')
   await mkdir(runtime)
-  const executable = join(runtime, manifest.filename)
-  await copyFile(join(directory, manifest.filename), executable)
+  // Run exactly what is published: the executable comes out of the release archive.
+  const executable = join(runtime, archiveEntryName)
+  await writeFile(executable, singleFileArchiveEntry(new Uint8Array(await readFile(join(directory, archiveName)))).bytes)
   await chmod(executable, 0o755)
   const tokenFile = join(scratch, 'token')
   await writeFile(tokenFile, randomBytes(32).toString('hex'), { mode: 0o600 })
@@ -112,7 +114,7 @@ export async function smokeRelease(directory: string, tag: string) {
     }
     await run(['run', 'test:e2e'], 360000, { ...process.env, MERDECK_TEST_URL: origin, MERDECK_UNSUPPORTED_URL: unsupportedOrigin, MERDECK_SMOKE_ROOT: roots[0]!, MERDECK_SMOKE_TOKEN_FILE: tokenFile, MERDECK_TEST_DISPOSABLE: 'true' }, [await privateToken(tokenFile)])
     browser = await lazyBrowser(origin, tokenFile, join(evidence, 'lazy-diagrams.png'))
-    if (JSON.stringify(await readdir(runtime)) !== JSON.stringify([manifest.filename]))
+    if (JSON.stringify(await readdir(runtime)) !== JSON.stringify([archiveEntryName]))
       throw new Error('Unexpected runtime directory extraction')
   }
   catch (error) { failure = error }

@@ -47,3 +47,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**CI-002 Accept the root brand icon in release manifests**](CI-002.md) `P1`
 - [x] [**RELEASE-001 Publish the first version-tag release**](RELEASE-001.md) `P2`
 - [x] [**FILE-003 List only the chosen file types in the explorer**](FILE-003.md) `P2`
+- [x] [**RELEASE-002 Publish one stable release archive**](RELEASE-002.md) `P2`

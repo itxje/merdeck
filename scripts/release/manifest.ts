@@ -3,6 +3,7 @@ import { lstat, readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { binaryName, commitSchema, releaseVersion, targetSchema } from '../release-version'
+import { archiveEntryName, archiveName, singleFileArchiveEntry } from './archive'
 
 export const sha256 = (value: Uint8Array | string) => createHash('sha256').update(value).digest('hex')
 const digest = z.string().regex(/^[a-f0-9]{64}$/)
@@ -34,7 +35,7 @@ export async function readManifest(directory: string, tag: string, commit?: stri
 
 export async function releaseFiles(directory: string, tag: string, commit?: string) {
   const manifest = await readManifest(directory, tag, commit)
-  const expected = [manifest.filename, 'SHA256SUMS', 'manifest.json'].sort()
+  const expected = [manifest.filename, archiveName, 'SHA256SUMS', 'manifest.json'].sort()
   if (JSON.stringify((await readdir(directory)).sort()) !== JSON.stringify(expected))
     throw new Error('Unexpected or missing release package entries')
   for (const name of expected) {
@@ -43,11 +44,16 @@ export async function releaseFiles(directory: string, tag: string, commit?: stri
       throw new Error('Release entries must be regular files')
   }
   const binary = new Uint8Array(await readFile(join(directory, manifest.filename)))
-  const checksum = `${sha256(binary)}  ${manifest.filename}\n`
+  const archive = new Uint8Array(await readFile(join(directory, archiveName)))
+  const checksum = `${sha256(archive)}  ${archiveName}\n`
   if (await readFile(join(directory, 'SHA256SUMS'), 'utf8') !== checksum)
     throw new Error('Release checksum mismatch')
+  // The published archive must hold exactly the executable these checks accept.
+  const entry = singleFileArchiveEntry(archive)
+  if (entry.name !== archiveEntryName || entry.mode !== 0o755 || sha256(entry.bytes) !== sha256(binary))
+    throw new Error('Release archive does not hold the checked executable')
   // Linux ELF class and machine must agree even when cross-compilation cannot be executed.
   if (binary[0] !== 0x7F || String.fromCharCode(...binary.slice(1, 4)) !== 'ELF' || binary[4] !== 2 || binary[5] !== 1 || new DataView(binary.buffer).getUint16(18, true) !== (manifest.target === 'bun-linux-x64' ? 62 : 183))
     throw new Error('Executable architecture/header mismatch')
-  return { manifest, assets: [{ name: manifest.filename, bytes: binary }, { name: 'SHA256SUMS', bytes: new TextEncoder().encode(checksum) }] }
+  return { manifest, assets: [{ name: archiveName, bytes: archive }, { name: 'SHA256SUMS', bytes: new TextEncoder().encode(checksum) }] }
 }

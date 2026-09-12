@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 02:15 [progress]
+
+At the project owner's request, releases now attach `merdeck.tar.gz` and `SHA256SUMS` instead of the version-named executable, so one address keeps working across releases. The archive is reproducible and holds exactly one executable named `merdeck`; the release checks compare it with the checked executable, and the release smoke runs the extracted one. See [RELEASE-002](task/RELEASE-002.md).
+
 ## 2026-09-12 01:58 [progress]
 
 At the project owner's request, release [`v0.2.0`](https://github.com/itxje/merdeck/releases/tag/v0.2.0) was published from `a2d2c87`, so the executable now carries the explorer file type filter. The tag workflow repeated all native checks on that commit before publishing `merdeck-0.2.0-linux-x64` with its `SHA256SUMS`. See [RELEASE-001](task/RELEASE-001.md).
