@@ -54,3 +54,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**PREVIEW-005 Accept bounded node styling in the preview**](PREVIEW-005.md) `P3`
 - [x] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`
 - [x] [**STORAGE-002 Admit host-shared storage under a content identity model**](STORAGE-002.md) `P2`
+- [x] [**PREVIEW-006 Fit a Gantt chart to its bars, not to its today marker**](PREVIEW-006.md) `P3`

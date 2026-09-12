@@ -95,7 +95,14 @@ export function Preview({ source, title, onError, onSourceChange, onLocate }: Pr
     const host = surfaceRef.current
     if (!node || !host)
       return
+    // A Gantt chart marks today even when its tasks are months away, and that one line would
+    // otherwise decide the fitted size; the marker is measured out, not removed from the diagram.
+    const markers = [...node.querySelectorAll('.today')]
+    for (const marker of markers)
+      marker.setAttribute('display', 'none')
     const content = node.getBBox()
+    for (const marker of markers)
+      marker.removeAttribute('display')
     if (content.width > 0 && content.height > 0)
       node.setAttribute('viewBox', `${content.x - 16} ${content.y - 16} ${content.width + 32} ${content.height + 32}`)
     const box = node.viewBox.baseVal

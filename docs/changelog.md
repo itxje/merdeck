@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 10:45 [progress]
+
+Gantt charts fit their bars. The preview already accepted the family and rendered it, but a chart whose tasks sit away from the current date was fitted around Mermaid's today marker and appeared at single-digit zoom; the marker is now measured out of the fitted size while staying in the diagram. A chart that includes today is unchanged. See [PREVIEW-006](task/PREVIEW-006.md).
+
 ## 2026-09-12 09:55 [progress]
 
 Host-shared `virtiofs` storage is now writable. The measured mount selects an identity model: overlay and ext4 keep the inode comparison unchanged, and virtiofs is admitted under a content model that compares device, size, both timestamps and the complete-file hash, proves staged bytes by their own hash and reads the published name back. The one distinction it gives up is an external replacement whose bytes and both timestamps are identical. With fixtures on that storage the file, storage, API and acceptance tests passed 1,060 of 1,060 across twenty runs, against 5 failures in 80 runs before, and the browser suite passed 42 of 42 rooted there. See [STORAGE-002](task/STORAGE-002.md) and [PLAN-020](plan/PLAN-020.md).
