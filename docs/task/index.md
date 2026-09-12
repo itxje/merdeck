@@ -63,3 +63,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**CONFIG-001 Default the tree scan to a wide, shallow walk**](CONFIG-001.md) `P2`
 - [x] [**LAYOUT-008 Move the file bar into the header**](LAYOUT-008.md) `P3`
 - [x] [**NAV-002 Preserve linked flowchart layout and titled file navigation**](NAV-002.md) `P1`
+- [x] [**PREVIEW-009 Accept bidirectional sequence messages and bounded front matter configuration**](PREVIEW-009.md) `P2`

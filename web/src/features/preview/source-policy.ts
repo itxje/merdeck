@@ -1,6 +1,7 @@
 export const previewLimit = 32000
 export const bareLabelBreak = /<br(?: ?\/)?>/gi
 export const flowchartHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph)\b/
+const sequenceHeader = /^\s*(?:%%[^\n]*\n\s*)*sequenceDiagram\b/
 const identifier = '[a-z_][\\w-]*'
 const identifiers = `${identifier}(?:,${identifier})*`
 const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
@@ -14,14 +15,19 @@ const linkFile = /\.(?:mmd|mermaid|md)$/i
 const linkSegment = /^[\w.-]+$/
 const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
 const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
-// A leading front matter block may carry a title and nothing else; `config` there is the same
-// configuration surface as a directive and stays refused with every other key.
-const frontMatterTitle = /^---\r?\n[ \t]*title:([^\n\r]*)\r?\n---(?:\r?\n|$)/
+// A leading front matter block may carry a title and a bounded configuration, in either order and
+// at most once each. `config` there is the same surface as a configuration directive, so it admits
+// only a diagram section holding switches and bounded whole numbers: no value may carry text, and
+// no key that spells CSS, a font, a theme, a layout or an address can be expressed at all.
+const frontMatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
+const frontMatterEntry = /^([ \t]*)([a-z][\w-]*):(.*)$/i
+const configSections = new Set(['flowchart', 'sequence', 'gantt', 'state', 'er', 'class', 'journey', 'pie', 'timeline', 'mindmap'])
+const configNumber = /^\d{1,4}$/
 // A numeric character reference is text that follows other text; a colour declaration follows its
 // property, so `fill:#0c4a6e;` is an ordinary statement rather than an entity.
 const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im
 const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
-const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
+const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes, and sequence diagrams support bidirectional messages. A leading front matter block may carry a title and a bounded diagram configuration of switches and whole numbers. Configuration directives, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {
   throw new Error(message)
 }
@@ -45,7 +51,7 @@ export function fileLinks(source: string): Map<string, string> {
     validateSource(source)
   }
   catch { return links }
-  const plain = source.replace(frontMatterTitle, '')
+  const plain = source.replace(frontMatter, '')
   if (!flowchartHeader.test(plain))
     return links
   mapFlowchart(plain, (statement) => {
@@ -61,7 +67,7 @@ export function fileLinks(source: string): Map<string, string> {
 // Render ordinary nodes instead; the original draft still supplies application-owned targets.
 export function renderSource(source: string): string {
   validateSource(source)
-  const plain = source.replace(frontMatterTitle, '')
+  const plain = source.replace(frontMatter, '')
   if (!flowchartHeader.test(plain))
     return source
   return source.slice(0, source.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
@@ -167,6 +173,48 @@ function maskFlowchart(source: string) {
   return masked.replaceAll('&', ' ')
 }
 
+// Reads a front matter block, refusing anything outside the admitted shape, and returns its title
+// for the ordinary label checks. A configuration reaches Mermaid through the same entry a directive
+// uses, so the shape itself, not the host's own key filtering, is what keeps it harmless.
+function frontMatterTitle(body: string) {
+  let title: string | undefined
+  let configured = false
+  let section = ''
+  let sectionIndent = 0
+  for (const line of body.split(/\r?\n/)) {
+    const entry = frontMatterEntry.exec(line)
+    if (!entry)
+      refuse()
+    const [, indent, key, declared] = entry as unknown as [string, string, string, string]
+    const value = declared.trim()
+    if (!indent) {
+      section = ''
+      if (key === 'title' && title === undefined)
+        title = value
+      else if (key === 'config' && !configured && !value)
+        configured = true
+      else refuse()
+    }
+    else if (!configured) {
+      refuse()
+    }
+    else if (!section || indent.length <= sectionIndent) {
+      if (value || !configSections.has(key))
+        refuse()
+      section = key
+      sectionIndent = indent.length
+    }
+    // htmlLabels is the one switch the host keeps for itself; every other leaf takes a switch or a
+    // bounded whole number, so no leaf can carry a colour, a font, a selector or an address.
+    else if (key === 'htmlLabels' || !(value === 'true' || value === 'false' || (configNumber.test(value) && Number(value) <= 1000))) {
+      refuse()
+    }
+  }
+  if (configured && !section)
+    refuse()
+  return title ?? ''
+}
+
 // These checks precede every context mask and Mermaid/CSS/measurement-host operation.
 function unsupported(text: string) {
   return unsafe.test(text) || [...text].some(character => character.charCodeAt(0) < 32 && !'\t\r\n'.includes(character))
@@ -176,15 +224,19 @@ export function validateSource(source: string) {
   if (source.length > previewLimit)
     throw new Error('Live preview is limited to 32,000 characters. You can still edit and save this file.')
   const full = source.replace(bareLabelBreak, ' ')
-  const titled = frontMatterTitle.exec(full)
-  const plain = titled ? full.slice(titled[0].length) : full
+  const block = frontMatter.exec(full)
+  const plain = block ? full.slice(block[0].length) : full
   // The title is ordinary text and takes every check that a label takes.
-  if (titled && (unsupported(titled[1]!) || disabled.test(titled[1]!)))
+  const title = block ? frontMatterTitle(block[1]!) : ''
+  if (unsupported(title) || disabled.test(title))
     refuse()
   if (unsupported(plain))
     refuse()
-  const flowchart = flowchartHeader.test(plain)
-  const checked = flowchart ? maskFlowchart(plain) : plain
+  // Bidirectional messages are the only sequence arrows carrying an angle bracket, and the pair is
+  // syntax rather than markup, so it is masked exactly like the flowchart arrows already are.
+  const checked = flowchartHeader.test(plain)
+    ? maskFlowchart(plain)
+    : sequenceHeader.test(plain) ? plain.replace(/<<(?=--?>>)/g, '  ') : plain
   if (disabled.test(checked))
     refuse()
 }

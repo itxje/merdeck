@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-12 14:35 [progress]
+
+The preview accepts two more pieces of ordinary Mermaid. A sequence diagram may use the bidirectional messages `<<->>` and `<<-->>`, which get the carve-out flowchart arrows already had and are the only sequence arrows carrying an angle bracket; every other bracket and ampersand outside a flowchart stays refused. A leading front matter block may now carry a bounded `config` beside its title: one diagram section from a fixed list, then leaves valued `true`, `false` or a whole number up to 1,000. No configuration value may carry text, so no key can express CSS, a theme, a font, a layout, a colour or an address, and `themeCSS` in particular cannot be written at all — which matters because the host `secure` list does not cover it. A wholesale `config` stays refused for the reason recorded in PREVIEW-007, and every front matter refusal that task established still refuses. Measured against the eighteen sources that prompted the work, all eighteen are now accepted against twelve before. See [PREVIEW-009](task/PREVIEW-009.md) and [PLAN-022](plan/PLAN-022.md).
+
+## 2026-09-12 14:35 [pitfall]
+
+This environment cannot run the full delivery gate. `bun run check:ci` requires the repository Node 24.20.0 pin against an installed 24.21.0, and the installed Chromium headless shell cannot start without its system libraries, so the new browser case was typechecked but never executed. `bun run check` with the documented fixture parents reaches 203 of 204 backend tests; the single failure reproduces identically on an unmodified worktree of the same commit and is the read-consistency failure already recorded against NAV-002. Frontend lint, typecheck, 282 of 282 tests and the build all pass. See [PREVIEW-009](task/PREVIEW-009.md).
+
 ## 2026-09-12 13:45 [progress]
 
 The file bar is gone. The header now carries the open file, the save state and the Save button beside the brand, the theme switch and log out, so the panes gained the whole bar: the preview surface grew from 685 to 731 pixels at 1440 by 900. With no file open the header names none. See [LAYOUT-008](task/LAYOUT-008.md).

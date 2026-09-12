@@ -102,8 +102,61 @@ it.each([
   '---\ntitle: A plan\n---\n---\ntitle: Another\n---\nflowchart LR\nA --> B',
   'flowchart LR\nA --> B\n---\ntitle: A plan\n---',
   '---\nflowchart LR\nA --> B',
-])('refuses front matter beyond one title: %s', (source) => {
+])('refuses front matter outside the admitted shape: %s', (source) => {
   expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it.each([
+  '---\nconfig:\n  gantt:\n    useMaxWidth: true\n    barHeight: 20\n    barGap: 6\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\nconfig:\n  flowchart:\n    padding: 8\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  sequence:\n    mirrorActors: false\n  gantt:\n    barGap: 4\n---\nsequenceDiagram\nA<<->>B: Exchange',
+])('accepts a bounded front matter configuration: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  '---\nconfig:\n  gantt:\n    displayMode: compact\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  themeCSS: .node { fill: red }\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  flowchart:\n    htmlLabels: true\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  gantt:\n    barHeight: 5000\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  gantt:\n    barHeight: 20.5\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  unknownFamily:\n    useMaxWidth: true\n---\nflowchart LR\nA --> B',
+  '---\ntitle: One\ntitle: Two\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n---\nflowchart LR\nA --> B',
+  '---\nconfig: base\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\n\nconfig:\n  gantt:\n    barGap: 4\n---\nflowchart LR\nA --> B',
+])('refuses a configuration outside the bounded shape: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it.each([
+  'sequenceDiagram\nA<<->>B: Exchange',
+  'sequenceDiagram\nA<<-->>B: Exchange',
+  '---\ntitle: A plan\n---\nsequenceDiagram\nautonumber\nA->>B: One\nA<<->>B: Two\nNote over A,B: Both',
+])('accepts bidirectional sequence messages: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  'sequenceDiagram\nA->>B: Value < 250V',
+  'sequenceDiagram\nA<<->B: Exchange',
+  'sequenceDiagram\nA<->>B: Exchange',
+  'sequenceDiagram\nparticipant A as <b>One',
+  'sequenceDiagram\nNote over A,B: A & B',
+  'flowchart LR\nA<<->>B',
+  'stateDiagram-v2\n[*] <<->> Ready',
+])('refuses every other angle bracket and ampersand outside a flowchart: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it('keeps links and the render projection aligned with a configured front matter', () => {
+  const block = '---\ntitle: Index\nconfig:\n  flowchart:\n    padding: 8\n---\n'
+  const source = `${block}flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\n`
+  expect([...fileLinks(source)]).toEqual([['A1', '01-system-architecture.mmd']])
+  const rendered = renderSource(source)
+  expect(rendered).toHaveLength(source.length)
+  expect(rendered.startsWith(block)).toBe(true)
+  expect(rendered).not.toContain('click')
 })
 
 it.each(['&ltimg src=x', '&lt', '&GT', '&amp#60;img', '&quotonclick', '<br/><img', 'classDef safe fill:#fff:bad', 'classDef safe'])('refuses incomplete encoding and declarations: %s', (text) => {
