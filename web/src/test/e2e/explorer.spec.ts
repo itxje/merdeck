@@ -70,3 +70,28 @@ test('the explorer selects Markdown diagrams and fills only the selected row', a
   await page.getByRole('tab', { name: 'Source', exact: true }).click()
   await expect(editor).toHaveValue(first)
 })
+
+test('the explorer lists only the chosen file types and remembers the choice', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await login(page)
+  const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
+  const types = explorer.getByRole('group', { name: 'File types', exact: true })
+  const diagram = explorer.getByRole('button', { name: /^welcome\.mmd/ })
+  const markdown = explorer.getByRole('button', { name: /^overview\.md/ })
+  await expect(diagram).toBeVisible()
+  await expect(markdown).toBeVisible()
+  await expect(explorer.getByText('3 files · .mmd · .mermaid · .md')).toBeVisible()
+
+  await types.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+  await expect(markdown).toHaveCount(0)
+  await expect(explorer.getByRole('button', { name: 'docs', exact: true })).toHaveCount(0)
+  await expect(diagram).toBeVisible()
+  await expect(explorer.getByText('2 files · .mmd · .mermaid')).toBeVisible()
+
+  // The choice belongs to this browser and survives a reload.
+  await page.reload()
+  await expect(types.getByRole('button', { name: '.mmd and .mermaid files', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(markdown).toHaveCount(0)
+  await types.getByRole('button', { name: 'All files', exact: true }).click()
+  await expect(markdown).toBeVisible()
+})

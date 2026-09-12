@@ -1,13 +1,16 @@
 import type { DiagramBlockSummary, TreeSnapshot } from '../../../../src/shared/contracts'
 import type { Drafts, FileDraft } from './drafts'
 import type { EntryAction } from './entries'
+import type { FileFilter } from './file-filter'
 import { ChevronDown, ChevronRight, FileCode2, FilePlus2, FileText, FolderOpen, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { dirty } from './drafts'
+import { fileExtensions } from './file-filter'
 
 interface Props {
   tree: TreeSnapshot | undefined
@@ -20,10 +23,18 @@ interface Props {
   failed: boolean
   canChange: boolean
   onAction: (action: EntryAction) => void
+  kinds: FileFilter
+  chooseKinds: (next: FileFilter) => void
   filterRef?: React.Ref<HTMLInputElement>
 }
 interface DiagramListProps { file: string, blocks: DiagramBlockSummary[], draft: FileDraft | undefined, open: boolean, block: number, select: Props['select'] }
 interface MenuItem { label: string, onSelect: () => void, disabled?: boolean, destructive?: boolean, separated?: boolean }
+
+const fileFilters: { value: FileFilter, text: string, label: string }[] = [
+  { value: 'all', text: 'All', label: 'All files' },
+  { value: 'mermaid', text: '.mmd', label: '.mmd and .mermaid files' },
+  { value: 'markdown', text: '.md', label: '.md files' },
+]
 
 // Diagram rows of one Markdown file; only the selected diagram is the current row.
 function DiagramList({ file, blocks, draft, open, block, select }: DiagramListProps) {
@@ -83,13 +94,17 @@ function shortcuts(rename: MenuItem, remove: MenuItem) {
   }
 }
 
-export function FileTree({ tree, drafts, path, block, select, refresh, loading, failed, canChange, onAction, filterRef }: Props) {
+export function FileTree({ tree, drafts, path, block, select, refresh, loading, failed, canChange, onAction, kinds, chooseKinds, filterRef }: Props) {
   const [filter, setFilter] = React.useState('')
   const [collapsed, setCollapsed] = React.useState<Set<string>>(() => new Set())
   const [menu, setMenu] = React.useState<string | null>(null)
   const entries = tree?.entries ?? []
   const files = entries.filter(item => item.kind === 'file')
-  const visible = entries.filter(item => item.path.toLowerCase().includes(filter.toLowerCase()) || (item.kind === 'directory' && files.some(file => file.path.startsWith(`${item.path}/`) && file.path.toLowerCase().includes(filter.toLowerCase()))))
+  const listed = files.filter(item => kinds === 'all' || item.fileKind === kinds)
+  const matches = (value: string) => value.toLowerCase().includes(filter.toLowerCase())
+  const shown = listed.filter(item => matches(item.path))
+  // A folder stays visible while it holds a listed file; with every type listed, its own name matches too.
+  const visible = entries.filter(item => item.kind === 'file' ? shown.includes(item) : shown.some(file => file.path.startsWith(`${item.path}/`)) || (kinds === 'all' && matches(item.path)))
   const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !files.some(entry => entry.path === name))
   const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
   const rowMenu = (target: string) => ({
@@ -113,6 +128,23 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
       <div className="tree-search">
         <Search aria-hidden="true" />
         <Input ref={filterRef} aria-label="Filter files" placeholder="Find a file…" value={filter} onChange={event => setFilter(event.target.value)} />
+      </div>
+      <div className="tree-kinds">
+        <ToggleGroup
+          size="sm"
+          aria-label="File types"
+          value={[kinds]}
+          onValueChange={(value) => {
+            // Pressing the current choice again reports no value; keep exactly one choice.
+            const next = fileFilters.find(option => option.value === value[0])
+            if (next)
+              chooseKinds(next.value)
+          }}
+        >
+          {fileFilters.map(option => (
+            <ToggleGroupItem key={option.value} value={option.value} aria-label={option.label}>{option.text}</ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
       <nav aria-label="Files and diagrams">
         {loading && <p className="tree-hint" role="status">Reading project files…</p>}
@@ -190,7 +222,7 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
             )
           })}
         </ul>
-        {!loading && !failed && !visible.length && <p className="tree-hint">{filter ? 'No matching files' : 'No supported files in this project'}</p>}
+        {!loading && !failed && !visible.length && <p className="tree-hint">{filter ? 'No matching files' : kinds === 'all' ? 'No supported files in this project' : `No ${fileExtensions[kinds].join(' or ')} files in this project`}</p>}
         {retained.length > 0 && (
           <>
             <div className="tree-heading">RETAINED DRAFTS</div>
@@ -215,10 +247,10 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
       </nav>
       <div className="tree-bottom">
         <span className="muted">
-          {files.length}
+          {listed.length}
           {' '}
-          {files.length === 1 ? 'file' : 'files'}
-          {' · .mmd · .mermaid · .md'}
+          {listed.length === 1 ? 'file' : 'files'}
+          {` · ${fileExtensions[kinds].join(' · ')}`}
         </span>
         {tree?.truncated && <span role="status">Partial file list. Select known files directly.</span>}
       </div>

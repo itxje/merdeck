@@ -169,6 +169,9 @@ button:disabled { cursor: default; }
 .tree-search { margin: 0 12px 16px; position: relative; display: flex; align-items: center; gap: 4px; }
 .tree-search > svg { position: absolute; left: 9px; top: 50%; translate: 0 -50%; width: 14px; height: 14px; color: var(--muted-foreground); }
 .tree-search input { flex: 1; padding-left: 29px; font-size: 12px; background: var(--background); }
+.tree-kinds { margin: -10px 12px 14px; }
+.tree-kinds [data-slot="toggle-group"] { width: 100%; }
+.tree-kinds [data-slot="toggle-group-item"] { flex: 1; min-width: 0; font-size: 11px; }
 .file-tree nav { padding: 0 10px; flex: 1; overflow: auto; }
 .file-tree ul { list-style: none; padding: 0; margin: 0; }
 .file-tree .nested { margin: 3px 0 10px 13px; padding-left: 9px; border-left: 1px solid var(--border); }

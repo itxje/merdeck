@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/
 import { absoluteSourceLimit, errorMessage } from './api'
 import { warningMessage } from './drafts'
 import { EntryDialog } from './entry-dialog'
+import { useFileFilter } from './file-filter'
 import { FileTree } from './file-tree'
 import { useWorkspace } from './use-workspace'
 
@@ -111,7 +112,8 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
     }
   }
   const canChange = !!state.session?.storage.writable && !disconnected && !state.entries.isPending && !state.savePending
-  const treeProps = { tree: state.tree.data, drafts: state.drafts, path, block, select, refresh: state.refresh, loading: state.tree.isPending, failed: state.tree.isError, canChange, onAction: openEntry }
+  const [kinds, chooseKinds] = useFileFilter()
+  const treeProps = { tree: state.tree.data, drafts: state.drafts, path, block, select, refresh: state.refresh, loading: state.tree.isPending, failed: state.tree.isError, canChange, onAction: openEntry, kinds, chooseKinds }
   const openReview = () => {
     state.review.reset()
 
