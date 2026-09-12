@@ -37,7 +37,7 @@ export interface DirectoryEntry {
 
 const directoryFlags = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW
 const readFlags = constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
-const ignoredDirectories = new Set(['.git', '.hg', '.svn', 'node_modules', 'vendor', 'dist', 'build', 'coverage', '.cache', '.next', '.nuxt', '.output', '.turbo', '.vite', 'secrets'])
+const ignoredDirectories = new Set(['.git', '.hg', '.svn', 'node_modules', 'vendor', 'dist', 'build', 'target', '__pycache__', 'coverage', '.cache', '.next', '.nuxt', '.output', '.turbo', '.vite', 'secrets'])
 
 // Only read() consumes this internal signal; public errors and writes are never retried.
 class ReadChanged extends AppError {

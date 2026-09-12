@@ -295,7 +295,7 @@ describe('contained real filesystem service', () => {
   })
 
   test('bounds entries, traversal work and depth; hides metadata but retains ordinary directories', async () => {
-    for (const path of ['.git', 'node_modules', 'dist', 'secrets', 'ordinary']) {
+    for (const path of ['.git', 'node_modules', 'dist', 'target', '__pycache__', 'secrets', 'ordinary']) {
       await mkdir(join(root, path))
       await writeFile(join(root, path, 'a.mmd'), 'graph TD')
     }
@@ -304,6 +304,8 @@ describe('contained real filesystem service', () => {
     expect(tree.entries.map(entry => entry.path)).toEqual(['diagram.mmd', 'ordinary', 'ordinary/a.mmd'])
     await expectCode(service.readDocument('.git/a.mmd'), 'forbidden')
     await expectCode(service.readDocument('node_modules/a.mmd'), 'forbidden')
+    await expectCode(service.readDocument('target/a.mmd'), 'forbidden')
+    await expectCode(service.readDocument('__pycache__/a.mmd'), 'forbidden')
     const shallow = await createDiagramService({ ...config, limits: { ...config.limits, maxTreeDepth: 1 } })
     expect((await shallow.treeSnapshot()).truncated).toBe(true)
     await expectCode(shallow.readDocument('ordinary/a.mmd'), 'forbidden')

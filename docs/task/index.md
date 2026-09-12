@@ -59,3 +59,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**LAYOUT-007 Let the explorer be resized**](LAYOUT-007.md) `P3`
 - [x] [**PREVIEW-008 Stop reading a colour declaration as an entity**](PREVIEW-008.md) `P2`
 - [x] [**NAV-001 Open a linked diagram from the preview**](NAV-001.md) `P2`
+- [x] [**FILE-004 Skip compiled build output during discovery**](FILE-004.md) `P3`

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 12:30 [progress]
+
+Discovery now skips a Rust `target` and a Python `__pycache__` directory, like the other generated output it already ignored, so build artefacts no longer compete with diagrams for the entry budget. See [FILE-004](task/FILE-004.md).
+
 ## 2026-09-12 11:55 [progress]
 
 An index diagram works: a flowchart node may name another diagram file with `click <node> "<file>"`, and selecting it with a pointer or the keyboard opens that file in the workspace. Only a project-relative diagram path is accepted; callbacks, addresses, extra arguments and every other form stay refused, the rendered SVG still carries no anchor or `href`, and a target outside the listed tree only explains itself. See [NAV-001](task/NAV-001.md) and [PLAN-021](plan/PLAN-021.md).
