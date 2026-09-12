@@ -31,3 +31,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-021 Open a linked diagram from the preview**](PLAN-021.md) `2026-09-12`
 - [x] [**PLAN-022 Admit bidirectional sequence messages and a bounded front matter configuration**](PLAN-022.md) `2026-09-12`
 - [x] [**PLAN-023 Preserve linked flowchart layout and titled file navigation**](PLAN-023.md) `2026-09-12`
+- [x] [**PLAN-024 Preserve inert addresses and note text in diagram previews**](PLAN-024.md) `2026-09-12`

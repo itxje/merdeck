@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 16:20 [progress]
+
+Plain flowchart node/group labels, sequence notes and reference comments can display HTTP(S) addresses without opening links or loading resources. The CSS resource check no longer mistakes `base64url(...)` for `url(...)`, and quoted class notes accept escaped newlines. Original source bytes and strict rendering remain intact. Generic regressions cover unsafe neighboring syntax, visible text, geometry and exact saves; supplied diagrams remain local evidence. See [PREVIEW-010](task/PREVIEW-010.md) and [PLAN-024](plan/PLAN-024.md) for verification and the existing backend gate limitation.
+
 ## 2026-09-12 14:35 [progress]
 
 The preview accepts two more pieces of ordinary Mermaid. A sequence diagram may use the bidirectional messages `<<->>` and `<<-->>`, which get the carve-out flowchart arrows already had and are the only sequence arrows carrying an angle bracket; every other bracket and ampersand outside a flowchart stays refused. A leading front matter block may now carry a bounded `config` beside its title: one diagram section from a fixed list, then leaves valued `true`, `false` or a whole number up to 1,000. No configuration value may carry text, so no key can express CSS, a theme, a font, a layout, a colour or an address, and `themeCSS` in particular cannot be written at all — which matters because the host `secure` list does not cover it. A wholesale `config` stays refused for the reason recorded in PREVIEW-007, and every front matter refusal that task established still refuses. Measured against the eighteen sources that prompted the work, all eighteen are now accepted against twelve before. See [PREVIEW-009](task/PREVIEW-009.md) and [PLAN-022](plan/PLAN-022.md).

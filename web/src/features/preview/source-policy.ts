@@ -2,6 +2,7 @@ export const previewLimit = 32000
 export const bareLabelBreak = /<br(?: ?\/)?>/gi
 export const flowchartHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph)\b/
 const sequenceHeader = /^\s*(?:%%[^\n]*\n\s*)*sequenceDiagram\b/
+const classHeader = /^\s*(?:%%[^\n]*\n\s*)*classDiagram\b/
 const identifier = '[a-z_][\\w-]*'
 const identifiers = `${identifier}(?:,${identifier})*`
 const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
@@ -25,7 +26,7 @@ const configSections = new Set(['flowchart', 'sequence', 'gantt', 'state', 'er',
 const configNumber = /^\d{1,4}$/
 // A numeric character reference is text that follows other text; a colour declaration follows its
 // property, so `fill:#0c4a6e;` is an ordinary statement rather than an entity.
-const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im
+const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|\burl\s*\(|@\{|\$\$|@import|expression\s*\(/im
 const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
 const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes, and sequence diagrams support bidirectional messages. A leading front matter block may carry a title and a bounded diagram configuration of switches and whole numbers. Configuration directives, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {
@@ -68,6 +69,8 @@ export function fileLinks(source: string): Map<string, string> {
 export function renderSource(source: string): string {
   validateSource(source)
   const plain = source.replace(frontMatter, '')
+  if (classHeader.test(plain))
+    return source.slice(0, source.length - plain.length) + mapClassNotes(plain, note => note.replace(/\\n/g, '<br/>'))
   if (!flowchartHeader.test(plain))
     return source
   return source.slice(0, source.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
@@ -135,6 +138,36 @@ function mapFlowchart(source: string, visit: (statement: string) => string) {
   }
   finish()
   return mapped
+}
+
+// Plain node/group labels render as SVG text. Mask only address tokens for the resource check;
+// markup, entities, scripts and CSS remain visible to validation, and draft/render bytes are intact.
+function maskAddresses(text: string) {
+  return text.replace(/https?:\/\/|\/\//gi, token => ' '.repeat(token.length))
+}
+
+function maskLabelAddresses(source: string) {
+  return mapFlowchart(source, (statement) => {
+    if (/^\s*(?:click|classDef|class|style|linkStyle)\b/i.test(statement))
+      return statement
+    return statement.replace(/\[\s*"[^"]*"\s*\]|\(\s*"[^"]*"\s*\)|\{\s*"[^"]*"\s*\}/g, label => label.includes('`') ? label : maskAddresses(label))
+  })
+}
+
+function mapClassNotes(source: string, visit: (note: string) => string) {
+  return source.replace(/^[ \t]*note(?:[ \t]+for[ \t]+[\w-]+)?[ \t]+"[^"\r\n]*"[ \t]*$/gim, visit)
+}
+
+function maskDisplayText(source: string) {
+  // Whole-line citations are inert; directive-shaped comments keep every original check.
+  const comments = source.replace(/^[ \t]*%%(?![ \t]*\{)[^\r\n]*/gm, maskAddresses)
+  if (flowchartHeader.test(comments))
+    return maskLabelAddresses(comments)
+  if (sequenceHeader.test(comments))
+    return comments.replace(/^[ \t]*note[ \t]+(?:over|left[ \t]+of|right[ \t]+of)[ \t]+[\w-]+(?:[ \t]*,[ \t]*[\w-]+)?[ \t]*:[^\r\n]*/gim, note => note.includes('`') ? note : maskAddresses(note))
+  if (classHeader.test(comments))
+    return mapClassNotes(comments, note => note.includes('`') ? note : note.replace(/\\n/g, '  '))
+  return comments
 }
 
 function maskFlowchart(source: string) {
@@ -230,11 +263,12 @@ export function validateSource(source: string) {
   const title = block ? frontMatterTitle(block[1]!) : ''
   if (unsupported(title) || disabled.test(title))
     refuse()
-  if (unsupported(plain))
+  const flowchart = flowchartHeader.test(plain)
+  if (unsupported(maskDisplayText(plain)))
     refuse()
   // Bidirectional messages are the only sequence arrows carrying an angle bracket, and the pair is
   // syntax rather than markup, so it is masked exactly like the flowchart arrows already are.
-  const checked = flowchartHeader.test(plain)
+  const checked = flowchart
     ? maskFlowchart(plain)
     : sequenceHeader.test(plain) ? plain.replace(/<<(?=--?>>)/g, '  ') : plain
   if (disabled.test(checked))

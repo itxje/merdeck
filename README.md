@@ -129,6 +129,8 @@ The preview accepts a constrained Mermaid subset (strict host settings plus sani
 
 Relative flowchart node targets work inside and outside subgraphs, including diagrams with title-only front matter. Rendering preserves node positions and source bytes. Pointer clicks, Enter and Space use the workspace's existing file navigation and retain unsaved drafts; pending or rejected previews do not activate stale targets.
 
+Plain double-quoted flowchart node/group labels, single-line sequence notes and ordinary whole-line comments may contain HTTP(S) addresses as text. These addresses do not become links or load resources. Function names such as `base64url(...)` are ordinary text, and quoted class notes support `\n` line breaks without changing source bytes. These exceptions keep other escapes, Markdown resources, HTML, active links, configuration directives and arbitrary CSS refused.
+
 ### Files and Markdown limits
 
 Only case-sensitive `.mmd`, `.mermaid` and `.md` regular UTF-8 files are supported, with optional BOM and LF/CRLF. Hidden paths, dependency/build/secret directories, symlinks, hardlinked files and unsupported path characters (including `%`) are excluded or rejected. The default tree is bounded to 8,000 entries and depth 4, so a root that also holds unrelated directories lists four complete levels rather than part of a deeper walk; raise `MERDECK_MAX_TREE_DEPTH` for diagrams kept deeper than that. A truncated scan cannot prove deletion. File size defaults to 1 MiB; see `.env.example` and [architecture](docs/architecture.md) for configurable limits and exact excluded paths.
