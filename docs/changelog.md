@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 11:35 [progress]
+
+A colour declaration that ends with an ordinary statement separator, such as `classDef entry fill:#e0f2fe,color:#0c4a6e;`, is no longer read as a numeric character reference and no longer rejects the whole source; a reference in ordinary text stays refused. See [PREVIEW-008](task/PREVIEW-008.md).
+
 ## 2026-09-12 11:20 [progress]
 
 The preview accepts a front matter block that carries only a diagram title, so a titled state diagram renders instead of being refused for its `---` lines; `config` and every other key stay refused. The explorer border became an ordinary window splitter: drag it, step it with the arrow keys or double click it back to the default, and the width is kept per browser between 180 and 520 pixels. See [PREVIEW-007](task/PREVIEW-007.md) and [LAYOUT-007](task/LAYOUT-007.md).

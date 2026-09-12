@@ -12,7 +12,9 @@ const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
 // A leading front matter block may carry a title and nothing else; `config` there is the same
 // configuration surface as a directive and stays refused with every other key.
 const frontMatterTitle = /^---\r?\n[ \t]*title:([^\n\r]*)\r?\n---(?:\r?\n|$)/
-const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im
+// A numeric character reference is text that follows other text; a colour declaration follows its
+// property, so `fill:#0c4a6e;` is an ordinary statement rather than an entity.
+const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|url\s*\(|@\{|\$\$|@import|expression\s*\(/im
 const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
 const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {

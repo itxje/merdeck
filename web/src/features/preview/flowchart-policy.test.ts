@@ -15,6 +15,8 @@ it.each([
   '%% Ordinary comment\nflowchart LR\nA --> B %% A comment with an unmatched "\nclassDef safe stroke:#ABC,stroke-width:10,stroke-dasharray:100 0 2.5px\nclass A safe',
   'flowchart TB\nsubgraph Group["Visible group"]\nA --> B\nend\nstyle Group fill:#f5f5f5,stroke:#333,stroke-width:3px',
   'flowchart LR\nA --> B\nstyle A,B fill:#fff,color:#111,stroke-dasharray:2 4',
+  'flowchart TB\nROOT["Entry"] --> LIMITS["Boundaries"]\nclassDef entry fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e;\nclass ROOT entry;',
+  'flowchart LR\nA --> B\nstyle A fill:#123456;',
 ])('accepts nearby bounded ordinary grammar: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
 })
@@ -64,6 +66,8 @@ it.each([
   'A["Value &lt;img&gt;"]',
   'A["Value &#x3c;img"]',
   'A["Value #60;img"]',
+  'A["Value #0c4a6e;"]',
+  'A["Value#60;"]',
   'A["Value <br/>#60;img"]',
   'A["Value < 250V"]\n%%{init:{}}',
 ])('rejects nearby unsafe grammar before rendering: %s', (statement) => {
