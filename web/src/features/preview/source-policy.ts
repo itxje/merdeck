@@ -41,15 +41,30 @@ function fileLink(statement: string): [string, string] | undefined {
 // The nodes a validated source links to, for the workspace to open; other sources link to nothing.
 export function fileLinks(source: string): Map<string, string> {
   const links = new Map<string, string>()
-  const plain = source.replace(bareLabelBreak, ' ')
+  try {
+    validateSource(source)
+  }
+  catch { return links }
+  const plain = source.replace(frontMatterTitle, '')
   if (!flowchartHeader.test(plain))
     return links
-  for (const statement of plain.split(/[\n;]/)) {
+  mapFlowchart(plain, (statement) => {
     const link = fileLink(statement.trim())
     if (link)
       links.set(link[0], link[1])
-  }
+    return statement
+  })
   return links
+}
+
+// Mermaid positions linked nodes on anchor wrappers that our sanitizers must remove.
+// Render ordinary nodes instead; the original draft still supplies application-owned targets.
+export function renderSource(source: string): string {
+  validateSource(source)
+  const plain = source.replace(frontMatterTitle, '')
+  if (!flowchartHeader.test(plain))
+    return source
+  return source.slice(0, source.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
 }
 
 function validateDeclarations(statement: string, shape: RegExp) {
@@ -84,39 +99,13 @@ function validateDeclarations(statement: string, shape: RegExp) {
   }
 }
 
-// Split only at syntax boundaries, never inside a quoted label or line comment.
-function maskFlowchart(source: string) {
+// Validation, extraction and render projection share the same quote/comment boundaries.
+function mapFlowchart(source: string, visit: (statement: string) => string) {
   let statement = ''
-  let masked = ''
+  let mapped = ''
   let quoted = false
   const finish = () => {
-    const text = statement.trim()
-    if (/^classDef\b/.test(text)) {
-      validateDeclarations(text, definition)
-      masked += ' '
-    }
-    else if (/^style\b/.test(text)) {
-      validateDeclarations(text, styling)
-      masked += ' '
-    }
-    else if (/^class\b/.test(text)) {
-      if (!assignment.test(text))
-        refuse()
-      masked += ' '
-    }
-    else if (/^click\b/i.test(text)) {
-      if (!fileLink(text))
-        refuse()
-      masked += ' '
-    }
-    else {
-      masked += statement.replace(/"[^"]*"/g, (label) => {
-        // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
-        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(label))
-          refuse()
-        return label.replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
-      }).replace(inlineClass, ' ').replace(/<(?=--|==|-\.)/g, ' ')
-    }
+    mapped += visit(statement)
     statement = ''
   }
   for (let index = 0; index < source.length; index++) {
@@ -124,13 +113,13 @@ function maskFlowchart(source: string) {
     if (!quoted && source.startsWith('%%', index)) {
       finish()
       const end = source.indexOf('\n', index)
-      // Keep comment tails subject to global checks; do not assume upstream discards inline comments.
-      masked += `${source.slice(index, end === -1 ? source.length : end)}\n`
+      // Preserve comment bytes, including unmatched quotes; validation still checks their contents.
+      mapped += source.slice(index, end === -1 ? source.length : end + 1)
       index = end === -1 ? source.length : end
     }
     else if (!quoted && /[;\r\n]/.test(character)) {
       finish()
-      masked += character
+      mapped += character
     }
     else {
       if (character === '"')
@@ -139,6 +128,39 @@ function maskFlowchart(source: string) {
     }
   }
   finish()
+  return mapped
+}
+
+function maskFlowchart(source: string) {
+  const masked = mapFlowchart(source, (statement) => {
+    const text = statement.trim()
+    if (/^classDef\b/.test(text)) {
+      validateDeclarations(text, definition)
+      return ' '
+    }
+    else if (/^style\b/.test(text)) {
+      validateDeclarations(text, styling)
+      return ' '
+    }
+    else if (/^class\b/.test(text)) {
+      if (!assignment.test(text))
+        refuse()
+      return ' '
+    }
+    else if (/^click\b/i.test(text)) {
+      if (!fileLink(text))
+        refuse()
+      return ' '
+    }
+    else {
+      return statement.replace(/"[^"]*"/g, (label) => {
+        // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
+        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(label))
+          refuse()
+        return label.replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
+      }).replace(inlineClass, ' ').replace(/<(?=--|==|-\.)/g, ' ')
+    }
+  })
   // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
   if (/\b(?:classDef|class|style|click)\b|:::/.test(masked))
     refuse()

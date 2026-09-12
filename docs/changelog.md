@@ -12,6 +12,10 @@ The file bar lost its second line and thirty pixels of height, which the panes g
 
 The default tree scan became wide and shallow: 8,000 entries across four complete levels, instead of 1,000 entries of a walk up to sixteen levels deep. A root that also holds unrelated directories now lists its diagrams instead of spending the budget inside the first large subtree; diagrams kept deeper than four levels need an explicit `MERDECK_MAX_TREE_DEPTH`. Both maximums are unchanged. See [CONFIG-001](task/CONFIG-001.md).
 
+## 2026-09-12 12:45 [progress]
+
+Relative file links preserve flowchart node and subgraph layout, including title-only front matter. A validated private render projection avoids Mermaid's positioning anchors while retaining the original source and application-owned navigation. Stale previews cannot activate file targets. Browser regressions cover geometry, pointer and keyboard navigation, draft retention and exact saved bytes. The normal quality gate remains blocked by an unchanged backend read-consistency test in the current environment; the source candidate and evidence are recorded in [NAV-002](task/NAV-002.md) and [PLAN-022](plan/PLAN-022.md).
+
 ## 2026-09-12 12:30 [progress]
 
 Discovery now skips a Rust `target` and a Python `__pycache__` directory, like the other generated output it already ignored, so build artefacts no longer compete with diagrams for the entry budget. See [FILE-004](task/FILE-004.md).

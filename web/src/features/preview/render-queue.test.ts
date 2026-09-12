@@ -1,5 +1,6 @@
 import mermaid from 'mermaid'
 import { expect, it, vi } from 'vitest'
+import { linkedIndex } from '../../test/linked-flowchart'
 import { originalFlowSource } from '../../test/original-flow'
 import { renderDiagram } from './renderer'
 
@@ -73,4 +74,29 @@ it('themes subgraph containers from the dedicated cluster tokens', async () => {
   await renderDiagram('flowchart LR\nsubgraph Battery\nA-->B\nend')
   expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ themeVariables: expect.objectContaining({ clusterBkg: '#fafafa', clusterBorder: '#c8c8c8', titleColor: '#141414', tertiaryColor: '#787878' }) }))
   computed.mockRestore()
+})
+
+it('keeps links out of Mermaid input and both sanitization stages while preserving the draft', async () => {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ fillStyle: '', fillRect: vi.fn(), getImageData: () => ({ data: [120, 120, 120, 255] }) } as unknown as CanvasRenderingContext2D)
+  const computed = window.getComputedStyle.bind(window)
+  const measured: string[] = []
+  const measurement = vi.spyOn(window, 'getComputedStyle').mockImplementation((element) => {
+    if (element.closest('.render-scratch'))
+      measured.push(element.outerHTML)
+    return computed(element)
+  })
+  vi.mocked(mermaid.render).mockClear().mockResolvedValue({ svg: '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"><g class="node" onclick="alert(1)"><text>Safe</text></g></a><image href="https://example.test/probe"/><foreignObject><p>Unsafe</p></foreignObject></svg>', diagramType: 'flowchart' })
+  const source = `---\ntitle: Diagram overview\n---\n${linkedIndex}`
+  const result = await renderDiagram(source)
+  const input = vi.mocked(mermaid.render).mock.calls[0]![1]
+  expect(input).toContain('title: Diagram overview')
+  expect(input).toContain('classDef entry fill:#e0f2fe')
+  expect(input).toContain('ROOT --> A')
+  expect(input).not.toMatch(/\bclick\b|\.mmd/)
+  expect(source.match(/\bclick\b/g)).toHaveLength(17)
+  expect(measured.length).toBeGreaterThan(0)
+  for (const svg of [...measured, result!])
+    expect(svg).not.toMatch(/<a\b|href|foreignObject|<image\b|onclick|javascript:|https:/)
+  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ securityLevel: 'strict', htmlLabels: false, flowchart: expect.objectContaining({ htmlLabels: false }) }))
+  measurement.mockRestore()
 })

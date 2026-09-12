@@ -49,6 +49,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
   const editorRef = React.useRef<HTMLTextAreaElement>(null)
   const cancelRef = React.useRef(false)
   const liveSourceRef = React.useRef<string | null>(source)
+  const settled = !!svg && !error && !rendering && settledSource === source && settledThemeRevision === themeRevision
 
   React.useEffect(() => {
     const observer = new MutationObserver(() => setThemeRevision(value => value + 1))
@@ -95,11 +96,15 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
 
   React.useLayoutEffect(() => {
     const node = graphicRef.current?.querySelector('svg')
-    const host = surfaceRef.current
-    if (!node || !host)
+    if (!node)
       return
-    // A Gantt chart marks today even when its tasks are months away, and that one line would
-    // otherwise decide the fitted size; the marker is measured out, not removed from the diagram.
+    // A pending or rejected draft must not activate targets on the last valid diagram.
+    for (const linked of node.querySelectorAll('[data-file-link]')) {
+      for (const attribute of ['data-file-link', 'role', 'tabindex', 'aria-label'])
+        linked.removeAttribute(attribute)
+    }
+    if (!settled)
+      return
     // A node the source links to becomes an ordinary target: reachable, announced and pointer-marked.
     for (const [id, target] of links) {
       const linked = [...node.querySelectorAll('g.node')].find(item => new RegExp(`-flowchart-${id}-\\d+$`).test(item.id))
@@ -110,6 +115,15 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
       linked.setAttribute('tabindex', '0')
       linked.setAttribute('aria-label', `Open ${target}`)
     }
+  }, [svg, links, settled])
+
+  React.useLayoutEffect(() => {
+    const node = graphicRef.current?.querySelector('svg')
+    const host = surfaceRef.current
+    if (!node || !host)
+      return
+    // A Gantt chart marks today even when its tasks are months away, and that one line would
+    // otherwise decide the fitted size; the marker is measured out, not removed from the diagram.
     const markers = [...node.querySelectorAll('.today')]
     for (const marker of markers)
       marker.setAttribute('display', 'none')
@@ -129,10 +143,9 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
     observer.observe(host)
     resize()
     return () => observer.disconnect()
-  }, [svg, links])
+  }, [svg])
 
   const scale = zoom ?? fit
-  const settled = !!svg && !error && !rendering && settledSource === source && settledThemeRevision === themeRevision
   const labelEditing = !!onSourceChange && flowchartHeader.test(source)
   const sites = labels?.source === source ? labels.sites : null
   const activeEditor = editor?.source === source ? editor : null
@@ -217,6 +230,8 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
   const insideEditor = (target: EventTarget) => target instanceof Element && !!target.closest('.label-editor')
   // Following a link is the workspace's navigation; the rendered diagram never carries one.
   const followLink = (target: EventTarget) => {
+    if (!settled)
+      return false
     const linked = target instanceof Element ? target.closest('[data-file-link]') : null
     const file = onOpenFile && linked && graphicRef.current?.contains(linked) ? linked.getAttribute('data-file-link') : null
     if (!file)

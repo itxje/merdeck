@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify'
 import mermaid from 'mermaid'
 
 import { LabelEditError, labelSites, refusedLabelMessage, sameExceptLabel, sourceOnlyLabelMessage, unsafeLabelMessage, writeLabel } from './flowchart-labels'
-import { bareLabelBreak, previewLimit, validateSource } from './source-policy'
+import { bareLabelBreak, previewLimit, renderSource, validateSource } from './source-policy'
 
 export { previewLimit, validateSource } from './source-policy'
 let sequence = 0
@@ -76,7 +76,7 @@ function tokenHex(name: string) {
   return `#${Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3).map(value => value.toString(16).padStart(2, '0')).join('')}`
 }
 async function render(source: string): Promise<string> {
-  validateSource(source)
+  const projected = renderSource(source)
   mermaid.initialize({
     ...settings,
     themeVariables: { fontSize: '14px', primaryColor: tokenHex('--muted'), primaryTextColor: tokenHex('--foreground'), primaryBorderColor: tokenHex('--ring'), lineColor: tokenHex('--muted-foreground'), secondaryColor: tokenHex('--card'), tertiaryColor: tokenHex('--background'), background: tokenHex('--background'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--foreground') },
@@ -88,7 +88,7 @@ async function render(source: string): Promise<string> {
   document.body.append(host)
   try {
     // Canonical breaks become SVG text rows with HTML labels disabled. Draft bytes stay untouched.
-    const { svg } = await mermaid.render(id, source.replace(bareLabelBreak, '<br/>'), host)
+    const { svg } = await mermaid.render(id, projected.replace(bareLabelBreak, '<br/>'), host)
     // Only generated output enters this private measurement host. Strip active SVG
     // first; styles are read from the renderer's already installed stylesheet.
     const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true }, FORBID_TAGS: ['a', 'foreignObject', 'image', 'script', 'use', 'animate', 'set'], FORBID_ATTR: ['href', 'xlink:href'] })

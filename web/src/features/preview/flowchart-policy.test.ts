@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { originalSolarSource } from '../../test/original-solar'
 import { validateSource } from './renderer'
-import { fileLinks } from './source-policy'
+import { fileLinks, renderSource } from './source-policy'
 
 it('accepts the unchanged original 24-node four-group flowchart', () => {
   expect(() => validateSource(originalSolarSource)).not.toThrow()
@@ -125,4 +125,48 @@ it('names the files a validated source links to, and nothing else', () => {
   // A click outside a flowchart is refused, so it never becomes a link.
   expect(() => validateSource('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')).toThrow('plain Mermaid')
   expect([...fileLinks('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')]).toEqual([])
+})
+
+it.each(['\n', '\r\n'])('extracts relative targets after supported title front matter using %j', (newline) => {
+  const source = ['---', 'title: Diagram overview', '---', '%% Ordinary comment', 'flowchart TB', 'A[One] --> B[Two]; click A "details/one.mmd";', 'click B "two.md"'].join(newline)
+  expect(() => validateSource(source)).not.toThrow()
+  expect([...fileLinks(source)]).toEqual([['A', 'details/one.mmd'], ['B', 'two.md']])
+})
+
+it('projects only validated statements and preserves titles, quoted separators, comments and styles', () => {
+  const source = '---\r\ntitle: Diagram overview\r\n---\r\n%% Header with an unmatched "\r\nflowchart LR; A["First; second<br/>row"] --> B; click A "one.mmd" %% Tail with an unmatched "\r\nclick B "docs/two.md"; style A fill:#fff;\r\n%% Final comment "'
+  const projected = source.replace('click A "one.mmd"', ' '.repeat('click A "one.mmd"'.length)).replace('click B "docs/two.md"', ' '.repeat('click B "docs/two.md"'.length))
+  expect(renderSource(source)).toBe(projected)
+  expect([...fileLinks(source)]).toEqual([['A', 'one.mmd'], ['B', 'docs/two.md']])
+  expect([...fileLinks(projected)]).toEqual([])
+  expect(renderSource(projected)).toBe(projected)
+  const sequence = '---\ntitle: Conversation\n---\nsequenceDiagram\nA->>B: Hello\n'
+  expect(renderSource(sequence)).toBe(sequence)
+  expect(renderSource(originalSolarSource)).toBe(originalSolarSource)
+})
+
+it.each([
+  'click A "//example.test/a.mmd"',
+  'click A "javascript:alert.mmd"',
+  'click A "data:example.mmd"',
+  'click A "https://example.test/a.mmd"',
+  'click A "../a.mmd"',
+  'click A "nested/../a.mmd"',
+  'click A "./a.mmd"',
+  'click A "nested//a.mmd"',
+  'click A "nested\\a.mmd"',
+  'click A "%2e%2e/a.mmd"',
+  'click A "a.mmd?x=1"',
+  'click A "a.mmd#node"',
+  'click A "a.svg"',
+  'click A "a.mmd" _blank',
+  'click A call callback()',
+  'click A href "a.mmd"',
+  'click A "a.mmd"; style A transform:translate(1)',
+  '%% click A "a.mmd"',
+  `click A "${'a'.repeat(200)}.mmd"`,
+])('does not project or extract a partially valid source: %s', (statement) => {
+  const source = `---\ntitle: Overview\n---\nflowchart LR\nA --> B\nclick B "safe.mmd"\n${statement}`
+  expect(() => renderSource(source)).toThrow('plain Mermaid')
+  expect([...fileLinks(source)]).toEqual([])
 })

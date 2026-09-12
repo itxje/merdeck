@@ -143,3 +143,38 @@ it('selects and edits flowchart node labels on the diagram', async () => {
   fireEvent.doubleClick(screen.getByText('Old label'))
   expect(screen.getByText('Only flowchart node labels can be edited on the diagram.')).toBeVisible()
 })
+
+it('only activates node targets after the matching source settles', async () => {
+  const source = '---\ntitle: Overview\n---\nflowchart LR\nA[One]\nclick A "one.mmd"'
+  const svg = '<svg><g class="node" id="diagram-1-flowchart-A-0"><text>One</text></g></svg>'
+  let finish: (svg: string) => void = () => {}
+  vi.mocked(renderDiagram).mockResolvedValueOnce(svg).mockImplementationOnce(() => new Promise((resolve) => {
+    finish = resolve
+  })).mockRejectedValueOnce(new Error('Invalid syntax'))
+  const onOpenFile = vi.fn()
+  const onError = vi.fn()
+  const { rerender } = render(<Preview source={source} title="Index" onError={onError} onOpenFile={onOpenFile} />)
+  await waitFor(() => expect(screen.getByText('Live preview')).toBeVisible())
+  const link = screen.getByText('One').closest('g')!
+  expect(link).toHaveAttribute('aria-label', 'Open one.mmd')
+  fireEvent.click(screen.getByText('One'))
+  expect(onOpenFile).toHaveBeenLastCalledWith('one.mmd')
+
+  rerender(<Preview source={source.replace('one.mmd', 'two.mmd')} title="Index" onError={onError} onOpenFile={onOpenFile} />)
+  expect(link).not.toHaveAttribute('data-file-link')
+  expect(link).not.toHaveAttribute('tabindex')
+  fireEvent.click(link)
+  fireEvent.keyDown(link, { key: 'Enter' })
+  expect(onOpenFile).toHaveBeenCalledTimes(1)
+  await waitFor(() => expect(renderDiagram).toHaveBeenCalledTimes(2))
+  await act(async () => finish(svg))
+  expect(link).toHaveAttribute('data-file-link', 'two.mmd')
+  fireEvent.keyDown(link, { key: ' ' })
+  expect(onOpenFile).toHaveBeenLastCalledWith('two.mmd')
+
+  rerender(<Preview source={`${source}\nclick A "../outside.mmd"`} title="Index" onError={onError} onOpenFile={onOpenFile} />)
+  await waitFor(() => expect(screen.getByText('Unable to render')).toBeVisible())
+  expect(link).not.toHaveAttribute('data-file-link')
+  fireEvent.click(link)
+  expect(onOpenFile).toHaveBeenCalledTimes(2)
+})

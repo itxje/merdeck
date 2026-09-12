@@ -62,3 +62,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**FILE-004 Skip compiled build output during discovery**](FILE-004.md) `P3`
 - [x] [**CONFIG-001 Default the tree scan to a wide, shallow walk**](CONFIG-001.md) `P2`
 - [x] [**LAYOUT-008 Move the file bar into the header**](LAYOUT-008.md) `P3`
+- [x] [**NAV-002 Preserve linked flowchart layout and titled file navigation**](NAV-002.md) `P1`

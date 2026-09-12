@@ -29,3 +29,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-019 Publish one architecture-independent bundle**](PLAN-019.md) `2026-09-12`
 - [x] [**PLAN-020 Admit host-shared storage under a content identity model**](PLAN-020.md) `2026-09-12`
 - [x] [**PLAN-021 Open a linked diagram from the preview**](PLAN-021.md) `2026-09-12`
+- [x] [**PLAN-022 Preserve linked flowchart layout and titled file navigation**](PLAN-022.md) `2026-09-12`
