@@ -3,7 +3,7 @@ import { open, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, spyOn, test } from 'bun:test'
 import { createFixture, fixtureLimits, removeFixture } from '../../../tests/integration/files/fixtures'
-import { inspectFilesystem, requireWritableFilesystem, writableFilesystem } from './filesystem'
+import { admittedIdentity, inspectFilesystem, requireWritableFilesystem, retained, writableFilesystem } from './filesystem'
 import { createDiagramService } from './index'
 import * as mounts from './mount'
 
@@ -23,6 +23,31 @@ test.each([
   { platform: 'darwin', type: 0xEF53n, device: 2049n, root: 2049n, mount: ext4, writable: false },
 ])('synthetic filesystem policy case %# retains exact type/device/platform admission', ({ platform, type, device, root, mount, writable }) => {
   expect(writableFilesystem(platform, type, device, root, mount)).toBe(writable)
+})
+
+test.each([
+  { type: 0xEF53n, filesystem: 'ext4', identity: 'stable' },
+  { type: 0x794C7630n, filesystem: 'overlay', identity: 'stable' },
+  { type: 0x65735546n, filesystem: 'virtiofs', identity: 'content' },
+  { type: 0x65735546n, filesystem: 'fuse', identity: undefined },
+  { type: 0x65735546n, filesystem: 'ext4', identity: undefined },
+  { type: 0xEF53n, filesystem: 'virtiofs', identity: undefined },
+])('admitted mount %# reports the identity model its storage supports', ({ type, filesystem, identity }) => {
+  expect(admittedIdentity('linux', type, 70n, 70n, { ...ext4, device: '0:70', filesystem })).toBe(identity)
+})
+
+const held = { dev: 70n, ino: 5n, size: 12n, mtimeNs: 7n, ctimeNs: 9n }
+test.each([
+  { changed: {}, stable: true, content: true },
+  { changed: { ino: 6n }, stable: false, content: true },
+  { changed: { size: 13n }, stable: false, content: false },
+  { changed: { mtimeNs: 8n }, stable: false, content: false },
+  { changed: { ctimeNs: 10n }, stable: false, content: false },
+  { changed: { dev: 71n }, stable: false, content: false },
+  { changed: { ino: 6n, mtimeNs: 8n }, stable: false, content: false },
+])('identity comparison case %# separates the inode from the rest of the metadata', ({ changed, stable, content }) => {
+  expect(retained('stable', held, { ...held, ...changed })).toBe(stable)
+  expect(retained('content', held, { ...held, ...changed })).toBe(content)
 })
 
 test.each([

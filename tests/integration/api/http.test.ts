@@ -122,7 +122,7 @@ describe('HTTP authentication boundary', () => {
     expect(auth.setCookie).toContain('SameSite=Strict')
     expect(auth.setCookie).toContain('Path=/api')
     expect(auth.setCookie).not.toContain('Secure')
-    expect(auth.session.storage).toEqual({ writable: true, filesystemType: process.env.MERDECK_TEST_EXPECTED_FS ?? '0x794c7630', supportedFilesystem: (await f.diagrams.storageStatus()).supportedFilesystem })
+    expect(auth.session.storage).toEqual({ writable: true, identity: (await f.diagrams.storageStatus()).identity, filesystemType: process.env.MERDECK_TEST_EXPECTED_FS ?? '0x794c7630', supportedFilesystem: (await f.diagrams.storageStatus()).supportedFilesystem })
     expect(JSON.stringify(auth.session)).not.toContain(f.root)
     expect(JSON.stringify(auth.session)).not.toContain('device')
     expect(await data(await f.request('/api/session', { headers: auth.headers }))).toEqual(auth.session)

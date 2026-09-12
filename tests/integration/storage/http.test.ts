@@ -37,7 +37,7 @@ test.each([false, true])('HTTP storage contract uses actual writable capability;
     const session = await data<SessionStatus>(login)
     if (!session.authenticated || session.access !== 'token')
       throw new Error('Expected a token session')
-    expect(session.storage).toEqual({ writable: storage.writable, filesystemType: storage.filesystemType, supportedFilesystem: storage.supportedFilesystem })
+    expect(session.storage).toEqual({ writable: storage.writable, identity: storage.identity, filesystemType: storage.filesystemType, supportedFilesystem: storage.supportedFilesystem })
     expect(JSON.stringify(session)).not.toContain(root)
     expect(session.storage).not.toHaveProperty('device')
     const headers = { 'Origin': origin, 'Content-Type': 'application/json', 'Cookie': login.headers.get('set-cookie')!.split(';')[0]!, 'X-CSRF-Token': session.csrfToken }

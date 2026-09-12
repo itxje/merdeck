@@ -8,7 +8,7 @@ import { createQueryClient } from '@/shared/lib/query'
 import { api } from './api'
 import { useWorkspace } from './use-workspace'
 
-const session: Session = { authenticated: true, access: 'token', version: '0.0.0-test', csrfToken: 'csrf', expiresAt: new Date(Date.now() + 3600000).toISOString(), pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } }
+const session: Session = { authenticated: true, access: 'token', version: '0.0.0-test', csrfToken: 'csrf', expiresAt: new Date(Date.now() + 3600000).toISOString(), pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, identity: 'stable' as const, filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } }
 const version = 'a'.repeat(64)
 function doc(path: string, source = 'A-->B'): DiagramDocument {
   return { path, version, kind: 'mermaid', blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', source, lineStart: 1, lineEnd: 2 }] }

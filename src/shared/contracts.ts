@@ -81,7 +81,8 @@ export interface SessionCapabilities {
   version: string
   pollIntervalMs: number
   maxSourceBytes: number
-  storage: { writable: boolean, filesystemType: string, supportedFilesystem: string }
+  // `identity` names the model the measured storage supports: `stable` by inode, `content` by file bytes, `none` when writes are refused.
+  storage: { writable: boolean, identity: 'stable' | 'content' | 'none', filesystemType: string, supportedFilesystem: string }
 }
 // `open` is reported by a service that runs without an access token and therefore has no session or CSRF token.
 export type SessionStatus

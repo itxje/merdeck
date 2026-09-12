@@ -53,4 +53,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**RELEASE-003 Publish one architecture-independent bundle**](RELEASE-003.md) `P1`
 - [x] [**PREVIEW-005 Accept bounded node styling in the preview**](PREVIEW-005.md) `P3`
 - [x] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`
-- [ ] [**STORAGE-002 Admit host-shared storage under a content identity model**](STORAGE-002.md) `P2`
+- [x] [**STORAGE-002 Admit host-shared storage under a content identity model**](STORAGE-002.md) `P2`

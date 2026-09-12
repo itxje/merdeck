@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 09:55 [progress]
+
+Host-shared `virtiofs` storage is now writable. The measured mount selects an identity model: overlay and ext4 keep the inode comparison unchanged, and virtiofs is admitted under a content model that compares device, size, both timestamps and the complete-file hash, proves staged bytes by their own hash and reads the published name back. The one distinction it gives up is an external replacement whose bytes and both timestamps are identical. With fixtures on that storage the file, storage, API and acceptance tests passed 1,060 of 1,060 across twenty runs, against 5 failures in 80 runs before, and the browser suite passed 42 of 42 rooted there. See [STORAGE-002](task/STORAGE-002.md) and [PLAN-020](plan/PLAN-020.md).
+
 ## 2026-09-12 08:40 [decision]
 
 Write admission keeps refusing host-shared `virtiofs` storage. The evaluation found every save primitive behaving as on an admitted filesystem, and a single publish cycle stable across 320 raw cycles, but consecutive publication reported a new inode number for unchanged bytes, size and timestamps in 7 of 400 cycles, against 0 of 400 on an overlay control; with admission temporarily extended, the real file tests failed 5 of 80 runs with false conflicts. Saving there stays refused and fail-closed; browsing and drafts are unaffected. See [STORAGE-001](task/STORAGE-001.md).

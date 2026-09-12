@@ -25,6 +25,9 @@ function boolean(value: unknown): boolean {
 function array(value: unknown): unknown[] {
   return Array.isArray(value) ? value : invalid()
 }
+function identity(value: unknown): 'stable' | 'content' | 'none' {
+  return value === 'stable' || value === 'content' || value === 'none' ? value : invalid()
+}
 function version(value: unknown): string {
   return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value) ? value : invalid()
 }
@@ -62,7 +65,7 @@ export function decodeSession(value: unknown): Session | { authenticated: false 
     return invalid()
   const storage = object(item.storage)
   // The UI uses writable capability, never a filesystem name as an admission rule.
-  const capabilities = { version: string(item.version), pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), storage: { writable: boolean(storage.writable), filesystemType: string(storage.filesystemType), supportedFilesystem: string(storage.supportedFilesystem) }, maxSourceBytes: integer(item.maxSourceBytes, 1, absoluteSourceLimit) }
+  const capabilities = { version: string(item.version), pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), storage: { writable: boolean(storage.writable), identity: identity(storage.identity), filesystemType: string(storage.filesystemType), supportedFilesystem: string(storage.supportedFilesystem) }, maxSourceBytes: integer(item.maxSourceBytes, 1, absoluteSourceLimit) }
   if (item.access === 'open')
     return { authenticated: true, access: 'open', ...capabilities }
   if (item.access !== 'token')

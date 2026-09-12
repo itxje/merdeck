@@ -1,6 +1,7 @@
 import type { BigIntStats } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 import type { AppConfig } from '../../config'
+import type { StorageIdentity } from './filesystem'
 import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
@@ -8,7 +9,7 @@ import { link, lstat, mkdir, open, opendir, realpath, rename, rmdir, unlink } fr
 import { isAbsolute, join, resolve } from 'node:path'
 import { relativePathSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
-import { inspectFilesystem, requireWritableFilesystem } from './filesystem'
+import { inspectFilesystem, requireWritableFilesystem, retained } from './filesystem'
 import { contentVersion, fileKind } from './parser'
 
 export type FileConfig = Pick<AppConfig, 'projectRoot' | 'limits'>
@@ -275,10 +276,41 @@ export class FileRepository {
     })
   }
 
-  private async assertWritable(directory: Directory): Promise<void> {
+  private async assertWritable(directory: Directory): Promise<StorageIdentity> {
     await this.validateDirectory(directory)
     const stat = await directory.handle.stat({ bigint: true })
-    await requireWritableFilesystem(directory.handle, stat.dev, this.rootIdentity.dev)
+    return requireWritableFilesystem(directory.handle, stat.dev, this.rootIdentity.dev)
+  }
+
+  // The staged bytes are proven by their own hash where an inode cannot prove them.
+  private async stagedIsOurs(identity: StorageIdentity, temporary: string, staged: BigIntStats, bytes: Buffer): Promise<boolean> {
+    const current = await lstat(temporary, { bigint: true })
+    if (identity === 'stable')
+      return sameIdentity(staged, current)
+    if (current.dev !== staged.dev || current.nlink !== 1n || current.size !== BigInt(bytes.length))
+      return false
+    const handle = await open(temporary, readFlags)
+    try {
+      return contentVersion(await handle.readFile()) === contentVersion(bytes)
+    }
+    finally {
+      await handle.close()
+    }
+  }
+
+  // Where the rename cannot be confirmed by identity, the published name is read back instead.
+  private async confirmPublication(identity: StorageIdentity, directory: Directory, name: string, bytes: Buffer): Promise<void> {
+    if (identity === 'stable')
+      return
+    const handle = await open(`${directory.anchor}/${name}`, readFlags)
+    try {
+      const published = contentVersion(await handle.readFile())
+      if (published !== contentVersion(bytes))
+        throw new AppError('conflict', published)
+    }
+    finally {
+      await handle.close()
+    }
   }
 
   async replace(path: string, expectedVersion: string, transform: (bytes: Buffer) => Buffer): Promise<Buffer> {
@@ -288,7 +320,7 @@ export class FileRepository {
       throw new AppError('forbidden')
     const name = parts.pop()!
     return this.withDirectory(parts.join('/'), async (directory) => {
-      await this.assertWritable(directory)
+      const identity = await this.assertWritable(directory)
       const original = await this.readIn(directory, name, path, true)
       if (original.version !== expectedVersion)
         throw new AppError('conflict', original.version)
@@ -312,14 +344,15 @@ export class FileRepository {
         await tempHandle.sync()
         await this.hooks.afterTempWrite?.(path)
         const current = await this.readIn(directory, name, path, true)
-        if (current.version !== expectedVersion || !unchanged(original.stat, current.stat))
+        if (current.version !== expectedVersion || !retained(identity, original.stat, current.stat))
           throw new AppError('conflict', current.version)
         await this.assertWritable(directory)
-        if (!sameIdentity(tempStat, await lstat(temporary, { bigint: true })))
+        if (!await this.stagedIsOurs(identity, temporary, tempStat, bytes))
           throw new AppError('forbidden')
         await rename(temporary, `${directory.anchor}/${name}`)
         owned = false
         await directory.handle.sync()
+        await this.confirmPublication(identity, directory, name, bytes)
         return bytes
       }
       finally {
@@ -330,7 +363,10 @@ export class FileRepository {
                 return undefined
               throw error
             })
-            if (current && sameIdentity(current, await tempHandle.stat({ bigint: true })))
+            const staged = await tempHandle.stat({ bigint: true })
+            // The name was created here with a random component, so device, link count and size
+            // identify it where an inode cannot.
+            if (current && (identity === 'stable' ? sameIdentity(current, staged) : current.dev === staged.dev && current.nlink === 1n && current.size === staged.size))
               await unlink(temporary)
           }
         }
@@ -398,7 +434,7 @@ export class FileRepository {
     const source = this.split(from, false)
     const target = this.split(to, false)
     await this.withDirectory(source.parent, sourceDirectory => this.withDirectory(target.parent, async (targetDirectory) => {
-      await this.assertWritable(sourceDirectory)
+      const identity = await this.assertWritable(sourceDirectory)
       await this.assertWritable(targetDirectory)
       const original = await this.readIn(sourceDirectory, source.name, from, true)
       if (original.version !== expectedVersion)
@@ -411,7 +447,12 @@ export class FileRepository {
       })
       try {
         const [linked, current] = await Promise.all([lstat(targetPath, { bigint: true }), lstat(sourcePath, { bigint: true })])
-        if (!sameIdentity(original.stat, linked) || !sameIdentity(original.stat, current) || current.size !== original.stat.size || current.mtimeNs !== original.stat.mtimeNs)
+        // A hard link raises the link count, so its change time moves; the link itself is what must be proven.
+        const sameFile = identity === 'stable'
+          ? sameIdentity(original.stat, linked) && sameIdentity(original.stat, current)
+          : linked.dev === original.stat.dev && current.dev === original.stat.dev && linked.size === original.stat.size
+            && linked.mtimeNs === original.stat.mtimeNs && linked.nlink === 2n && current.nlink === 2n
+        if (!sameFile || current.size !== original.stat.size || current.mtimeNs !== original.stat.mtimeNs)
           throw new AppError('conflict')
         await this.validateDirectory(sourceDirectory)
         await unlink(sourcePath)
@@ -419,7 +460,7 @@ export class FileRepository {
       catch (error) {
         // Remove the extra link only while the source name still holds the file.
         const linked = await lstat(targetPath, { bigint: true }).catch(() => undefined)
-        if (linked && sameIdentity(linked, original.stat) && linked.nlink > 1n)
+        if (linked && (identity === 'stable' ? sameIdentity(linked, original.stat) : linked.dev === original.stat.dev && linked.size === original.stat.size && linked.mtimeNs === original.stat.mtimeNs) && linked.nlink > 1n)
           await unlink(targetPath)
         throw error
       }
@@ -469,13 +510,13 @@ export class FileRepository {
     allowedPath(path)
     const { parent, name } = this.split(path, false)
     await this.withDirectory(parent, async (directory) => {
-      await this.assertWritable(directory)
+      const identity = await this.assertWritable(directory)
       const original = await this.readIn(directory, name, path, true)
       if (original.version !== expectedVersion)
         throw new AppError('conflict', original.version)
       const target = `${directory.anchor}/${name}`
       await this.validateDirectory(directory)
-      if (!unchanged(original.stat, await lstat(target, { bigint: true })))
+      if (!retained(identity, original.stat, await lstat(target, { bigint: true })))
         throw new AppError('conflict')
       await unlink(target)
       await directory.handle.sync()

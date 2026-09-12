@@ -40,8 +40,8 @@ export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions
   const router = new Hono<HttpEnvironment>()
   const methods = sessions ? ['GET', 'POST', 'DELETE'] : ['GET']
   const status = async (session?: Session): Promise<SessionStatus> => {
-    const { writable, filesystemType, supportedFilesystem } = await diagrams.storageStatus()
-    const capabilities = { version, pollIntervalMs: config.limits.pollIntervalMs, maxSourceBytes: config.limits.maxFileBytes, storage: { writable, filesystemType, supportedFilesystem } }
+    const { writable, identity, filesystemType, supportedFilesystem } = await diagrams.storageStatus()
+    const capabilities = { version, pollIntervalMs: config.limits.pollIntervalMs, maxSourceBytes: config.limits.maxFileBytes, storage: { writable, identity, filesystemType, supportedFilesystem } }
     return session
       ? { authenticated: true, access: 'token', csrfToken: session.csrfToken, expiresAt: new Date(session.expiresAt).toISOString(), ...capabilities }
       : { authenticated: true, access: 'open', ...capabilities }

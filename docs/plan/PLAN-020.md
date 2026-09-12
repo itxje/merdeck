@@ -1,8 +1,8 @@
 # PLAN-020 Admit host-shared storage under a content identity model
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-12
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-12 (the owner asked for this option after the evaluation and approved the plan)
 - **relatedTask**: STORAGE-002
 
 ## Context
@@ -47,3 +47,7 @@ The save protocol answers "is this still the same file" with device and inode. T
 - **One relaxed model everywhere**: one code path instead of two, but it removes a guarantee from deployments that do keep inode numbers stable, for no benefit to them.
 - **A persistent file handle** through `name_to_handle_at`, which survives replacement by design: not reachable from the pinned runtime without native code, and it would need its own portability evidence.
 - **Keep the refusal** and document the storage choices that satisfy the current model: no code risk, and the owner's host-share deployment stays read-only.
+
+## Implementation record
+
+Implemented as proposed, with one correction. The entry move first compared full metadata including the change time, which every move failed because a hard link raises the link count and moves that timestamp; a probe showed hard links are sound on the candidate storage, so the move now proves itself through device, size, modification time and the link count. Everything else landed as written: the model follows the measured mount, the admitted filesystems keep their comparison unchanged, staged and published bytes are verified by hash, and the reported status names the model. The required evidence is recorded in [STORAGE-002](../task/STORAGE-002.md).
