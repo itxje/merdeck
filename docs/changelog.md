@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 03:30 [progress]
+
+The status bar now names the running version, such as `Merdeck 0.3.1`, and reports `Merdeck development` for a service started from source. The version travels with the session status, so a service that requires a token does not disclose it before accepting a session. See [LAYOUT-006](task/LAYOUT-006.md).
+
 ## 2026-09-12 03:02 [progress]
 
 Class definitions in the preview may now set a text colour: `color` takes the same three or six digit hex form as `fill` and `stroke`, so a diagram that styles its label colours no longer fails to render. Unreadable colours are still replaced automatically, and every other property stays refused. See [PREVIEW-004](task/PREVIEW-004.md).

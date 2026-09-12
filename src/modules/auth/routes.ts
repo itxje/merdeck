@@ -36,12 +36,12 @@ function cookie(config: AppConfig, value = ''): string {
   return `${sessionCookie}=${value}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${value ? config.limits.sessionTtlSeconds : 0}${secure}`
 }
 
-export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions: Sessions | undefined) {
+export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions: Sessions | undefined, version: string) {
   const router = new Hono<HttpEnvironment>()
   const methods = sessions ? ['GET', 'POST', 'DELETE'] : ['GET']
   const status = async (session?: Session): Promise<SessionStatus> => {
     const { writable, filesystemType, supportedFilesystem } = await diagrams.storageStatus()
-    const capabilities = { pollIntervalMs: config.limits.pollIntervalMs, maxSourceBytes: config.limits.maxFileBytes, storage: { writable, filesystemType, supportedFilesystem } }
+    const capabilities = { version, pollIntervalMs: config.limits.pollIntervalMs, maxSourceBytes: config.limits.maxFileBytes, storage: { writable, filesystemType, supportedFilesystem } }
     return session
       ? { authenticated: true, access: 'token', csrfToken: session.csrfToken, expiresAt: new Date(session.expiresAt).toISOString(), ...capabilities }
       : { authenticated: true, access: 'open', ...capabilities }

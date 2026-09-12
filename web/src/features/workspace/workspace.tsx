@@ -333,6 +333,7 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                 <span>
                   {state.hasUnsaved ? 'Drafts kept in this tab' : <span className="desktop-only">External edits refresh automatically</span>}
                 </span>
+                <span title="Running version">{`Merdeck ${state.session.version}`}</span>
               </footer>
             </>
           )}

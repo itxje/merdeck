@@ -265,7 +265,8 @@ describe('HTTP open access', () => {
     expect(response.headers.has('set-cookie')).toBe(false)
     const status = await data<SessionStatus>(response)
     expect(status).toMatchObject({ authenticated: true, access: 'open', pollIntervalMs: 1000, maxSourceBytes: 1024, storage: { writable: true } })
-    expect(Object.keys(status).sort()).toEqual(['access', 'authenticated', 'maxSourceBytes', 'pollIntervalMs', 'storage'])
+    expect(Object.keys(status).sort()).toEqual(['access', 'authenticated', 'maxSourceBytes', 'pollIntervalMs', 'storage', 'version'])
+    expect(status.authenticated && status.version).toBe('development')
     for (const init of [
       { method: 'POST', headers: { 'Origin': origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) },
       { method: 'DELETE', headers: { Origin: origin } },

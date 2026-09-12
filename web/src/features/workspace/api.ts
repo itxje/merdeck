@@ -62,7 +62,7 @@ export function decodeSession(value: unknown): Session | { authenticated: false 
     return invalid()
   const storage = object(item.storage)
   // The UI uses writable capability, never a filesystem name as an admission rule.
-  const capabilities = { pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), storage: { writable: boolean(storage.writable), filesystemType: string(storage.filesystemType), supportedFilesystem: string(storage.supportedFilesystem) }, maxSourceBytes: integer(item.maxSourceBytes, 1, absoluteSourceLimit) }
+  const capabilities = { version: string(item.version), pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), storage: { writable: boolean(storage.writable), filesystemType: string(storage.filesystemType), supportedFilesystem: string(storage.supportedFilesystem) }, maxSourceBytes: integer(item.maxSourceBytes, 1, absoluteSourceLimit) }
   if (item.access === 'open')
     return { authenticated: true, access: 'open', ...capabilities }
   if (item.access !== 'token')

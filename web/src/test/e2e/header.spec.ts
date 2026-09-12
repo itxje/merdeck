@@ -62,6 +62,9 @@ test('header keeps the brand, a theme switch and log out, and the explorer offer
   const request = page.waitForRequest(item => new URL(item.url()).pathname === '/api/diagrams/tree')
   await refresh.click()
   await request
+
+  // The status bar names the running version.
+  await expect(page.locator('.status-bar')).toContainText(/Merdeck \S+/)
   await page.mouse.move(1, 1)
 
   for (const width of [390, 360]) {

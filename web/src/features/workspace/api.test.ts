@@ -6,7 +6,7 @@ const version = 'a'.repeat(64)
 const doc = { path: 'hello.mmd', version, kind: 'mermaid', blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', lineStart: 1, lineEnd: 2, source: 'A-->B' }] }
 it('decodes the authenticated capability without deriving write eligibility from a filesystem name', () => {
   expect(decodeSession({ authenticated: false })).toEqual({ authenticated: false })
-  const capabilities = { pollIntervalMs: 3000, storage: { writable: false, filesystemType: 'unknown', supportedFilesystem: 'future-storage' }, maxSourceBytes: 1000 }
+  const capabilities = { version: '0.0.0-test', pollIntervalMs: 3000, storage: { writable: false, filesystemType: 'unknown', supportedFilesystem: 'future-storage' }, maxSourceBytes: 1000 }
   const token = decodeSession({ authenticated: true, access: 'token', csrfToken: 'csrf', expiresAt: new Date().toISOString(), ...capabilities })
   expect(token).toMatchObject({ access: 'token', storage: { writable: false }, maxSourceBytes: 1000 })
   const open = decodeSession({ authenticated: true, access: 'open', csrfToken: 'ignored', ...capabilities })

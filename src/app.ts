@@ -1,5 +1,6 @@
 import type { AppConfig } from './config'
 import type { DiagramService } from './modules/diagrams'
+import type { BuildInfo } from './shared/build-info'
 import type { ApplicationBuild, HealthStatus } from './shared/contracts'
 import type { HttpEnvironment } from './shared/middleware/boundary'
 import type { StaticAssets } from './shared/static-assets'
@@ -9,6 +10,7 @@ import { authRoutes } from './modules/auth/routes'
 import { Sessions } from './modules/auth/sessions'
 import { diagramRoutes } from './modules/diagrams/routes'
 import { buildPollIntervalMs, snapshotBuildAssets } from './shared/application-build'
+import { developmentBuild } from './shared/build-info'
 import { AppError, errorStatus, safeError } from './shared/errors'
 import { queryInput } from './shared/lib/http-input'
 import { boundary } from './shared/middleware/boundary'
@@ -18,6 +20,7 @@ export interface AppServices {
   diagrams: DiagramService
   assets?: StaticAssets
   clock?: () => number
+  buildInfo?: BuildInfo
 }
 
 export function createApp(config: AppConfig, services: AppServices) {
@@ -50,7 +53,7 @@ export function createApp(config: AppConfig, services: AppServices) {
     queryInput(new URL(c.req.url), z.strictObject({}))
     return c.json({ success: true as const, data: { identity: build?.identity ?? null, pollIntervalMs: buildPollIntervalMs } satisfies ApplicationBuild })
   })
-  api.route('/', authRoutes(config, services.diagrams, sessions))
+  api.route('/', authRoutes(config, services.diagrams, sessions, (services.buildInfo ?? developmentBuild).version))
   api.route('/', diagramRoutes(config, services.diagrams, sessions))
   app.route(config.apiBasePath, api)
   app.notFound((c) => {

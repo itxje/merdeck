@@ -23,8 +23,8 @@ export async function startService(options: { assets?: StaticAssets, buildInfo?:
     if (Bun.isStandaloneExecutable && !options.assets)
       throw new Error('Embedded assets are missing')
     const services = config.apiBasePath === '/api'
-      ? { diagrams, assets: options.assets ?? await loadStaticAssets(resolve(import.meta.dir, '../web/dist')) }
-      : { diagrams }
+      ? { diagrams, buildInfo: info, assets: options.assets ?? await loadStaticAssets(resolve(import.meta.dir, '../web/dist')) }
+      : { diagrams, buildInfo: info }
     const app = createApp(config, services)
     const server = Bun.serve({ hostname: config.host, port: config.port, idleTimeout: 15, fetch: app.fetch })
     let stopping = false

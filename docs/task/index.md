@@ -49,3 +49,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**FILE-003 List only the chosen file types in the explorer**](FILE-003.md) `P2`
 - [x] [**RELEASE-002 Publish one stable release archive**](RELEASE-002.md) `P2`
 - [x] [**PREVIEW-004 Allow a text colour in class definitions**](PREVIEW-004.md) `P3`
+- [x] [**LAYOUT-006 Show the running version in the status bar**](LAYOUT-006.md) `P3`

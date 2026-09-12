@@ -9,7 +9,7 @@ import { api } from './api'
 import { warningMessage } from './drafts'
 import { useWorkspace } from './use-workspace'
 
-const session: Session = { authenticated: true, access: 'token', csrfToken: 'csrf', expiresAt: new Date(Date.now() + 3600000).toISOString(), pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } }
+const session: Session = { authenticated: true, access: 'token', version: '0.0.0-test', csrfToken: 'csrf', expiresAt: new Date(Date.now() + 3600000).toISOString(), pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } }
 const version = 'a'.repeat(64)
 function doc(path = 'one.mmd', source = 'A-->B', next = version): DiagramDocument {
   return { path, version: next, kind: 'mermaid', blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', source, lineStart: 1, lineEnd: 2 }] }
@@ -173,7 +173,7 @@ it('pauses polling while hidden and coalesces an in-flight revision request', as
 
   vi.useRealTimers()
 })
-const openSession: Session = { authenticated: true, access: 'open', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: session.storage }
+const openSession: Session = { authenticated: true, access: 'open', version: '0.0.0-test', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: session.storage }
 it('saves and changes entries without a CSRF token when the service has open access', async () => {
   const { client, wrapper } = setup()
   vi.mocked(api.session).mockResolvedValue(openSession)

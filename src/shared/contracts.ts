@@ -78,6 +78,7 @@ export interface EntryChange {
 }
 
 export interface SessionCapabilities {
+  version: string
   pollIntervalMs: number
   maxSourceBytes: number
   storage: { writable: boolean, filesystemType: string, supportedFilesystem: string }
