@@ -7,6 +7,11 @@ const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, '
 const styling = new RegExp(`^style[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
 const assignment = new RegExp(`^class[ \\t]+${identifiers}[ \\t]+${identifier}$`, 'i')
 const inlineClass = new RegExp(`:::${identifier}(?=[ \\t;[\\]{}()&]|$)`, 'gi')
+// A click may only name a diagram file inside this project; callbacks, addresses and every other
+// form stay refused, and following one is the application's navigation, never a rendered link.
+const linkStatement = new RegExp(`^click[ \\t]+(${identifier})[ \\t]+"([^"]*)"$`, 'i')
+const linkFile = /\.(?:mmd|mermaid|md)$/i
+const linkSegment = /^[\w.-]+$/
 const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
 const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
 // A leading front matter block may carry a title and nothing else; `config` there is the same
@@ -22,6 +27,31 @@ function refuse(): never {
 }
 
 // classDef and style carry the same declarations, so both take the same bounded properties.
+function fileLink(statement: string): [string, string] | undefined {
+  const match = linkStatement.exec(statement)
+  const target = match?.[2]
+  if (!match || !target || target.length > 200 || !linkFile.test(target))
+    return undefined
+  const segments = target.split('/')
+  if (segments.some(segment => !linkSegment.test(segment) || segment === '.' || segment === '..'))
+    return undefined
+  return [match[1]!, target]
+}
+
+// The nodes a validated source links to, for the workspace to open; other sources link to nothing.
+export function fileLinks(source: string): Map<string, string> {
+  const links = new Map<string, string>()
+  const plain = source.replace(bareLabelBreak, ' ')
+  if (!flowchartHeader.test(plain))
+    return links
+  for (const statement of plain.split(/[\n;]/)) {
+    const link = fileLink(statement.trim())
+    if (link)
+      links.set(link[0], link[1])
+  }
+  return links
+}
+
 function validateDeclarations(statement: string, shape: RegExp) {
   const match = shape.exec(statement)
   if (!match)
@@ -74,6 +104,11 @@ function maskFlowchart(source: string) {
         refuse()
       masked += ' '
     }
+    else if (/^click\b/i.test(text)) {
+      if (!fileLink(text))
+        refuse()
+      masked += ' '
+    }
     else {
       masked += statement.replace(/"[^"]*"/g, (label) => {
         // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
@@ -105,7 +140,7 @@ function maskFlowchart(source: string) {
   }
   finish()
   // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
-  if (/\b(?:classDef|class|style)\b|:::/.test(masked))
+  if (/\b(?:classDef|class|style|click)\b|:::/.test(masked))
     refuse()
   return masked.replaceAll('&', ' ')
 }

@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { sourceOnlyLabelMessage } from './flowchart-labels'
 import { editFlowchartLabel, inspectFlowchart, renderDiagram } from './renderer'
-import { bareLabelBreak, flowchartHeader } from './source-policy'
+import { bareLabelBreak, fileLinks, flowchartHeader } from './source-policy'
 
 const minZoom = 0.25
 const maxZoom = 3
@@ -20,11 +20,14 @@ interface PreviewProps {
   onError: (error: string) => void
   onSourceChange?: (source: string) => void
   onLocate?: (range: { start: number, end: number }) => void
+  // Returns a message when the named file cannot be opened, so the preview can say so.
+  onOpenFile?: (target: string) => string | undefined
 }
 
-export function Preview({ source, title, onError, onSourceChange, onLocate }: PreviewProps) {
+export function Preview({ source, title, onError, onSourceChange, onLocate, onOpenFile }: PreviewProps) {
   const [svg, setSvg] = React.useState('')
   const markup = React.useMemo(() => ({ __html: svg }), [svg])
+  const links = React.useMemo(() => fileLinks(source), [source])
   const [error, setError] = React.useState('')
   const [rendering, setRendering] = React.useState(true)
   const [settledSource, setSettledSource] = React.useState('')
@@ -97,6 +100,16 @@ export function Preview({ source, title, onError, onSourceChange, onLocate }: Pr
       return
     // A Gantt chart marks today even when its tasks are months away, and that one line would
     // otherwise decide the fitted size; the marker is measured out, not removed from the diagram.
+    // A node the source links to becomes an ordinary target: reachable, announced and pointer-marked.
+    for (const [id, target] of links) {
+      const linked = [...node.querySelectorAll('g.node')].find(item => new RegExp(`-flowchart-${id}-\\d+$`).test(item.id))
+      if (!linked)
+        continue
+      linked.setAttribute('data-file-link', target)
+      linked.setAttribute('role', 'link')
+      linked.setAttribute('tabindex', '0')
+      linked.setAttribute('aria-label', `Open ${target}`)
+    }
     const markers = [...node.querySelectorAll('.today')]
     for (const marker of markers)
       marker.setAttribute('display', 'none')
@@ -116,7 +129,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate }: Pr
     observer.observe(host)
     resize()
     return () => observer.disconnect()
-  }, [svg])
+  }, [svg, links])
 
   const scale = zoom ?? fit
   const settled = !!svg && !error && !rendering && settledSource === source && settledThemeRevision === themeRevision
@@ -202,6 +215,16 @@ export function Preview({ source, title, onError, onSourceChange, onLocate }: Pr
     return node && graphicRef.current?.contains(node) ? node : null
   }
   const insideEditor = (target: EventTarget) => target instanceof Element && !!target.closest('.label-editor')
+  // Following a link is the workspace's navigation; the rendered diagram never carries one.
+  const followLink = (target: EventTarget) => {
+    const linked = target instanceof Element ? target.closest('[data-file-link]') : null
+    const file = onOpenFile && linked && graphicRef.current?.contains(linked) ? linked.getAttribute('data-file-link') : null
+    if (!file)
+      return false
+    const message = onOpenFile?.(file)
+    setNote(message ? { source, text: message } : null)
+    return true
+  }
   const siteOf = (node: Element) => settled ? sites?.get(node.id.replace(/^diagram-\d+-/, '')) : undefined
 
   const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -310,10 +333,18 @@ export function Preview({ source, title, onError, onSourceChange, onLocate }: Pr
             draggedRef.current = false
             return
           }
+          if (followLink(event.target))
+            return
           const node = onLocate && event.detail < 2 ? nodeAt(event.target) : null
           const site = node && siteOf(node)
           if (site)
             onLocate?.({ start: site.start, end: site.end })
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ')
+            return
+          if (followLink(event.target))
+            event.preventDefault()
         }}
         onDoubleClick={editNode}
       >

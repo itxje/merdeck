@@ -93,6 +93,16 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
     window.addEventListener('keydown', keydown)
     return () => window.removeEventListener('keydown', keydown)
   }, [doSave])
+  // A diagram may name a sibling file; opening it is the same navigation the explorer performs.
+  const openLinkedFile = React.useCallback((target: string) => {
+    const base = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : ''
+    const resolved = `${base}${target}`
+    if (!state.tree.data?.entries.some(entry => entry.kind === 'file' && entry.path === resolved))
+      return state.tree.data?.truncated ? 'That file is not in the listed part of this project.' : 'That file is not in this project.'
+    navigate(resolved, 0)
+    return undefined
+  }, [navigate, path, state.tree.data])
+
   const select = (next: string, index = 0) => {
     navigate(next, index)
 
@@ -346,7 +356,7 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                             </ResizablePanel>
                             <ResizableHandle withHandle aria-label="Resize source and preview" />
                             <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
-                              <Preview key={`${path}:${block}`} source={source} title={selected.label} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} />
+                              <Preview key={`${path}:${block}`} source={source} title={selected.label} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />
                             </ResizablePanel>
                           </ResizablePanelGroup>
                         </>

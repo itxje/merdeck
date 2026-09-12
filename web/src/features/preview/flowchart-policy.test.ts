@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import { originalSolarSource } from '../../test/original-solar'
 import { validateSource } from './renderer'
+import { fileLinks } from './source-policy'
 
 it('accepts the unchanged original 24-node four-group flowchart', () => {
   expect(() => validateSource(originalSolarSource)).not.toThrow()
@@ -17,6 +18,7 @@ it.each([
   'flowchart LR\nA --> B\nstyle A,B fill:#fff,color:#111,stroke-dasharray:2 4',
   'flowchart TB\nROOT["Entry"] --> LIMITS["Boundaries"]\nclassDef entry fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e;\nclass ROOT entry;',
   'flowchart LR\nA --> B\nstyle A fill:#123456;',
+  'flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\nclick B1 "docs/02-runtime.md";',
 ])('accepts nearby bounded ordinary grammar: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
 })
@@ -46,6 +48,15 @@ it.each([
   'classDef safe fill:#fff; @import "/probe"',
   'classDef safe fill:#fff; style A fill:red',
   'classDef safe fill:#fff; click A callback',
+  'click A "https://example.test"',
+  'click A "../secret.mmd"',
+  'click A "/etc/passwd"',
+  'click A "notes.txt"',
+  'click A "a.mmd" "A tooltip"',
+  'click A a.mmd',
+  'click A href "a.mmd"',
+  'click A call open()',
+  'click A ""',
   'style A fill:red',
   'style A fill:#fff!important',
   'style A background-image:url(/probe)',
@@ -104,4 +115,14 @@ it.each(['A --> B %% classDef evil background-image:image-set("/probe")', '%% cl
 })
 it('accepts an ordinary comment at end of input', () => {
   expect(() => validateSource('flowchart LR\nA --> B %% Ordinary comment with an unmatched "')).not.toThrow()
+})
+
+it('names the files a validated source links to, and nothing else', () => {
+  const source = 'flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\nclick B1 "docs/02-runtime.md"\n'
+  expect(() => validateSource(source)).not.toThrow()
+  expect([...fileLinks(source)]).toEqual([['A1', '01-system-architecture.mmd'], ['B1', 'docs/02-runtime.md']])
+  expect([...fileLinks('flowchart LR\nA --> B')]).toEqual([])
+  // A click outside a flowchart is refused, so it never becomes a link.
+  expect(() => validateSource('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')).toThrow('plain Mermaid')
+  expect([...fileLinks('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')]).toEqual([])
 })

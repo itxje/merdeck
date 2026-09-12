@@ -1,8 +1,8 @@
 # PLAN-021 Open a linked diagram from the preview
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-12
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-12 (the owner approved the proposal)
 - **relatedTask**: NAV-001
 
 ## Context
@@ -37,3 +37,7 @@ The workspace, on the other hand, already navigates between files: the file expl
 - **Keep refusing `click`**: the owner strips eighteen lines from the index and the diagram renders, with no navigation.
 - **Let Mermaid handle links** with a looser security level: re-admits arbitrary URLs and callbacks into rendered content, which the policy exists to prevent.
 - **Render the targets as an explicit list beside the diagram**: no interaction surface in the diagram, but it duplicates the index the diagram already is.
+
+## Implementation record
+
+Implemented as proposed. The accepted form, the masking, the application-owned navigation, the resolution against the current directory, the reach by keyboard and the untouched drafts all landed as written. The evidence is recorded in [NAV-001](../task/NAV-001.md).

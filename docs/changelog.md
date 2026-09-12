@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 11:55 [progress]
+
+An index diagram works: a flowchart node may name another diagram file with `click <node> "<file>"`, and selecting it with a pointer or the keyboard opens that file in the workspace. Only a project-relative diagram path is accepted; callbacks, addresses, extra arguments and every other form stay refused, the rendered SVG still carries no anchor or `href`, and a target outside the listed tree only explains itself. See [NAV-001](task/NAV-001.md) and [PLAN-021](plan/PLAN-021.md).
+
 ## 2026-09-12 11:35 [progress]
 
 A colour declaration that ends with an ordinary statement separator, such as `classDef entry fill:#e0f2fe,color:#0c4a6e;`, is no longer read as a numeric character reference and no longer rejects the whole source; a reference in ordinary text stays refused. See [PREVIEW-008](task/PREVIEW-008.md).

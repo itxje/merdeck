@@ -304,6 +304,9 @@ button:disabled { cursor: default; }
 .preview-surface[data-pan="active"] { cursor: grabbing; }
 .preview-surface[data-pan] .diagram-graphic { user-select: none; }
 .preview-surface[data-editable="ready"] .diagram-graphic g.node { cursor: pointer; }
+/* A node that names a file reads as a target whether or not label editing is available. */
+.diagram-graphic [data-file-link] { cursor: pointer; }
+.diagram-graphic [data-file-link]:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .label-editor { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 6px; cursor: auto; }
 .label-editor [data-slot="textarea"] { resize: none; padding: 6px 10px; text-align: center; font: 14px/1.4 ui-sans-serif, system-ui, sans-serif; background: var(--background); box-shadow: 0 4px 16px var(--overlay); }
 .label-editor p { margin: 0; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--destructive); font-size: 11px; line-height: 1.5; }

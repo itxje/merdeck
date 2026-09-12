@@ -58,4 +58,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**PREVIEW-007 Accept a title-only front matter**](PREVIEW-007.md) `P3`
 - [x] [**LAYOUT-007 Let the explorer be resized**](LAYOUT-007.md) `P3`
 - [x] [**PREVIEW-008 Stop reading a colour declaration as an entity**](PREVIEW-008.md) `P2`
-- [ ] [**NAV-001 Open a linked diagram from the preview**](NAV-001.md) `P2`
+- [x] [**NAV-001 Open a linked diagram from the preview**](NAV-001.md) `P2`
