@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 02:30 [progress]
+
+Release [`v0.3.0`](https://github.com/itxje/merdeck/releases/tag/v0.3.0) was published from `7520517` as the first release with the stable archive, so `https://github.com/itxje/merdeck/releases/latest/download/merdeck.tar.gz` now always names the current build. See [RELEASE-002](task/RELEASE-002.md).
+
 ## 2026-09-12 02:15 [progress]
 
 At the project owner's request, releases now attach `merdeck.tar.gz` and `SHA256SUMS` instead of the version-named executable, so one address keeps working across releases. The archive is reproducible and holds exactly one executable named `merdeck`; the release checks compare it with the checked executable, and the release smoke runs the extracted one. See [RELEASE-002](task/RELEASE-002.md).
