@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 05:30 [progress]
+
+Release [`v0.4.0`](https://github.com/itxje/merdeck/releases/tag/v0.4.0) was published from `9685258` as the first architecture-independent release: `merdeck.tar.gz` measures 1,213,428 bytes, against 37 MB for the previous executable archive. It was downloaded on an `aarch64` host, checked against SHA256SUMS, extracted and started with that host's own Bun; the service reported version `0.4.0`, served the interface, refused an anonymous API request, accepted the token, listed a real project tree and saved a real file against its revision. See [RELEASE-003](task/RELEASE-003.md).
+
 ## 2026-09-12 05:05 [progress]
 
 At the project owner's request, releases now attach one architecture-independent `merdeck.tar.gz`: it holds `merdeck.js` and the built `web/` tree, and the host's Bun starts it with `bun merdeck.js`, so the same download runs on x64 and arm64 Linux. The compiled single-target executable stays a checked build output and is no longer published. See [RELEASE-003](task/RELEASE-003.md).
