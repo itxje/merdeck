@@ -24,3 +24,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-015 Manage project files from the explorer**](PLAN-015.md) `2026-09-11`
 - [x] [**PLAN-016 Open the workspace without an access token by default**](PLAN-016.md) `2026-09-11`
 - [x] [**PLAN-010 Detect deployed builds without losing open work**](PLAN-010.md) `2026-09-08`
+- [x] [**PLAN-017 List only the chosen file types in the explorer**](PLAN-017.md) `2026-09-12`

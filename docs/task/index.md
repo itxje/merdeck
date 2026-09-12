@@ -46,3 +46,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**DOC-003 Keep hosted instance hostnames and addresses out of the repository**](DOC-003.md) `P1`
 - [x] [**CI-002 Accept the root brand icon in release manifests**](CI-002.md) `P1`
 - [x] [**RELEASE-001 Publish the first version-tag release**](RELEASE-001.md) `P2`
+- [x] [**FILE-003 List only the chosen file types in the explorer**](FILE-003.md) `P2`
