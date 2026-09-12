@@ -24,6 +24,9 @@ const frontMatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
 const frontMatterEntry = /^([ \t]*)([a-z][\w-]*):(.*)$/i
 const configSections = new Set(['flowchart', 'sequence', 'gantt', 'state', 'er', 'class', 'journey', 'pie', 'timeline', 'mindmap'])
 const configNumber = /^\d{1,4}$/
+const literalPlaceholder = /<([^<>\r\n]+)>/gu
+const namedPlaceholder = /^(?:net|label|product-domain)$/i
+const htmlElements = new Set('a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd legend li link main map mark math menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' '))
 // A numeric character reference is text that follows other text; a colour declaration follows its
 // property, so `fill:#0c4a6e;` is an ordinary statement rather than an entity.
 const unsafe = /%%\s*\{|^\s*---|\\|!\[|\]\s*\(|(?:^|[^:&])#\w+;|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:https?|data|javascript|vbscript):|\/\/|\burl\s*\(|@\{|\$\$|@import|expression\s*\(/im
@@ -31,6 +34,22 @@ const disabled = /[<&]|\b(?:click|href|links?|style|classDef|linkStyle|css)\b/i
 const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes, and sequence diagrams support bidirectional messages. A leading front matter block may carry a title and a bounded diagram configuration of switches and whole numbers. Configuration directives, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {
   throw new Error(message)
+}
+
+function inertPlaceholder(body: string) {
+  if (!/^[\p{L}\p{N}_(). -]+$/u.test(body))
+    return false
+  if (namedPlaceholder.test(body))
+    return true
+  if (htmlElements.has(body.toLowerCase()) || body.includes('-'))
+    return false
+  return /[\p{Script=Han}\p{Lu}\p{N}()]/u.test(body)
+}
+
+// Mermaid renders these bounded placeholders as text with HTML labels disabled. Masking them only
+// affects the policy scan; the original source is still what Mermaid receives.
+function maskLiteralPlaceholders(text: string) {
+  return text.replace(literalPlaceholder, (placeholder, body: string) => inertPlaceholder(body) ? ' '.repeat(placeholder.length) : placeholder)
 }
 
 // classDef and style carry the same declarations, so both take the same bounded properties.
@@ -194,16 +213,17 @@ function maskFlowchart(source: string) {
     else {
       return statement.replace(/"[^"]*"/g, (label) => {
         // Numeric or spaced comparisons are text; tag-shaped and incomplete HTML stay refused.
-        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(label))
+        const display = maskLiteralPlaceholders(label)
+        if (/<\s*(?:[a-z][^<>]*>|[!/?])|<[a-z]/i.test(display))
           refuse()
-        return label.replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
+        return display.replace(/\blink\b/gi, word => ' '.repeat(word.length)).replace(/([\p{L}\p{N}_)\]])([ \t]*)<(?==|[ \t]*[\d+-]|[ \t]+[\p{L}_])/gu, '$1$2 ')
       }).replace(inlineClass, ' ').replace(/<(?=--|==|-\.)/g, ' ')
     }
   })
   // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
   if (/\b(?:classDef|class|style|click)\b|:::/.test(masked))
     refuse()
-  return masked.replaceAll('&', ' ')
+  return maskLiteralPlaceholders(masked).replaceAll('&', ' ')
 }
 
 // Reads a front matter block, refusing anything outside the admitted shape, and returns its title
@@ -270,7 +290,7 @@ export function validateSource(source: string) {
   // syntax rather than markup, so it is masked exactly like the flowchart arrows already are.
   const checked = flowchart
     ? maskFlowchart(plain)
-    : sequenceHeader.test(plain) ? plain.replace(/<<(?=--?>>)/g, '  ') : plain
+    : sequenceHeader.test(plain) ? maskLiteralPlaceholders(plain).replace(/<<(?=--?>>)/g, '  ') : plain
   if (disabled.test(checked))
     refuse()
 }

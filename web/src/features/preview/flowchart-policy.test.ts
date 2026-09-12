@@ -24,6 +24,16 @@ it.each([
 })
 
 it.each([
+  'flowchart LR\nA["peer.<ZONE>"] --> B',
+  'flowchart LR\nsubgraph Network["<net>.<product-domain>"]\nA["<label>.<ZONE>"] --> B["<base32(H96(I))>"]\nend\nA --> C["<设备名>-<H96(I) 前 4 位 hex>"]',
+  'flowchart LR\nA["network link"] --> B',
+  'sequenceDiagram\nA->>B: Query peer.<ZONE>',
+  '%% Connect to peer.<ZONE>\nsequenceDiagram\nA->>B: Query',
+])('accepts inert literal placeholders and display text: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
   'classDef safe fill:red',
   'classDef safe fill:#fff garbage',
   'classDef safe fill:#fff!important',
@@ -81,8 +91,19 @@ it.each([
   'A["Value#60;"]',
   'A["Value <br/>#60;img"]',
   'A["Value < 250V"]\n%%{init:{}}',
+  'A["Value <img>"]',
+  'A["Value <SCRIPT>"]',
+  'A["Value <img src=x>"]',
+  'A["Value <custom-element>"]',
 ])('rejects nearby unsafe grammar before rendering: %s', (statement) => {
   expect(() => validateSource(`flowchart LR\nA --> B\n${statement}`)).toThrow('plain Mermaid')
+})
+
+it.each([
+  'sequenceDiagram\nlink A: Plain text',
+  '%% link A: Plain text\nsequenceDiagram\nA->>B: Query',
+])('keeps link directives refused outside display text: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
 })
 
 it.each([
