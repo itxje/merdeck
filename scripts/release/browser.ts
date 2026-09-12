@@ -28,7 +28,11 @@ export async function lazyBrowser(origin: string, tokenFile: string, screenshot:
     await page.getByRole('button', { name: 'Connect to project' }).click()
     await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'welcome.mmd', exact: true }).click()
+    const showSource = page.getByRole('button', { name: 'Show source', exact: true })
+    if (await showSource.isVisible())
+      await showSource.click()
     const editor = page.getByLabel('Mermaid source', { exact: true })
+    await expect(editor).toBeVisible()
     const diagrams = [
       { name: 'flowchart', source: 'flowchart LR\n  Binary --> Embedded\n', text: 'Embedded' },
       { name: 'sequence', source: 'sequenceDiagram\n  Client->>Server: Embedded message\n', text: 'Embedded message' },
