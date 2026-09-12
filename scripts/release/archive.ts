@@ -1,17 +1,25 @@
 import { gunzipSync, gzipSync } from 'node:zlib'
 
 export const archiveName = 'merdeck.tar.gz'
-export const archiveEntryName = 'merdeck'
+export const bundleEntry = 'merdeck.js'
+export const interfaceShell = 'web/index.html'
 const block = 512
-const entryMode = 0o755
+const fileMode = 0o644
 const encoder = new TextEncoder()
+const decoder = new TextDecoder()
 const octal = (value: number, length: number) => `${value.toString(8).padStart(length - 1, '0')}\0`
+const entryPath = /^[\w.-]+(?:\/[\w.-]+)*$/
 
-function header(name: string, size: number) {
+export interface ArchiveEntry {
+  path: string
+  bytes: Uint8Array
+}
+
+function header(path: string, size: number) {
   const bytes = new Uint8Array(block)
   const write = (offset: number, value: string) => bytes.set(encoder.encode(value), offset)
-  write(0, name)
-  write(100, octal(entryMode, 8))
+  write(0, path)
+  write(100, octal(fileMode, 8))
   write(108, octal(0, 8))
   write(116, octal(0, 8))
   write(124, octal(size, 12))
@@ -28,28 +36,54 @@ function header(name: string, size: number) {
   return bytes
 }
 
-// One ordinary file in a reproducible archive: fixed metadata and no stored name or timestamp.
-export function singleFileArchive(bytes: Uint8Array, name = archiveEntryName) {
-  if (!/^[\w.-]{1,99}$/.test(name))
-    throw new Error('Archive entry names must be short and ordinary')
-  const padded = Math.ceil(bytes.byteLength / block) * block
-  const tar = new Uint8Array(block + padded + block * 2)
-  tar.set(header(name, bytes.byteLength), 0)
-  tar.set(bytes, block)
+function ordinary(path: string) {
+  return entryPath.test(path) && path.length <= 99 && !path.split('/').some(part => part === '.' || part === '..')
+}
+
+// Ordinary files in a reproducible archive: sorted names, fixed metadata and no stored name or timestamp.
+export function filesArchive(entries: readonly ArchiveEntry[]) {
+  if (entries.length === 0)
+    throw new Error('A release archive holds at least one file')
+  const sorted = [...entries].sort((first, second) => (first.path < second.path ? -1 : first.path > second.path ? 1 : 0))
+  for (const [index, entry] of sorted.entries()) {
+    if (!ordinary(entry.path))
+      throw new Error('Archive entry names must be short and ordinary')
+    if (index > 0 && sorted[index - 1]!.path === entry.path)
+      throw new Error('Archive entry names must be unique')
+  }
+  const padded = (size: number) => Math.ceil(size / block) * block
+  const content = sorted.reduce((total, entry) => total + block + padded(entry.bytes.byteLength), 0)
+  const tar = new Uint8Array(content + block * 2)
+  let offset = 0
+  for (const entry of sorted) {
+    tar.set(header(entry.path, entry.bytes.byteLength), offset)
+    tar.set(entry.bytes, offset + block)
+    offset += block + padded(entry.bytes.byteLength)
+  }
   return new Uint8Array(gzipSync(tar, { level: 9 }))
 }
 
-export function singleFileArchiveEntry(archive: Uint8Array) {
+export function archiveEntries(archive: Uint8Array): ArchiveEntry[] {
   const tar = new Uint8Array(gunzipSync(archive))
   if (tar.byteLength < block * 3 || tar.byteLength % block !== 0)
-    throw new Error('Release archive must hold one file and its end blocks')
-  const text = (offset: number, length: number) => new TextDecoder().decode(tar.slice(offset, offset + length)).replace(/\0.*$/s, '').trim()
-  const size = Number.parseInt(text(124, 12) || 'x', 8)
-  const name = text(0, 100)
-  if (!Number.isSafeInteger(size) || size < 0 || text(156, 1) !== '0' || text(257, 6) !== 'ustar' || !/^[\w.-]{1,99}$/.test(name))
-    throw new Error('Release archive entry must be one ordinary named file')
-  const padded = Math.ceil(size / block) * block
-  if (tar.byteLength !== block + padded + block * 2 || tar.slice(block + size).some(value => value !== 0))
-    throw new Error('Release archive must contain exactly one file')
-  return { name, mode: Number.parseInt(text(100, 8) || 'x', 8), bytes: tar.slice(block, block + size) }
+    throw new Error('A release archive holds files followed by its end blocks')
+  const entries: ArchiveEntry[] = []
+  let offset = 0
+  while (offset + block * 2 <= tar.byteLength && tar.slice(offset, offset + block).some(value => value !== 0)) {
+    const field = (start: number, length: number) => decoder.decode(tar.slice(offset + start, offset + start + length)).replace(/\0.*$/s, '').trim()
+    const path = field(0, 100)
+    const size = Number.parseInt(field(124, 12) || 'x', 8)
+    if (!ordinary(path) || !Number.isSafeInteger(size) || size < 0 || field(156, 1) !== '0' || field(257, 6) !== 'ustar' || Number.parseInt(field(100, 8) || 'x', 8) !== fileMode)
+      throw new Error('Release archive entries must be ordinary named files with fixed metadata')
+    entries.push({ path, bytes: tar.slice(offset + block, offset + block + size) })
+    offset += block + Math.ceil(size / block) * block
+    if (entries.length > 4096)
+      throw new Error('Release archive entry limit exceeded')
+  }
+  // Only the zero end blocks may follow the last entry, and the names must stay sorted and unique.
+  if (entries.length === 0 || tar.byteLength - offset < block * 2 || tar.slice(offset).some(value => value !== 0))
+    throw new Error('A release archive ends with its zero blocks and nothing else')
+  if (entries.some((entry, index) => index > 0 && entries[index - 1]!.path >= entry.path))
+    throw new Error('Release archive entries must be sorted and unique')
+  return entries
 }

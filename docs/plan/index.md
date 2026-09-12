@@ -26,3 +26,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-010 Detect deployed builds without losing open work**](PLAN-010.md) `2026-09-08`
 - [x] [**PLAN-017 List only the chosen file types in the explorer**](PLAN-017.md) `2026-09-12`
 - [x] [**PLAN-018 Publish one stable release archive**](PLAN-018.md) `2026-09-12`
+- [x] [**PLAN-019 Publish one architecture-independent bundle**](PLAN-019.md) `2026-09-12`

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import { releaseVersion } from '../release-version'
-import { archiveEntryName, archiveName } from './archive'
-import { releaseFiles, sha256 } from './manifest'
+import { archiveName, bundleEntry } from './archive'
+import { bundleFiles } from './bundle-manifest'
+import { sha256 } from './manifest'
 
 export type Transport = (path: string, method?: string, data?: unknown) => Promise<unknown>
 const assetSchema = z.object({ id: z.number().int(), name: z.string(), size: z.number(), state: z.string(), digest: z.string().nullable() })
@@ -9,16 +10,14 @@ const releaseSchema = z.object({ id: z.number().int(), tag_name: z.string(), tar
 const referenceSchema = z.object({ object: z.object({ type: z.enum(['commit', 'tag']), sha: z.string().regex(/^[a-f0-9]{40}$/) }) })
 
 export async function publishRelease(directory: string, tag: string, commit: string, transport: Transport) {
-  const { manifest, assets } = await releaseFiles(directory, tag, commit)
-  if (manifest.target !== 'bun-linux-x64')
-    throw new Error('Only the matching Linux x64 release target is eligible for publication')
+  const { manifest, assets } = await bundleFiles(directory, tag, commit)
   const version = releaseVersion(tag)
   let reference = referenceSchema.parse(await transport(`/git/ref/tags/${encodeURIComponent(tag)}`))
   for (let depth = 0; reference.object.type === 'tag' && depth < 5; depth++)
     reference = referenceSchema.parse(await transport(`/git/tags/${reference.object.sha}`))
   if (reference.object.type !== 'commit' || reference.object.sha !== commit)
     throw new Error('Remote tag does not resolve to the checked commit')
-  const marker = `<!-- merdeck-release:${JSON.stringify({ tag, version: version.version, commit, target: manifest.target, assets: assets.map(asset => ({ name: asset.name, sha256: sha256(asset.bytes) })) })} -->`
+  const marker = `<!-- merdeck-release:${JSON.stringify({ tag, version: version.version, commit, runtime: manifest.runtime, assets: assets.map(asset => ({ name: asset.name, sha256: sha256(asset.bytes) })) })} -->`
   // Authenticated listing includes drafts; the by-tag endpoint only promises published releases.
   let existing: unknown = null
   for (let page = 1; page <= 10; page++) {
@@ -36,7 +35,7 @@ export async function publishRelease(directory: string, tag: string, commit: str
   let release: z.infer<typeof releaseSchema>
   if (existing === null) {
     const notes = z.object({ body: z.string() }).parse(await transport('/releases/generate-notes', 'POST', { tag_name: tag, target_commitish: commit }))
-    const body = `${notes.body}\n\n\`${archiveName}\` extracts to one Linux x64 executable named \`${archiveEntryName}\`, with the runtime and all frontend assets embedded. It requires Linux procfs and verified project storage; no installed Bun/Node or source checkout. Verify SHA256SUMS before extracting. Read the tagged README and All rights reserved LICENSE.\n\n${marker}`
+    const body = `${notes.body}\n\n\`${archiveName}\` holds \`${bundleEntry}\` and the built interface beside it, and runs on any architecture: \`tar -xzf ${archiveName} && bun ${bundleEntry}\`. It requires Linux procfs, verified project storage and Bun 1.4.2 or newer on the host; no source checkout is needed. Verify SHA256SUMS before extracting. Read the tagged README and All rights reserved LICENSE.\n\n${marker}`
     release = releaseSchema.parse(await transport('/releases', 'POST', { tag_name: tag, target_commitish: commit, name: `Merdeck ${version.version}`, body, draft: true, prerelease: version.prerelease }))
   }
   else { release = releaseSchema.parse(existing) }

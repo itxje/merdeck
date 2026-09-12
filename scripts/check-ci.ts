@@ -1,9 +1,11 @@
 import { mkdir, mkdtemp, rename } from 'node:fs/promises'
 import { join } from 'node:path'
+import { bundleRelease } from './bundle'
 import { project, requireSession, run } from './ci/process'
 import { compile } from './compile'
 import { packageRelease } from './package-release'
 import { releaseVersion } from './release-version'
+import { smokeBundle } from './smoke-bundle'
 import { smokeRelease } from './smoke-release'
 
 requireSession()
@@ -47,4 +49,12 @@ const destination = join(project, 'dist/release')
 if (await Bun.file(join(destination, 'manifest.json')).exists())
   await rename(destination, `${await mkdtemp(join(project, 'tmp/prior-release-'))}/release`)
 await rename(output, destination)
-process.stdout.write(`check:ci passed for ${target}; native acceptance: ${native ? 'passed' : 'pending'}; remote CI/release: unobserved locally.\n`)
+// The published artifact is the architecture-independent bundle; it is checked after the executable.
+const bundleOutput = await mkdtemp(join(project, 'tmp/checked-bundle-'))
+await bundleRelease(tag, { built: true, output: bundleOutput })
+await smokeBundle(bundleOutput, tag)
+const bundleDestination = join(project, 'dist/bundle')
+if (await Bun.file(join(bundleDestination, 'manifest.json')).exists())
+  await rename(bundleDestination, `${await mkdtemp(join(project, 'tmp/prior-bundle-'))}/bundle`)
+await rename(bundleOutput, bundleDestination)
+process.stdout.write(`check:ci passed for ${target} with the architecture-independent bundle; native acceptance: ${native ? 'passed' : 'pending'}; remote CI/release: unobserved locally.\n`)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 05:05 [progress]
+
+At the project owner's request, releases now attach one architecture-independent `merdeck.tar.gz`: it holds `merdeck.js` and the built `web/` tree, and the host's Bun starts it with `bun merdeck.js`, so the same download runs on x64 and arm64 Linux. The compiled single-target executable stays a checked build output and is no longer published. See [RELEASE-003](task/RELEASE-003.md).
+
 ## 2026-09-12 03:30 [progress]
 
 The status bar now names the running version, such as `Merdeck 0.3.1`, and reports `Merdeck development` for a service started from source. The version travels with the session status, so a service that requires a token does not disclose it before accepting a session. See [LAYOUT-006](task/LAYOUT-006.md).

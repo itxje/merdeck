@@ -50,3 +50,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**RELEASE-002 Publish one stable release archive**](RELEASE-002.md) `P2`
 - [x] [**PREVIEW-004 Allow a text colour in class definitions**](PREVIEW-004.md) `P3`
 - [x] [**LAYOUT-006 Show the running version in the status bar**](LAYOUT-006.md) `P3`
+- [x] [**RELEASE-003 Publish one architecture-independent bundle**](RELEASE-003.md) `P1`

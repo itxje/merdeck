@@ -29,5 +29,5 @@ const transport: Transport = async (path, method = 'GET', data) => {
     throw new Error(`Release API failed: ${method} HTTP ${response.status}`)
   return response.json()
 }
-const result = await publishRelease(join(project, 'dist/release'), tag, commit, transport)
+const result = await publishRelease(join(project, 'dist/bundle'), tag, commit, transport)
 process.stdout.write(`${JSON.stringify(result)}\n`)

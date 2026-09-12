@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import { expect, test } from 'bun:test'
 import { sha256 } from '../../scripts/release/manifest'
 import { publishRelease } from '../../scripts/release/publisher'
-import { fixtureCommit, fixtureTag, releaseFixture } from './fixtures'
+import { bundleFixture, fixtureCommit, fixtureTag } from './fixtures'
 
 function mockTransport() {
   let release: Record<string, unknown> | null = null
@@ -50,7 +50,7 @@ function mockTransport() {
 }
 
 test('draft remains private on failed upload and resumes idempotently before publication', async () => {
-  const { directory } = await releaseFixture()
+  const { directory } = await bundleFixture()
   const mock = mockTransport()
   try {
     mock.fail()
@@ -71,7 +71,7 @@ test('draft remains private on failed upload and resumes idempotently before pub
 })
 
 test('tag movement and unrelated existing release assets refuse mutation', async () => {
-  const { directory } = await releaseFixture()
+  const { directory } = await bundleFixture()
   const mock = mockTransport()
   try {
     await publishRelease(directory, fixtureTag, fixtureCommit, mock.transport)

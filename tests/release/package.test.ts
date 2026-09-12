@@ -2,14 +2,13 @@ import { readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from 'bun:test'
 import { packageRelease } from '../../scripts/package-release'
-import { archiveName } from '../../scripts/release/archive'
 import { readManifest, releaseFiles } from '../../scripts/release/manifest'
 import { fixtureCommit, fixtureTag, releaseFixture } from './fixtures'
 
 test('package checks assert tag, commit, checksum, exact inventory and ELF architecture', async () => {
   const { directory, filename } = await releaseFixture()
   try {
-    expect((await releaseFiles(directory, fixtureTag, fixtureCommit)).assets.map(item => item.name)).toEqual([archiveName, 'SHA256SUMS'])
+    expect((await releaseFiles(directory, fixtureTag, fixtureCommit)).assets.map(item => item.name)).toEqual([filename, 'SHA256SUMS'])
     await expect(releaseFiles(directory, 'v0.0.0-other')).rejects.toThrow('mismatch')
     await expect(releaseFiles(directory, fixtureTag, 'b'.repeat(40))).rejects.toThrow('mismatch')
     await writeFile(join(directory, '.env'), 'synthetic')

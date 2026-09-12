@@ -23,6 +23,7 @@
     "compile": "bun scripts/compile.ts",
     "lint:workflows": "bun scripts/verify-workflows.ts",
     "test:release": "bun scripts/release/test.ts",
+    "bundle": "bun scripts/bundle.ts",
     "check:ci": "bun scripts/check-ci.ts"
   },
   "dependencies": {
