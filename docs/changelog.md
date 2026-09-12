@@ -14,7 +14,7 @@ The default tree scan became wide and shallow: 8,000 entries across four complet
 
 ## 2026-09-12 12:45 [progress]
 
-Relative file links preserve flowchart node and subgraph layout, including title-only front matter. A validated private render projection avoids Mermaid's positioning anchors while retaining the original source and application-owned navigation. Stale previews cannot activate file targets. Browser regressions cover geometry, pointer and keyboard navigation, draft retention and exact saved bytes. The normal quality gate remains blocked by an unchanged backend read-consistency test in the current environment; the source candidate and evidence are recorded in [NAV-002](task/NAV-002.md) and [PLAN-022](plan/PLAN-022.md).
+Relative file links preserve flowchart node and subgraph layout, including title-only front matter. A validated private render projection avoids Mermaid's positioning anchors while retaining the original source and application-owned navigation. Stale previews cannot activate file targets. Browser regressions cover geometry, pointer and keyboard navigation, draft retention and exact saved bytes. The normal quality gate remains blocked by an unchanged backend read-consistency test in the current environment; the source candidate and evidence are recorded in [NAV-002](task/NAV-002.md) and [PLAN-023](plan/PLAN-023.md).
 
 ## 2026-09-12 12:30 [progress]
 

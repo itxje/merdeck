@@ -1,4 +1,4 @@
-# PLAN-022 Preserve linked flowchart layout and titled file navigation
+# PLAN-023 Preserve linked flowchart layout and titled file navigation
 
 - **status**: completed
 - **createdAt**: 2026-09-12
@@ -32,3 +32,5 @@ The preview policy, renderer, navigation metadata lifetime, related regression t
 ## Validation record
 
 Implementation and focused browser RED/GREEN are recorded in [NAV-002](../task/NAV-002.md). The supplied original also passes through the isolated built application without source modification. Both sanitizer policies and navigation containment are unchanged. The standard aggregate was attempted and stopped on an unchanged backend read-consistency failure, whose timestamp evidence and overlay comparison are retained. Remaining component checks are recorded separately; they do not establish a passing aggregate or native delivery acceptance. Evidence belongs in ignored `tmp/nav-002/`.
+
+The owner subsequently authorized committing and merging the repair into local `main` on 2026-09-12 after the aggregate failure was explained. This does not change the recorded gate result or select publication, native delivery or deployment.
