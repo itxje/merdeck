@@ -54,6 +54,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
 
     // An unsaved draft follows its renamed file and can still be saved there.
     const draft = 'flowchart TD\n  A[Start] --> B[Renamed draft]\n'
+    await page.getByRole('button', { name: 'Show source', exact: true }).click()
     await editor.fill(draft)
     await explorer.getByRole('button', { name: /^flow\.mmd/ }).focus()
     await page.keyboard.press('F2')

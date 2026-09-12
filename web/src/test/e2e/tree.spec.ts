@@ -1,6 +1,6 @@
 import { mkdir, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
-import { expect, login, test } from './support'
+import { choose, expect, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -40,7 +40,7 @@ test('loading and an actually empty project remain understandable', async ({ pag
 
 test('an advertised partial tree cannot discard the selected dirty document', async ({ page }) => {
   await login(page)
-  await page.getByRole('button', { name: 'welcome.mmd', exact: true }).click()
+  await choose(page, 'welcome.mmd')
   const editor = page.getByLabel('Mermaid source', { exact: true })
   await expect(editor).toBeVisible()
   const draft = 'flowchart LR\n  Retain --> Draft\n'

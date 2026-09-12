@@ -306,7 +306,7 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                             <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
                           </Tabs>
                           <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
-                            <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={40} minSize="20%" defaultSize="42.5%" onResize={size => setSourceCollapsed(sourcePanel.current?.isCollapsed() ?? size.inPixels < 120)}>
+                            <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={40} minSize="20%" defaultSize={40} onResize={size => setSourceCollapsed(sourcePanel.current?.isCollapsed() ?? size.inPixels < 120)}>
                               {sourceCollapsed && (
                                 <div className="source-rail">
                                   <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={() => sourcePanel.current?.expand()}><PanelLeftOpen /></Button>
