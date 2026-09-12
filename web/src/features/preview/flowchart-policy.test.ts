@@ -13,6 +13,8 @@ it.each([
   'flowchart LR\nA:::warm <--> B\nclassDef warm fill:#fff',
   'flowchart LR\nA --> B\nclassDef warm fill:#fff,stroke:#123,color:#a1B2c3\nclass A,B warm',
   '%% Ordinary comment\nflowchart LR\nA --> B %% A comment with an unmatched "\nclassDef safe stroke:#ABC,stroke-width:10,stroke-dasharray:100 0 2.5px\nclass A safe',
+  'flowchart TB\nsubgraph Group["Visible group"]\nA --> B\nend\nstyle Group fill:#f5f5f5,stroke:#333,stroke-width:3px',
+  'flowchart LR\nA --> B\nstyle A,B fill:#fff,color:#111,stroke-dasharray:2 4',
 ])('accepts nearby bounded ordinary grammar: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
 })
@@ -42,6 +44,16 @@ it.each([
   'classDef safe fill:#fff; @import "/probe"',
   'classDef safe fill:#fff; style A fill:red',
   'classDef safe fill:#fff; click A callback',
+  'style A fill:red',
+  'style A fill:#fff!important',
+  'style A background-image:url(/probe)',
+  'style A opacity:0',
+  'style A stroke-width:11px',
+  'style A fill:#fff garbage',
+  'style A',
+  'style A, B fill:#fff',
+  'style A fill:#fff; click A callback',
+  'linkStyle 0 stroke:#fff',
   'classDef safe fill:&#35;fff',
   'class A safe trailing',
   'class A,something[onclick] safe',

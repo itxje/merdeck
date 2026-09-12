@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-11
+> Updated: 2026-09-12
 
 ## Usage
 
@@ -51,3 +51,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**PREVIEW-004 Allow a text colour in class definitions**](PREVIEW-004.md) `P3`
 - [x] [**LAYOUT-006 Show the running version in the status bar**](LAYOUT-006.md) `P3`
 - [x] [**RELEASE-003 Publish one architecture-independent bundle**](RELEASE-003.md) `P1`
+- [x] [**PREVIEW-005 Accept bounded node styling in the preview**](PREVIEW-005.md) `P3`
+- [ ] [**STORAGE-001 Evaluate write admission for host-shared virtiofs project storage**](STORAGE-001.md) `P2`

@@ -4,17 +4,19 @@ export const flowchartHeader = /^\s*(?:%%[^\n]*\n\s*)*(?:flowchart|graph)\b/
 const identifier = '[a-z_][\\w-]*'
 const identifiers = `${identifier}(?:,${identifier})*`
 const definition = new RegExp(`^classDef[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
+const styling = new RegExp(`^style[ \\t]+${identifiers}[ \\t]+(\\S.*)$`, 'i')
 const assignment = new RegExp(`^class[ \\t]+${identifiers}[ \\t]+${identifier}$`, 'i')
 const inlineClass = new RegExp(`:::${identifier}(?=[ \\t;[\\]{}()&]|$)`, 'gi')
 const pixelNumber = /^(?:\d{1,2}(?:\.\d{1,2})?|100)(?:px)?$/
 const colors = /^#(?:[\da-f]{3}|[\da-f]{6})$/i
-const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
+const message = 'Preview uses plain Mermaid only. Flowcharts support quoted comparisons, fan-out and bounded class and node colors, widths and dashes. Configuration, other HTML, entities, links, arbitrary CSS, images and math are disabled.'
 function refuse(): never {
   throw new Error(message)
 }
 
-function validateDefinition(statement: string) {
-  const match = definition.exec(statement)
+// classDef and style carry the same declarations, so both take the same bounded properties.
+function validateDeclarations(statement: string, shape: RegExp) {
+  const match = shape.exec(statement)
   if (!match)
     refuse()
   for (const declaration of match[1]!.split(',')) {
@@ -53,7 +55,11 @@ function maskFlowchart(source: string) {
   const finish = () => {
     const text = statement.trim()
     if (/^classDef\b/.test(text)) {
-      validateDefinition(text)
+      validateDeclarations(text, definition)
+      masked += ' '
+    }
+    else if (/^style\b/.test(text)) {
+      validateDeclarations(text, styling)
       masked += ' '
     }
     else if (/^class\b/.test(text)) {
@@ -92,7 +98,7 @@ function maskFlowchart(source: string) {
   }
   finish()
   // Entities were rejected globally before fan-out is allowed; class syntax cannot escape validation.
-  if (/\b(?:classDef|class)\b|:::/.test(masked))
+  if (/\b(?:classDef|class|style)\b|:::/.test(masked))
     refuse()
   return masked.replaceAll('&', ' ')
 }

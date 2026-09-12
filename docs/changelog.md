@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 08:35 [progress]
+
+The preview now accepts bounded `style` statements. A node style and a class definition carry the same declarations in Mermaid, so they now share one validated property list: hex colours, positive widths up to ten pixels and bounded dash lengths. One `style` line no longer rejects a whole diagram, while `linkStyle`, configuration directives, entities and every other property stay refused. See [PREVIEW-005](task/PREVIEW-005.md).
+
 ## 2026-09-12 05:30 [progress]
 
 Release [`v0.4.0`](https://github.com/itxje/merdeck/releases/tag/v0.4.0) was published from `9685258` as the first architecture-independent release: `merdeck.tar.gz` measures 1,213,428 bytes, against 37 MB for the previous executable archive. It was downloaded on an `aarch64` host, checked against SHA256SUMS, extracted and started with that host's own Bun; the service reported version `0.4.0`, served the interface, refused an anonymous API request, accepted the token, listed a real project tree and saved a real file against its revision. See [RELEASE-003](task/RELEASE-003.md).
