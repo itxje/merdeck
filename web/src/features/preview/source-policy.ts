@@ -26,6 +26,7 @@ function validateDefinition(statement: string) {
     switch (property) {
       case 'fill':
       case 'stroke':
+      case 'color':
         if (!colors.test(value))
           refuse()
         break

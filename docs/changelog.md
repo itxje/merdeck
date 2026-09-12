@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 03:02 [progress]
+
+Class definitions in the preview may now set a text colour: `color` takes the same three or six digit hex form as `fill` and `stroke`, so a diagram that styles its label colours no longer fails to render. Unreadable colours are still replaced automatically, and every other property stays refused. See [PREVIEW-004](task/PREVIEW-004.md).
+
 ## 2026-09-12 02:30 [progress]
 
 Release [`v0.3.0`](https://github.com/itxje/merdeck/releases/tag/v0.3.0) was published from `7520517` as the first release with the stable archive, so `https://github.com/itxje/merdeck/releases/latest/download/merdeck.tar.gz` now always names the current build. See [RELEASE-002](task/RELEASE-002.md).

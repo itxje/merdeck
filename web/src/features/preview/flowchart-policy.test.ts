@@ -11,6 +11,7 @@ it.each([
   'flowchart TD; A["x<=10; y < limit"] --> B; classDef warm fill:#aBc,stroke:#123456,stroke-width:1.5px,stroke-dasharray:2 4; class A,B warm;',
   'flowchart LR\nsubgraph Group["Visible group"]\nA & B --> C\nend\nclassDef one,two fill:#fff\nclass A,B one',
   'flowchart LR\nA:::warm <--> B\nclassDef warm fill:#fff',
+  'flowchart LR\nA --> B\nclassDef warm fill:#fff,stroke:#123,color:#a1B2c3\nclass A,B warm',
   '%% Ordinary comment\nflowchart LR\nA --> B %% A comment with an unmatched "\nclassDef safe stroke:#ABC,stroke-width:10,stroke-dasharray:100 0 2.5px\nclass A safe',
 ])('accepts nearby bounded ordinary grammar: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
@@ -23,6 +24,8 @@ it.each([
   'classDef safe fill:#fff,',
   'classDef safe fill:#ffff',
   'classDef safe fill:var(--probe)',
+  'classDef safe color:red',
+  'classDef safe color:#12345',
   'classDef safe background-image:url(/probe)',
   'classDef safe stroke-width:0',
   'classDef safe stroke-width:11px',
