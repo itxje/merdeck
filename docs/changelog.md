@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-12 01:58 [progress]
+
+At the project owner's request, release [`v0.2.0`](https://github.com/itxje/merdeck/releases/tag/v0.2.0) was published from `a2d2c87`, so the executable now carries the explorer file type filter. The tag workflow repeated all native checks on that commit before publishing `merdeck-0.2.0-linux-x64` with its `SHA256SUMS`. See [RELEASE-001](task/RELEASE-001.md).
+
 ## 2026-09-12 01:45 [progress]
 
 At the project owner's request, the explorer lists only the file types you choose: every supported file, diagram files (`.mmd`, `.mermaid`) or Markdown files. The control sits under the search field, is remembered in this browser, applies to the file drawer as well, and is reflected in the file count and the empty-list hint. See [FILE-003](task/FILE-003.md).
