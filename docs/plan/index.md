@@ -34,3 +34,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-024 Preserve inert addresses and note text in diagram previews**](PLAN-024.md) `2026-09-12`
 - [x] [**PLAN-026 Distinguish folders from files in the explorer**](PLAN-026.md) `2026-09-12`
 - [x] [**PLAN-025 Refuse only the preview security boundary and admit the remaining Mermaid syntax**](PLAN-025.md) `2026-09-12`
+
+- [-] [**20260913-1628-directory-navigation-pagination Directory navigation and bounded pagination**](20260913-1628-directory-navigation-pagination.md) `2026-09-13`
