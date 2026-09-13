@@ -551,18 +551,55 @@ test('idle/session sweep closes actual descriptors without another request', asy
   expect(await ownedDescriptors()).toBe(0)
 }, 7000)
 
-test('byte-boundary pending entry and late request abort do not skip names', async () => {
+test.each([0, 32])('byte-boundary pending entry and late request abort do not skip names (%i hidden entries)', async (hidden) => {
   const root = await fixture()
   await files(root, 8)
+  await files(root, hidden, '.')
   const controller = new AbortController()
-  const diagrams = await service(root, { directory: { pageBytes: 700 } })
+  const reads: string[] = []
+  const diagrams = await service(root, { directory: { pageBytes: 700 }, repositoryHooks: {
+    afterDirectoryRead: async (_path, name) => {
+      if (name !== null)
+        reads.push(name)
+    },
+  } })
   const first = await diagrams.directoryPage({ path: '', limit: 100 }, { ...context, signal: controller.signal })
   expect(first.stoppedBy).toBe('bytes')
-  expect(first.visited).toBe(first.entries.length + 1)
+  expect(Buffer.byteLength(JSON.stringify({ success: true, data: first }))).toBeLessThanOrEqual(700)
+  expect(first.visited).toBe(reads.length)
+  const accepted = reads.filter(name => /^[0-7]\.md$/.test(name))
+  expect(first.excluded).toBe(reads.length - accepted.length)
+  expect(first.entries.map(entry => entry.path)).toEqual(accepted.slice(0, -1))
+  // Native dots/excluded names can occur anywhere; the last accepted record is pending.
+  expect(first.visited).toBe(first.entries.length + first.excluded + 1)
   controller.abort()
-  const second = await next(diagrams, first)
-  expect(second.entries.length).toBeGreaterThan(0)
-  expect(new Set([...first.entries, ...second.entries].map(entry => entry.path)).size).toBe(first.entries.length + second.entries.length)
+  const paths = first.entries.map(entry => entry.path)
+  let page = first
+  let pending = accepted.at(-1)
+  let visited = first.visited
+  let excluded = first.excluded
+  while (!page.complete) {
+    const before = reads.length
+    const pendingIn = pending === undefined ? 0 : 1
+    page = await next(diagrams, page)
+    expect(page.entries.length).toBeGreaterThan(0)
+    if (pending !== undefined)
+      expect(page.entries[0]!.path).toBe(pending)
+    expect(page.visited).toBe(reads.length - before)
+    const pendingOut = page.stoppedBy === 'bytes' ? 1 : 0
+    expect(page.visited + pendingIn).toBe(page.entries.length + page.excluded + pendingOut)
+    pending = pendingOut ? reads.slice(before).filter(name => /^[0-7]\.md$/.test(name)).at(-1) : undefined
+    expect(Buffer.byteLength(JSON.stringify({ success: true, data: page }))).toBeLessThanOrEqual(700)
+    paths.push(...page.entries.map(entry => entry.path))
+    visited += page.visited
+    excluded += page.excluded
+  }
+  expect(paths.sort()).toEqual(Array.from({ length: 8 }, (_, index) => `${index}.md`))
+  expect(new Set(paths).size).toBe(paths.length)
+  expect(visited).toBe(reads.length)
+  expect(excluded).toBe(reads.filter(name => !/^[0-7]\.md$/.test(name)).length)
+  expect(visited).toBe(paths.length + excluded)
+  expect(page.nextCursor).toBeNull()
 })
 
 test('folder move audits projected path length and directory count with unchanged operands on refusal', async () => {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 17:45 [progress]
+
+Corrected the directory byte-boundary test to count excluded raw records independently of filesystem order. The regression now observes actual consumed names, verifies pending-entry delivery and complete unique traversal with and without hidden names, while retaining late cancellation and the exact descriptor check. Hosted run 34772385404 remains recorded as failed at this assertion; production code is unchanged and full hosted native retry is still required. See the [backend task](task/20260913-1637-directory-backend.md).
+
 ## 2026-09-13 17:40 [progress]
 
 Corrected directory verification exports to retain raw traces locally and publish only bounded, sanitized, identity-checked summaries. Existing hosted reporting now retains safe evidence on success and failure without changing release payloads. The production backend is unchanged from the prior complete local PASS; authorized focused validation covers this verification-only correction, with full hosted x64/ext4 acceptance still required. See the [backend task](task/20260913-1637-directory-backend.md).
