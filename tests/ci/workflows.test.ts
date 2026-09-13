@@ -26,3 +26,17 @@ test('real workflow exposes nonpublishing candidate checks and gates the only wr
   expect(publisher).toContain('cancel-in-progress: false')
   expect(publisher).toContain('--ignore-scripts')
 })
+
+test('verification evidence is sanitized before success or failure upload', async () => {
+  const yaml = await readFile('.github/workflows/verify.yml', 'utf8')
+  const prepare = yaml.split('name: Prepare bounded verification evidence')[1]!.split('      - name:')[0]!
+  expect(prepare).toContain('id: evidence')
+  expect(prepare).toContain(`if: \${{ success() || failure() }}`)
+  expect(prepare).toContain('run: bun scripts/ci/evidence.ts')
+  const upload = yaml.split('name: Upload bounded verification reports')[1]!.split('      - name:')[0]!
+  expect(upload).toContain('steps.evidence.outcome == \'success\'')
+  expect(upload).toContain('success() || failure()')
+  expect(upload).toContain('path: tmp/ci-evidence/')
+  expect(upload).toContain(`verification-reports-\${{ github.sha }}-\${{ github.run_attempt }}`)
+  expect(upload).not.toContain('directory-physical-')
+})
