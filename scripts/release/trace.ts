@@ -62,7 +62,8 @@ export function auditTrace(trace: string, executable: string, checkout: string, 
   // strace interleaves threads between syscall entry and return; audit only complete evidence.
   const { lines, pairedCalls } = completeCalls(trace)
   const relevant = lines.filter(line => /\b(?:execve|execveat|listen|open|openat|openat2|stat|statx|newfstatat|readlink|readlinkat|access)\(/.test(line))
-  const invalidReturn = relevant.find(line => !/\)\s+=\s+-?\d+(?:<[^>]+>+)?(?:\s.*)?$/.test(line))
+  // strace -yy appends literal (deleted) after a complete unlinked fd annotation.
+  const invalidReturn = relevant.find(line => !/\)\s+=\s+-?\d+(?:<[^>]+>+(?:\(deleted\))?)?(?:\s.*)?$/.test(line))
   if (invalidReturn)
     throw numericReturnFailure(invalidReturn, lines)
   const execution = lines.filter(line => /\bexecve(?:at)?\(/.test(line) && line.endsWith('= 0'))
@@ -76,7 +77,7 @@ export function auditTrace(trace: string, executable: string, checkout: string, 
   const creations = access.filter(line => /O_(?:CREAT|WRONLY|RDWR)/.test(line) && !/\)\s+=\s+-\d+\b/.test(line))
   // AT_FDCWD annotations describe cwd even for absolute paths; only the returned fd identifies the opened file.
   for (const line of creations) {
-    const target = /=\s+\d+<([^>]+)>$/.exec(line)?.[1]
+    const target = /=\s+\d+<([^>]+)>(?:\(deleted\))?$/.exec(line)?.[1]
     if (!target || !(target.startsWith(`${root}/`) || target.startsWith('/dev/') || target.startsWith('/memfd:')))
       throw new Error('Unexpected executable disk write outside the configured synthetic project')
     if (target === directory || target.startsWith(`${directory}/`))

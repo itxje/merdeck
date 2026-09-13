@@ -110,3 +110,32 @@ Focused evidence is retained under ignored `tmp/trace-repair/`:
 PMA code self-review applied shared policy and the TypeScript backend pack to the complete scoped diff and callers. No high-confidence findings (CRITICAL/HIGH/MEDIUM/LOW: 0); verdict PASS for the diagnostic change. This does not certify the unknown hosted trace. Original hosted run 34775581757 remains failed, with its reports preserved under `/tmp/merdeck-directory-final-native/`. No aggregate or browser gate was rerun. Final exact-candidate hosted/native validation, bundle acceptance and publication remain pending with the integration owner; overall plans remain implementing and prototypes needs-review.
 
 - complete: Bounded trace diagnostics and focused validation complete. Exact hosted offending record remains unknown; original native failure and final hosted acceptance remain pending.
+
+- reopen: Owner authorized a bounded proven trace-format repair after hosted run 34776441244; preserve failed native evidence.
+
+## Numeric annotation investigation and proposal
+
+Hosted run 34776441244 at `3f0c293f9757b2454cca196c5d014f2510dd3357` failed with the bounded category `syscall=openat; return=numeric-format; sigint=seen; sigterm=absent`. The raw record remains unavailable; neither restart nor SIGINT causation is established. Existing owner authorization covers this same task's narrow trace-format repair. Reproduce actual successful descriptor decorations and compare their complete grammar with the parser before changing acceptance. Preserve strict completion, execution, checkout, writes and extraction rules; use focused actual traces, regression tests and executable lifecycle checks only. No new task or feature scope is introduced.
+
+Actual local strace 6.13 reproduced two complete successful `openat` descriptor returns with a literal `(deleted)` suffix after the closed annotation using a memfd fixture, without signals. Both match the hosted diagnostic category and fail the current numeric regex. Official strace v6.8 `src/util.c` prints that suffix after the annotation terminator; a local exact-version build will confirm. The initial overlay unlink/reopen probe instead returned ENOENT and is not successful reproduction evidence. Proposal: accept only this exact suffix after a complete descriptor annotation and extract the same complete returned write target before existing scope checks. Test deleted reads/writes, split records, outside/runtime/checkout rejection, malformed suffixes and incomplete evidence. The hosted raw record remains unknown; no claim of exact hosted causation is made.
+
+## Proven deleted-descriptor correction
+
+The two-regex correction accepts only literal `(deleted)` after a complete numeric descriptor annotation and extracts the same write target before all existing scope checks. It does not accept bare numeric prefixes, missing annotation terminators, unknown returns or arbitrary suffixes. Read/split-call coverage and scoped root/memfd writes pass; outside writes, checkout/runtime access, extraction and malformed tails still fail. Service shutdown, application runtime, dependencies and trace exporting are unchanged.
+
+Actual strace 6.8 and 6.13 each produced two successful `openat` returns with the deleted-descriptor suffix, without SIGINT/SIGTERM. For both actual traces, the unchanged baseline failed `numeric-format`; the candidate passed with one execution, four file accesses, one allowed memfd write, zero checkout accesses and no extraction. Fixture cleanup succeeded. This proves the parser defect matching the diagnostic category; the exact hosted record remains unavailable and is not reconstructed or attributed to this fixture.
+
+The [official strace v6.8 descriptor formatter](https://github.com/strace/strace/blob/v6.8/src/util.c) emits the suffix outside the angle-bracket annotation. The local 6.8 tool was built from the official release tarball in ignored evidence storage, using bundled kernel headers and a scheduler-structure name adjustment for current libc headers; its descriptor formatter is byte-identical to the upstream source. Initial tool-build failures and the compatibility adjustment remain recorded. No installed runtime, dependency or application code changed.
+
+Focused validation under ignored `tmp/trace-format/`:
+
+- RED `bun test ./tests/release/trace.test.ts`: 12 passed, 2 failed against the unchanged parser (`red.log`, exit 1).
+- GREEN `bun test --coverage ./tests/release/trace.test.ts`: 14 passed, 76 assertions, 100% trace-module function/line coverage (`green.log`, exit 0).
+- `bun x eslint scripts/release/trace.ts tests/release/trace.test.ts`, root `tsc --noEmit`, and release-test `tsc --project tests/release/tsconfig.json`: all passed (`lint.*`, `types-root.*`, `types-release.*`).
+- `bun tmp/trace-format/verify-actual.ts`: both actual tracer versions reproduced baseline rejection and candidate acceptance, exit 0 (`actual.log`, `actual.exit`); raw traces remain local.
+- Targeted actual application lifecycle smoke with `MERDECK_STRACE` set to the locally built 6.8 tracer passed, exit 0 (`actual-validation.sh`, `smoke.log`, `smoke.exit`; `tmp/release-smoke-C4pKa8/result.json`). The unchanged compiled application, authenticated read/save, retained directory cursor, 94/94 resources, both supported/refused service traces and cleanup passed. Supported trace: one execution, 264 file accesses, one scoped write, zero checkout accesses, no extraction. Identified local overlay device 55 and refusal tmpfs device 99; this is not Linux x64/ext4 native acceptance.
+- Scoped PMA self-review applied shared policy and the TypeScript backend pack: zero high-confidence findings at every severity, verdict PASS. `git diff --check` passed.
+
+No aggregate or browser gate was rerun. Hosted failures 34775581757 and 34776441244 remain preserved; the latter's successful physical/source and 62 browser checks do not turn its failed native/bundle gate into acceptance. Final exact-candidate hosted validation, integration and publication remain pending with the integration owner. Overall plans remain implementing and prototypes needs-review.
+
+- complete: Proven deleted-descriptor format correction and focused validation complete; prior hosted failures remain preserved and final exact-candidate native acceptance remains pending.

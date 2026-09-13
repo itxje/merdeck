@@ -126,3 +126,38 @@ test('split restart and shutdown records remain refused even with later numeric 
   }
   expect(audit(baseline + resumed)).toMatchObject({ fileAccesses: 2, writes: 0 })
 })
+
+test('actual strace deleted descriptor suffixes preserve complete single and split reads', () => {
+  const single = '2 openat(AT_FDCWD, "/proc/self/fd/4", O_RDONLY) = 5</memfd:trace-format>(deleted)\n'
+  const split = '3 openat(AT_FDCWD, "/proc/self/fd/4", O_RDONLY <unfinished ...>\n3 <... openat resumed>) = 6</fixture/removed.mmd>(deleted)\n'
+  expect(audit(baseline + single + split)).toMatchObject({ pairedCalls: 1, fileAccesses: 3, writes: 0 })
+})
+
+test('deleted write descriptors still prove the actual destination and forbid extraction', () => {
+  const write = '2 openat(AT_FDCWD</scratch/runtime>, "/proc/self/fd/4", O_RDWR) = 7</fixture/removed.mmd>(deleted)\n'
+  expect(audit(baseline + write)).toMatchObject({ writes: 1 })
+  expect(audit(baseline + write.replace('/fixture/removed.mmd', '/memfd:trace-format'))).toMatchObject({ writes: 1 })
+  for (const target of ['/outside/file', '/scratch/runtime/file'])
+    expect(() => audit(baseline + write.replace('/fixture/removed.mmd', target))).toThrow('Unexpected executable disk write')
+  expect(() => auditTrace(baseline + write.replace('/fixture/removed.mmd', '/fixture/runtime/file'), '/scratch/runtime/program', '/checkout', '/fixture/runtime', '/fixture')).toThrow('extracted resources')
+  for (const target of ['/checkout/src/file', '/outside/node_modules/file', '/outside/web/dist/file'])
+    expect(() => audit(baseline + write.replace('/fixture/removed.mmd', target))).toThrow('accessed source checkout')
+})
+
+test('deleted suffix support never accepts partial annotations or arbitrary numeric tails', () => {
+  for (const returned of [
+    '7(deleted)',
+    '7</fixture/file>(delete)',
+    '7</fixture/file>(deleted',
+    '7</fixture/file>(deleted)extra',
+    '7</fixture/file>(deleted)(deleted)',
+    '7</fixture/file(deleted)',
+    '7</fixture/file...',
+    '7<>',
+    '7unknown',
+    '? <unavailable>',
+  ]) {
+    const line = `2 openat(AT_FDCWD, "/proc/self/fd/4", O_RDONLY) = ${returned}\n`
+    expect(() => audit(baseline + line)).toThrow('without a complete numeric return')
+  }
+})
