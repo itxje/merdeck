@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 17:05 [decision]
+
+Completed the bounded [directory primitive investigation](plan/20260913-1657-streaming-directory-correction.md) and recorded a [proposed fixed-buffer correction](decisions/20260913-1705-bounded-directory-primitive.md). Actual ARM64/overlay source, bundle and compiled probes demonstrate 4 KiB getdents64 streaming, bounded first-page syscalls, resume/EOF and resource cleanup. Experimental FFI adoption, actual x64/ext4 evidence and feature acceptance remain pending; synchronous I/O cannot guarantee prompt cancellation. No executable feature changes were made. The inherited checkpoint and its introduced failing resource test remain unaccepted, the backend stays in_progress, the feature implementing and prototype needs-review.
+
 ## 2026-09-13 16:54 [pitfall]
 
 The [directory backend implementation](task/20260913-1637-directory-backend.md) is blocked at runtime acceptance. Actual Bun 1.4.2 Dir.read uses a whole-directory readdir array despite bufferSize 1; a retained-descriptor assertion fails and the first-read syscall trace reaches EOF across 10,003 names. Logical page/depth/auth tests pass but do not prove bounded underlying work. The provisional contracts, path-depth and lifecycle changes are not ready for integration. The feature plan stays implementing; the prototype stays needs-review. A verified streaming primitive and contract correction are required before implementation acceptance.

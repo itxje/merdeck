@@ -71,3 +71,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260913-1626-directory-browsing-contract Directory browsing investigation and contract**](20260913-1626-directory-browsing-contract.md) `P1`
 
 - [-] [**20260913-1637-directory-backend Implement bounded directory browsing backend**](20260913-1637-directory-backend.md) `P1`
+
+- [x] [**20260913-1657-streaming-directory-investigation Investigate bounded directory primitives**](20260913-1657-streaming-directory-investigation.md) `P1`
