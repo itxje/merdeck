@@ -93,3 +93,36 @@ test('unpaired, mismatched, ambiguous and malformed syscall evidence fails close
   for (const trace of malformed)
     expect(() => audit(baseline + trace)).toThrow(/Trace/)
 })
+
+test('numeric-return failures expose bounded categories without paths or raw records', () => {
+  const privateText = '/fixture/private-token-do-not-disclose'
+  for (const [returned, category] of [
+    ['? ERESTARTSYS (To be restarted if SA_RESTART is set)', 'restart'],
+    ['? <unavailable>', 'unavailable'],
+    ['?', 'unknown'],
+    ['0x7fffffff', 'nondecimal'],
+    [`7<${privateText}`, 'numeric-format'],
+    [privateText, 'unrecognized'],
+  ]) {
+    const line = `2 openat(AT_FDCWD, "${privateText}", O_RDONLY) = ${returned}\n`
+    let message = ''
+    try {
+      audit(baseline + line)
+    }
+    catch (error) { message = (error as Error).message }
+    expect(message).toBe(`Trace has a relevant syscall without a complete numeric return (syscall=openat; return=${category}; sigint=absent; sigterm=absent)`)
+    expect(message).not.toContain(privateText)
+    expect(message.length).toBeLessThan(200)
+  }
+})
+
+test('split restart and shutdown records remain refused even with later numeric completion', () => {
+  const restart = '2 openat(AT_FDCWD, "/fixture/pipe", O_RDONLY <unfinished ...>\n2 <... openat resumed>) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)\n'
+  const resumed = '2 --- SIGCONT {si_signo=SIGCONT, si_code=SI_USER, si_pid=9, si_uid=1000} ---\n2 openat(AT_FDCWD, "/fixture/pipe", O_RDONLY) = 8</fixture/pipe>\n'
+  expect(() => audit(baseline + restart + resumed)).toThrow('syscall=openat; return=restart; sigint=absent; sigterm=absent')
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    const shutdown = `2 --- ${signal} {si_signo=${signal}, si_code=SI_USER, si_pid=9, si_uid=1000} ---\n2 openat(AT_FDCWD, "/fixture/pipe", O_RDONLY) = ? <unavailable>\n`
+    expect(() => audit(baseline + shutdown)).toThrow(`syscall=openat; return=unavailable; sigint=${signal === 'SIGINT' ? 'seen' : 'absent'}; sigterm=${signal === 'SIGTERM' ? 'seen' : 'absent'}`)
+  }
+  expect(audit(baseline + resumed)).toMatchObject({ fileAccesses: 2, writes: 0 })
+})

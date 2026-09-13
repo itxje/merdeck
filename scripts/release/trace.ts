@@ -37,12 +37,34 @@ function completeCalls(trace: string) {
   return { lines, pairedCalls }
 }
 
+// Diagnostics classify an already rejected record; they never include trace text,
+// paths, descriptors, process identities or unvalidated return values.
+function numericReturnFailure(line: string, lines: string[]): Error {
+  const syscall = /\b(execve|execveat|listen|open|openat|openat2|stat|statx|newfstatat|readlink|readlinkat|access)\(/.exec(line)?.[1] ?? 'unrecognized'
+  const marker = [...line.matchAll(/\)\s+=/g)].at(-1)
+  const returned = marker ? line.slice(marker.index + marker[0].length).trimStart() : ''
+  const category = /^\?\s+ERESTART(?:SYS|NOHAND|NOINTR|_RESTARTBLOCK)\b/.test(returned)
+    ? 'restart'
+    : /^\?\s+<unavailable>$/.test(returned)
+      ? 'unavailable'
+      : returned === '?'
+        ? 'unknown'
+        : /^-?0x[\da-f]+/i.test(returned)
+          ? 'nondecimal'
+          : /^-?\d/.test(returned)
+            ? 'numeric-format'
+            : 'unrecognized'
+  const signalSeen = (signal: 'SIGINT' | 'SIGTERM') => lines.some(record => new RegExp(`^(?:\\s*\\d+|\\[pid\\s+\\d+\\])\\s+--- ${signal} `).test(record)) ? 'seen' : 'absent'
+  return new Error(`Trace has a relevant syscall without a complete numeric return (syscall=${syscall}; return=${category}; sigint=${signalSeen('SIGINT')}; sigterm=${signalSeen('SIGTERM')})`)
+}
+
 export function auditTrace(trace: string, executable: string, checkout: string, directory: string, root: string) {
   // strace interleaves threads between syscall entry and return; audit only complete evidence.
   const { lines, pairedCalls } = completeCalls(trace)
   const relevant = lines.filter(line => /\b(?:execve|execveat|listen|open|openat|openat2|stat|statx|newfstatat|readlink|readlinkat|access)\(/.test(line))
-  if (relevant.some(line => !/\)\s+=\s+-?\d+(?:<[^>]+>+)?(?:\s.*)?$/.test(line)))
-    throw new Error('Trace has a relevant syscall without a complete numeric return')
+  const invalidReturn = relevant.find(line => !/\)\s+=\s+-?\d+(?:<[^>]+>+)?(?:\s.*)?$/.test(line))
+  if (invalidReturn)
+    throw numericReturnFailure(invalidReturn, lines)
   const execution = lines.filter(line => /\bexecve(?:at)?\(/.test(line) && line.endsWith('= 0'))
   if (execution.length !== 1 || !execution[0]!.includes(`"${executable}"`))
     throw new Error('Trace does not prove a single executable without a child runtime')

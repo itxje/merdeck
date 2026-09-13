@@ -82,3 +82,31 @@ README now states the exact candidate runtime boundary: Bun 1.4.2, Linux little-
 PMA implementation self-review rechecked current-document query scope, namespace cancellation/resumption, generation guards, cooldown, teardown and strict error auditing. No remaining high-confidence actionable finding; no HIGH/CRITICAL finding. This is bounded repair completion, not acceptance of the failed original aggregate or independent whole-feature review. Final exact-candidate hosted/native validation remains with the integration owner. Overall plans stay implementing, prototypes needs-review and brand approval unchanged. No push, release or deployment.
 
 - complete: Bounded repair and focused frontend acceptance complete. Original aggregate remains failed with preserved evidence; final exact-candidate hosted/native validation and publication remain with the integration owner.
+
+- reopen: Owner authorized a bounded trace-validation repair after hosted run 34775581757. Preserve all acceptance history; final native gate remains failed pending verification.
+
+## Trace validation investigation and proposal
+
+The owner authorized this same task's bounded harness repair after exact candidate `17e50a4ac4d115d35b9f7ee81e767e31feae6a2b` failed hosted run 34775581757. The actual Linux x64/ext4 physical checks, 62 authenticated browser cases (one expected open-access skip), 94 assets and four lazy diagram families passed; the supported executable trace failed numeric-return completeness. Cleanup was true, but whole native acceptance failed and the bundle stage is not accepted. Sanitized hosted reports do not include the offending raw record, so its exact category is unknown.
+
+The existing serializer has no reopen command. An ignored copy extends only its locked completed-to-in_progress transition, preserving the same owner, directory lock and atomic index/detail updates. Existing task history and indices are retained.
+
+Inspect only trace completion parsing and the traced supervisor/stop callers. Reproduce signal/return formatting with local actual strace, then make the smallest evidence-supported harness correction and meaningful regression tests. Never accept unknown/incomplete returns, weaken source/write/extraction/execution assertions or export raw traces. If the hosted cause cannot be established, add only fixed safe diagnostic categories that preserve rejection and identify the next hosted failure. Reuse the existing feature plan; final whole-feature/native acceptance remains implementing.
+
+## Trace diagnostic candidate and focused validation
+
+The exact hosted offending record remains unavailable. Local actual strace 6.13 on Linux arm64 with Bun 1.4.2 reproduced a split `openat` restart return after controlled SIGSTOP/SIGCONT, followed by a later numeric completion. The audit still rejects that restart record. A separate tracer-only SIGINT attempt timed out after five seconds and required owned-process cleanup; its forced-cleanup record does not establish the hosted failure's cause. The verified normal fixture exited and passed the unchanged audit. The hosted environment used strace 6.8 on Linux x64, so these observations are diagnostic evidence, not an exact hosted reproduction.
+
+Only the existing numeric-return error gained fixed syscall/return categories and observed SIGINT/SIGTERM flags. Restart, unavailable, unknown, nondecimal, malformed numeric and unrecognized returns remain rejected. The error contains no raw records, paths, descriptors, process identities or unvalidated values. Numeric completeness, split-call pairing, single execution, checkout isolation, write destinations and extraction checks are unchanged. Service shutdown, smoke lifecycle, redacted exporter, application runtime and dependencies are unchanged.
+
+Focused evidence is retained under ignored `tmp/trace-repair/`:
+
+- RED: `bun test ./tmp/trace-repair/red.test.ts` runs the new assertions against the unchanged baseline parser: 9 passed, 2 failed because bounded diagnostics were absent (`red-verified.log`). The initial non-explicit test path did not select the test and is not RED evidence.
+- GREEN: `bun test --coverage ./tests/release/trace.test.ts`: 11 passed, 57 assertions, 100% function/line coverage for the trace module (`coverage.log`). Numeric and split-call acceptance/refusal regressions remain intact.
+- Scoped ESLint and both root/release TypeScript checks passed (`lint.log`, `root-types.log`, `types.log`).
+- Actual compiled FIFO/listener fixture: normal execution passed audit; controlled restart execution was rejected with `syscall=openat; return=restart; sigint=absent; sigterm=absent` (`reproduce-verified.log`, exit 0). Raw traces remain local and are not exported.
+- Targeted actual executable lifecycle smoke passed (`actual-smoke.log`, exit 0; `tmp/release-smoke-xAe9Fm/result.json`): reused the unchanged compiled application candidate, authenticated read/save, a retained directory cursor at shutdown, 94/94 assets, both supported/refused service traces and cleanup. It retained the actual existing supervisor/stop/audit logic; broad browser checks were replaced only in the ignored local driver by these targeted actions. Identified local storage was overlay (device 55) and refusal tmpfs (device 99). Supported trace: one execution, 264 file accesses, one scoped write, zero checkout accesses, no extraction. This is local lifecycle verification, not native release acceptance.
+
+PMA code self-review applied shared policy and the TypeScript backend pack to the complete scoped diff and callers. No high-confidence findings (CRITICAL/HIGH/MEDIUM/LOW: 0); verdict PASS for the diagnostic change. This does not certify the unknown hosted trace. Original hosted run 34775581757 remains failed, with its reports preserved under `/tmp/merdeck-directory-final-native/`. No aggregate or browser gate was rerun. Final exact-candidate hosted/native validation, bundle acceptance and publication remain pending with the integration owner; overall plans remain implementing and prototypes needs-review.
+
+- complete: Bounded trace diagnostics and focused validation complete. Exact hosted offending record remains unknown; original native failure and final hosted acceptance remain pending.
