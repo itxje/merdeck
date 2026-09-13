@@ -67,3 +67,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**PREVIEW-010 Preserve inert addresses and note text in diagram previews**](PREVIEW-010.md) `P2`
 - [x] [**LAYOUT-009 Distinguish folders from files in the explorer**](LAYOUT-009.md) `P2`
 - [x] [**PREVIEW-011 Refuse only the preview security boundary and admit the remaining Mermaid syntax**](PREVIEW-011.md) `P1`
+
+- [x] [**20260913-1626-directory-browsing-contract Directory browsing investigation and contract**](20260913-1626-directory-browsing-contract.md) `P1`
