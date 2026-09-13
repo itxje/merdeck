@@ -110,12 +110,35 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(dialog).toHaveCount(0)
     await rm(join(root, folder, 'nested', '.keep'))
-    await explorer.getByRole('button', { name: 'Refresh files', exact: true }).click()
-    // Existing rows remain visible while refresh temporarily disables mutations.
+    const listing = explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })
+    let releaseRefresh = () => {}
+    const heldRefresh = new Promise<void>((resolve) => {
+      releaseRefresh = resolve
+    })
+    await page.route('**/api/diagrams/directory?*', async (route) => {
+      const response = await route.fetch()
+      await heldRefresh
+      await route.fulfill({ response }).catch(() => {})
+    }, { times: 1 })
+    const refreshed = page.waitForResponse((response) => {
+      const url = new URL(response.url())
+      return url.pathname === '/api/diagrams/directory' && url.searchParams.get('path') === folder
+    })
+    try {
+      await explorer.getByRole('button', { name: 'Refresh files', exact: true }).click()
+      // Retained rows are visible before this response makes their actions ready.
+      await expect(listing).toHaveAttribute('aria-busy', 'true')
+      await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeDisabled()
+    }
+    finally { releaseRefresh() }
+    await (await refreshed).finished()
+    await expect(listing).toHaveAttribute('aria-busy', 'false')
     await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeEnabled()
-
-    await explorer.getByRole('button', { name: 'nested', exact: true }).focus()
-    await page.keyboard.press('F2')
+    const nested = listing.getByRole('button', { name: 'nested', exact: true })
+    await nested.focus()
+    await expect(nested).toBeFocused()
+    await nested.press('F2')
+    await expect(dialog).toBeVisible()
     await pathInput.fill(`${folder}/empty`)
     await dialog.getByRole('button', { name: 'Move', exact: true }).click()
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toBeVisible()

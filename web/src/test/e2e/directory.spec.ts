@@ -220,7 +220,8 @@ test('stale directory responses cannot replace a new location and external remov
     await pending
     await explorer.getByRole('button', { name: 'Root', exact: true }).click()
     release()
-    await expect(explorer.getByRole('button', { name: 'welcome.mmd' })).toBeVisible()
+    await expect(explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })).toHaveAttribute('aria-busy', 'false')
+    await expect(explorer.getByRole('button', { name: /^welcome\.mmd(?: Unsaved changes)?$/ })).toBeVisible()
     await expect(explorer.getByRole('button', { name: 'late.mmd' })).toHaveCount(0)
     await expect(editor).toHaveValue(draft)
     await browse(page, top)
@@ -231,7 +232,8 @@ test('stale directory responses cannot replace a new location and external remov
     await expect(editor).toHaveValue(draft)
     await expect(page.getByRole('button', { name: /^Save/ })).toBeEnabled()
     await explorer.getByRole('button', { name: 'Up', exact: true }).click()
-    await expect(explorer.getByRole('button', { name: 'welcome.mmd' })).toBeVisible()
+    await expect(explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })).toHaveAttribute('aria-busy', 'false')
+    await expect(explorer.getByRole('button', { name: /^welcome\.mmd(?: Unsaved changes)?$/ })).toBeVisible()
   }
   finally {
     release()
