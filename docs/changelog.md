@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 16:54 [pitfall]
+
+The [directory backend implementation](task/20260913-1637-directory-backend.md) is blocked at runtime acceptance. Actual Bun 1.4.2 Dir.read uses a whole-directory readdir array despite bufferSize 1; a retained-descriptor assertion fails and the first-read syscall trace reaches EOF across 10,003 names. Logical page/depth/auth tests pass but do not prove bounded underlying work. The provisional contracts, path-depth and lifecycle changes are not ready for integration. The feature plan stays implementing; the prototype stays needs-review. A verified streaming primitive and contract correction are required before implementation acceptance.
+
 ## 2026-09-13 16:33 [decision]
 
 Recorded the authorized [directory navigation and bounded pagination proposal](plan/20260913-1628-directory-navigation-pagination.md): per-directory metadata pages, single-use cursors with bounded resources and cleanup, independent path depth, deferred document blocks, and explicit mutation/restart semantics. The [scoped routing decision](decisions/20260913-1628-directory-contract-routing.md) preserves current compatibility and actual virtiofs admission. Investigation/proposal is complete; implementation and integrated acceptance remain pending, and the prototype stays needs-review. Existing PLAN-026 and PREVIEW-011 are unchanged.

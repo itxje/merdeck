@@ -5,9 +5,8 @@ import { execFileSync } from 'node:child_process'
 import { chmod, link, mkdir, readdir, readFile, rename, stat, symlink, unlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
+import { createFixtureService as createDiagramService, createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
 import { AppError } from '../../shared/errors'
-import { createDiagramService } from './index'
 
 let fixture: string
 let root: string
@@ -21,7 +20,7 @@ beforeEach(async () => {
   await mkdir(outside)
   await writeFile(join(root, 'diagram.mmd'), 'graph TD\nA-->B\n')
   await writeFile(join(outside, 'private.mmd'), 'outside-secret')
-  config = { projectRoot: root, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
+  config = { projectRoot: root, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
 })
 afterEach(async () => {
   await removeFixture(fixture)
@@ -308,8 +307,8 @@ describe('contained real filesystem service', () => {
     await expectCode(service.readDocument('__pycache__/a.mmd'), 'forbidden')
     const shallow = await createDiagramService({ ...config, limits: { ...config.limits, maxTreeDepth: 1 } })
     expect((await shallow.treeSnapshot()).truncated).toBe(true)
-    await expectCode(shallow.readDocument('ordinary/a.mmd'), 'forbidden')
-    await expectCode(shallow.saveDiagram({ ...await saveRequest(service, 'ordinary/a.mmd') }), 'forbidden')
+    expect((await shallow.readDocument('ordinary/a.mmd')).path).toBe('ordinary/a.mmd')
+    expect((await shallow.saveDiagram({ ...await saveRequest(service, 'ordinary/a.mmd') })).path).toBe('ordinary/a.mmd')
     const small = await createDiagramService({ ...config, limits: { ...config.limits, maxTreeEntries: 1 } })
     expect((await small.treeSnapshot()).truncated).toBe(true)
     expect((await small.treeSnapshot()).entries.length).toBeLessThanOrEqual(1)

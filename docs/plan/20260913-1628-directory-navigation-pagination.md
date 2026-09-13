@@ -291,3 +291,5 @@ Required implementation evidence:
 - Investigation/proposal completion is not feature completion, prototype approval, integration, or release acceptance.
 
 - 2026-09-13 16:33 UTC: investigation and concrete proposal completed; existing owner authorization applied. The overall feature remains implementing, with backend/frontend and integrated acceptance outstanding.
+
+- 2026-09-13 16:54 UTC: backend runtime investigation found that pinned Bun 1.4.2 `Dir.read()` materializes `fs.readdir` results and does not honor bufferSize as an enumeration bound. The provisional implementation is not accepted. The [backend task](../task/20260913-1637-directory-backend.md) retains actual runtime, descriptor and first-read syscall evidence. The streaming/no-helper/runtime-pin constraints require a reviewed correction before bounded pagination can be accepted; no alternate API schema or dependency is inferred. This overall plan remains implementing.

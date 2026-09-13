@@ -10,7 +10,7 @@ import { createFixture, removeFixture } from '../files/fixtures'
 
 test.each([false, true])('HTTP storage contract uses actual writable capability; unsupported=%s', async (unsupported) => {
   const root = await createFixture('files-storage-http-', unsupported)
-  let close = () => {}
+  let close: () => Promise<void> = async () => {}
   const original = '\uFEFF# Keep\r\n```mermaid\r\ngraph TD\r\n```\r\nMiddle\r\n~~~mermaid\r\ngraph LR\r\n~~~\r\nTail'
   try {
     await writeFile(join(root, 'guide.md'), original)
@@ -86,7 +86,7 @@ test.each([false, true])('HTTP storage contract uses actual writable capability;
     expect((await request('/diagrams/tree', { headers })).status).toBe(401)
   }
   finally {
-    close()
+    await close()
     await removeFixture(root)
   }
 })

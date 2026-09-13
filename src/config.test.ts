@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { createApp } from './app'
 import { ConfigError, loadConfig } from './config'
 import { createDiagramService } from './modules/diagrams'
@@ -8,9 +8,15 @@ import { AppError } from './shared/errors'
 
 let project: string
 const testToken = 'test-only-token-with-at-least-32-characters'
+const apps: ReturnType<typeof createApp>[] = []
+afterEach(async () => {
+  await Promise.all(apps.splice(0).map(app => app.close()))
+})
 async function appFor(environment: Record<string, string>) {
   const config = await loadConfig(environment)
-  return createApp(config, { diagrams: await createDiagramService(config) })
+  const app = createApp(config, { diagrams: await createDiagramService(config) })
+  apps.push(app)
+  return app
 }
 const env = () => ({ MERDECK_ROOT: project, MERDECK_TOKEN: testToken })
 
@@ -28,6 +34,8 @@ describe('startup configuration', () => {
     const config = await loadConfig(env())
     expect(config.limits.maxTreeEntries).toBe(8000)
     expect(config.limits.maxTreeDepth).toBe(4)
+    expect(config.limits.maxPathDepth).toBe(64)
+    expect((await loadConfig({ ...env(), MERDECK_MAX_PATH_DEPTH: '6' })).limits.maxPathDepth).toBe(6)
     const raised = await loadConfig({ ...env(), MERDECK_MAX_TREE_DEPTH: '16', MERDECK_MAX_TREE_ENTRIES: '1000' })
     expect(raised.limits.maxTreeDepth).toBe(16)
     expect(raised.limits.maxTreeEntries).toBe(1000)
@@ -62,6 +70,9 @@ describe('startup configuration', () => {
       { MERDECK_MAX_FILE_BYTES: '0' },
       { MERDECK_MAX_TREE_ENTRIES: '10001' },
       { MERDECK_MAX_TREE_DEPTH: '33' },
+      { MERDECK_MAX_PATH_DEPTH: '0' },
+      { MERDECK_MAX_PATH_DEPTH: '65' },
+      { MERDECK_MAX_PATH_DEPTH: '1.5' },
       { MERDECK_MAX_BLOCKS: '0' },
       { MERDECK_POLL_INTERVAL_MS: '1' },
       { MERDECK_SESSION_TTL_SECONDS: '999999' },

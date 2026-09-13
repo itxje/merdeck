@@ -40,10 +40,11 @@ async function reproduce() {
       },
     }))
     const { createDiagramService } = await import('../../../src/modules/diagrams')
-    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
+    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
     const service = await createDiagramService(config)
     const original = await service.readDocument('diagram.mmd')
     const saved = await service.saveDiagram({ path: original.path, selector: original.blocks[0]!.selector, expectedVersion: original.version, source: submitted })
+    await service.close()
     const finalVersion = hash(await filesystem.readFile(path, 'utf8'))
     const externalChangeOverwritten = interceptionCount === 1 && versionAtRename === original.version && externalVersion === hash(external) && saved.version === hash(submitted) && finalVersion === saved.version
     process.stdout.write(`${JSON.stringify({

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { contentVersionSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
+import { closeDirectoryRequestSchema, contentVersionSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
 import { AppError, errorStatus, safeError } from './errors'
 
 const version = 'a'.repeat(64)
@@ -48,4 +48,23 @@ describe('transport boundaries', () => {
     expect(deleteEntryRequestSchema.safeParse({ kind: 'link', path: 'a' }).success).toBe(false)
     expect([errorStatus.exists, errorStatus.not_empty]).toEqual([409, 409])
   })
+})
+
+test('directory requests have strict defaults, canonical limits and bound cursor syntax', () => {
+  expect(directoryQuerySchema.parse({})).toEqual({ path: '', limit: 100 })
+  expect(directoryQuerySchema.parse({ path: '', limit: '200' })).toEqual({ path: '', limit: 200 })
+  for (const limit of ['', '01', '0', '201', '-1', '+1', '1e2', '1.0', ' 1'])
+    expect(directoryQuerySchema.safeParse({ limit }).success).toBe(false)
+  expect(directoryRequestSchema.safeParse({ path: '', limit: 1, cursor: version }).success).toBe(true)
+  expect(directoryRequestSchema.safeParse({ limit: '1' }).success).toBe(false)
+  expect(directoryRevisionRequestSchema.safeParse({ path: '', cursor: version }).success).toBe(false)
+  expect(closeDirectoryRequestSchema.safeParse({ path: '', cursor: version }).success).toBe(true)
+  expect(closeDirectoryRequestSchema.safeParse({ cursor: version }).success).toBe(false)
+  expect(closeDirectoryRequestSchema.safeParse({ path: '', cursor: version, extra: 1 }).success).toBe(false)
+  expect(relativePathSchema.safeParse('bad-\uD800.md').success).toBe(false)
+  expect(relativePathSchema.safeParse('valid-😀.md').success).toBe(true)
+  for (const code of ['directory_changed', 'cursor_stale'] as const) {
+    expect(errorStatus[code]).toBe(409)
+    expect(new AppError(code, version).toResponse()).not.toHaveProperty('currentVersion')
+  }
 })

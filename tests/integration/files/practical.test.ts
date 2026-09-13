@@ -2,10 +2,9 @@ import { Buffer } from 'node:buffer'
 import { mkdir, readdir, readFile, rename, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from 'bun:test'
-import { createDiagramService } from '../../../src/modules/diagrams'
 import { inspectFilesystem, requireWritableFilesystem } from '../../../src/modules/diagrams/filesystem'
 import { errorStatus, safeError } from '../../../src/shared/errors'
-import { createFixture, fixtureLimits, fixtureParent, removeFixture } from './fixtures'
+import { createFixtureService as createDiagramService, createFixture, fixtureLimits, fixtureParent, removeFixture } from './fixtures'
 
 test('twenty consecutive standalone saves retain BOM CRLF and fresh revisions', async () => {
   const root = await createFixture('files-standalone-')
