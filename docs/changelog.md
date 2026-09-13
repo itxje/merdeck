@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 20:09 [release]
+
+Published [v0.9.1](https://github.com/itxje/merdeck/releases/tag/v0.9.1) with independent directory navigation, bounded pagination and deferred Markdown loading. Exact commit `390adabc00385997f6e49a6771c450be465cbfed` passed full native source/executable/bundle acceptance and release verification. Downloaded archive checksum and build metadata were verified. Completed the feature/correction plans and existing [delivery task](task/20260913-1802-directory-frontend.md); original failed checkpoints and the unpublished immutable v0.9.0 tag remain recorded. Prototypes remain needs-review and runtime/storage limitations remain unchanged.
+
 ## 2026-09-13 18:41 [fix]
 
 Corrected selected-document refresh after transient failure and directory request lifetime around navigation and writes. The [bounded acceptance repair](task/20260913-1802-directory-frontend.md) preserves the original aggregate failure and reproduces its 429 on the unchanged executable. Focused unit checks passed 81 tests; targeted production browser checks passed 14 cases, including explicit namespace conflict recovery without cursor replay. README now states the exact candidate runtime and current v0.8.4 release; v0.9.0 and final hosted/native candidate acceptance remain pending. No full aggregate rerun or publication is claimed.

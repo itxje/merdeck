@@ -1,9 +1,13 @@
 # 20260913-1628-directory-navigation-pagination Directory navigation and bounded pagination
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-13 16:28
 - **approvedAt**: 2026-09-13 16:33 (existing 2026-09-13 owner authorization applied after proposal completion)
 - **relatedTask**: 20260913-1626-directory-browsing-contract
+
+## Delivery status
+
+Completed and published as [v0.9.1](https://github.com/itxje/merdeck/releases/tag/v0.9.1) at `390adabc00385997f6e49a6771c450be465cbfed` after [full native acceptance](https://github.com/itxje/merdeck/actions/runs/34778844881) and [release verification](https://github.com/itxje/merdeck/actions/runs/34779348165). The [final delivery record](../task/20260913-1802-directory-frontend.md#final-integrated-acceptance-and-release--2026-09-13) supersedes earlier pending-acceptance statements below; failed checkpoints remain historical evidence. Prototype status remains needs-review and documented platform/FFI limitations remain.
 
 ## Context
 

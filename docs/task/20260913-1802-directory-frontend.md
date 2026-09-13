@@ -2,7 +2,7 @@
 
 - **status**: completed
 - **priority**: P1
-- **owner**: frontend-maintainer/20260913
+- **owner**: release-maintainer/20260913
 - **createdAt**: 2026-09-13 18:02
 
 ## Description
@@ -16,7 +16,7 @@ Integrating directory navigation and verifying production behavior
 ## Dependencies
 
 - **blocked by**: (none; reviewed backend and completed design integrated)
-- **blocks**: final integrated acceptance
+- **blocks**: (none; integrated acceptance and publication complete)
 
 ## Notes
 
@@ -164,3 +164,19 @@ Focused evidence under ignored `tmp/browser-timing/`:
 Actual local verification used Bun 1.4.2, Node 24.20.0, identified overlay device 55 and separate refusal tmpfs device 99 in the project tmux session. Historical native passes 34777151314 and 34777678520 remain valid for their exact commits; they do not certify this new test candidate or a published release. The immutable v0.9.0 tag is preserved, v0.9.0 publication did not complete, and final exact-candidate native validation/integration plus v0.9.1 publication remain with the integration owner. Overall feature tracking remains implementing pending final acceptance and delivery; prototype status remains needs-review.
 
 - complete: Two browser-test repairs and focused unchanged executable/bundle acceptance complete. Prior release failures remain preserved; final native validation and v0.9.1 publication remain pending.
+
+### Final delivery record handoff
+
+The existing authorized delivery handoff transfers this task from frontend-maintainer/20260913 to release-maintainer/20260913 solely to record the verified native acceptance and published release. No implementation work is reopened.
+
+## Final integrated acceptance and release — 2026-09-13
+
+The authorized feature is complete on main and published as [v0.9.1](https://github.com/itxje/merdeck/releases/tag/v0.9.1) at exact commit `390adabc00385997f6e49a6771c450be465cbfed`. [Native validation](https://github.com/itxje/merdeck/actions/runs/34778844881) passed the unchanged full `check:ci --native` on actual Linux x64/ext4 with separate tmpfs refusal, Bun 1.4.2 and Node 24.20.0. Downloaded provenance confirms the clean commit; directory adapter and driver hashes match Git, and source/bundle/compiled physical checks all passed. Full executable and bundle browser checks, resource isolation and cleanup passed. [Release verification and publication](https://github.com/itxje/merdeck/actions/runs/34779348165) both succeeded.
+
+Direct implementation and repair review finished with no remaining actionable findings. The selected-document refresh defect, stale runtime instructions, complete deleted-fd trace annotation parsing and two browser-test synchronization/locator defects were corrected and verified. Earlier failed local/hosted runs remain historical failures. The immutable v0.9.0 tag was not moved and has no published release.
+
+The downloaded `merdeck.tar.gz` is 1,225,725 bytes, SHA-256 `e06dc0a0eaaf6efe817fc9b85c53d470f249b6c24602525f2fca16693c4e7df7`; `SHA256SUMS` verifies it. Its 95 entries have no absolute/traversing paths or links. Running the downloaded bundle's metadata commands reports `Merdeck 0.9.1`, target `bundle`, Bun 1.4.2 and the exact release commit. These metadata checks do not claim an additional local service deployment.
+
+Original and directory prototypes remain **needs-review**; brand approval is unchanged. Linux little-endian LP64 x64/arm64, exact Bun 1.4.2, procfs and dynamically loadable glibc >= 2.30 remain prerequisites. Experimental FFI, synchronous syscall and documented filesystem limitations remain; no universal hardened-host/minimum-libc acceptance is claimed.
+
+- complete: Integrated native acceptance and published v0.9.1 verified, including downloaded archive checksum and exact build metadata.
