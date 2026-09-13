@@ -19,14 +19,14 @@ test('loading and an actually empty project remain understandable', async ({ pag
       await rename(join(root, name), join(held, name))
       moved.push(name)
     }
-    await page.route('**/api/diagrams/tree', async (route) => {
+    await page.route('**/api/diagrams/directory?*', async (route) => {
       await gate
       await route.continue()
     }, { times: 1 })
-    await login(page)
-    await expect(page.getByText('Reading project files…', { exact: true })).toBeVisible()
+    await login(page, true)
+    await expect(page.getByText('Loading directory…', { exact: true })).toBeVisible()
     release()
-    await expect(page.getByText('No supported files in this project', { exact: true })).toBeVisible({ timeout: 12000 })
+    await expect(page.getByText('No supported entries in this page window', { exact: true })).toBeVisible({ timeout: 12000 })
     await expect(page.getByRole('heading', { name: 'Choose a diagram', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Refresh files', exact: true })).toBeEnabled()
   }
@@ -38,21 +38,21 @@ test('loading and an actually empty project remain understandable', async ({ pag
   }
 })
 
-test('an advertised partial tree cannot discard the selected dirty document', async ({ page }) => {
-  await login(page)
+test('a partial directory window cannot discard the selected dirty document', async ({ page }) => {
+  await login(page, true)
   await choose(page, 'welcome.mmd')
   const editor = page.getByLabel('Mermaid source', { exact: true })
   await expect(editor).toBeVisible()
   const draft = 'flowchart LR\n  Retain --> Draft\n'
   await editor.fill(draft)
   // Inject transport truncation while retaining a real revision endpoint and document.
-  await page.route('**/api/diagrams/tree', async (route) => {
+  await page.route('**/api/diagrams/directory?*', async (route) => {
     const response = await route.fetch()
     const body = await response.json()
-    await route.fulfill({ response, json: { ...body, data: { ...body.data, entries: [], truncated: true } } })
+    await route.fulfill({ response, json: { ...body, data: { ...body.data, entries: [], complete: false, stoppedBy: 'visits', nextCursor: 'f'.repeat(64), expiresAt: new Date(Date.now() + 100000).toISOString(), visited: 1024, excluded: 1024 } } })
   })
   await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-  await expect(page.getByText('Partial file list. Select known files directly.', { exact: true })).toBeVisible()
+  await expect(page.getByText('More entries may exist.', { exact: true })).toBeVisible()
   await expect(editor).toHaveValue(draft)
   await expect(page.getByText('RETAINED DRAFTS', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Save/ })).toBeEnabled()

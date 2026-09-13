@@ -55,6 +55,9 @@ for (const [kind, source, expected] of [
       await expect(page.getByRole('button', { name: /^Save/ })).toBeDisabled()
       expect(await readFile(path, 'utf8')).toBe(changed)
     }
-    finally { await rm(path, { force: true }) }
+    finally {
+      await page.close()
+      await rm(path, { force: true })
+    }
   })
 }

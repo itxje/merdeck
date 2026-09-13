@@ -1,7 +1,7 @@
 import type { Locator } from '@playwright/test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
-import { choose, expect, live, login, settledDialog, test } from './support'
+import { browse, choose, expect, live, login, settledDialog, test } from './support'
 
 async function measureDrawer(dialog: Locator) {
   return dialog.evaluate((popup) => {
@@ -95,7 +95,7 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
       assertContained(measurement)
       // The explorer heading actions precede the filter, which still receives the initial focus.
       await page.keyboard.press('Shift+Tab')
-      await expect(dialog.getByRole('button', { name: 'Refresh files', exact: true })).toBeFocused()
+      await expect(dialog.getByRole('button', { name: 'Restart', exact: true })).toBeFocused()
       await page.keyboard.press('Tab')
       await expect(search).toBeFocused()
       await page.keyboard.press('Escape')
@@ -103,6 +103,7 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
       await expect(opener).toBeFocused()
       await opener.click()
       await settledDialog(page)
+      await browse(page, relative(root, folder))
       await search.fill('drawer-target')
       await expect(dialog.getByRole('button', { name: 'welcome.mmd', exact: true })).toHaveCount(0)
       const target = dialog.locator('button').filter({ has: dialog.page().locator(`span:text-is("${filename}")`) })
@@ -122,7 +123,7 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
     await page.setViewportSize({ width: 1440, height: 920 })
     await choose(page, 'welcome.mmd')
     await live(page)
-    await choose(page, filename)
+    await choose(page, relative(root, path))
     await expect(page.getByLabel('Mermaid source', { exact: true })).toHaveValue(draft)
     await live(page)
     await expect(opener).toBeHidden()

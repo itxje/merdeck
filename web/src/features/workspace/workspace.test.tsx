@@ -12,6 +12,7 @@ vi.mock('@/features/preview/preview', () => ({ Preview: () => <div>Diagram canva
 beforeEach(() => {
   const media = Object.assign(new EventTarget(), { matches: false })
   vi.stubGlobal('matchMedia', () => media)
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
 })
 it('labels login controls, keeps tokens out of persistence and clears failed submissions', async () => {
   vi.spyOn(api, 'session').mockResolvedValue({ authenticated: false })
@@ -36,7 +37,8 @@ it('labels login controls, keeps tokens out of persistence and clears failed sub
 })
 it('opens directly with open access, without sign-in or Log out, and names the mode in the status bar', async () => {
   vi.spyOn(api, 'session').mockResolvedValue({ authenticated: true, access: 'open', version: '0.0.0-test', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, identity: 'stable', filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } })
-  vi.spyOn(api, 'tree').mockResolvedValue({ entries: [], revision: 'a'.repeat(64), truncated: false, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: '', parent: null, entries: [], revision: 'a'.repeat(64), complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: '', revision: 'a'.repeat(64), maxPathDepth: 64, pollIntervalMs: 30000 })
   const client = createQueryClient()
   const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path="" block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
   expect(await screen.findByText('Open access')).toBeVisible()
@@ -61,5 +63,23 @@ it('asks for a token only once the session check shows that one is needed', asyn
   expect(screen.getByLabelText('Access token', { exact: true })).toBeVisible()
   unmount()
 
+  client.clear()
+})
+
+it('renders the selected source after Refresh retries a transient document failure with the same revision', async () => {
+  const revision = 'a'.repeat(64)
+  vi.spyOn(api, 'session').mockResolvedValue({ authenticated: true, access: 'open', version: '0.0.0-test', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, identity: 'stable', filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } })
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: '', parent: null, entries: [], revision, complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: '', revision, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'revision').mockResolvedValue({ path: 'one.mmd', state: 'present', version: revision })
+  vi.spyOn(api, 'document').mockResolvedValue({ path: 'one.mmd', kind: 'mermaid', version: revision, blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', source: 'flowchart LR\nA-->B', lineStart: 1, lineEnd: 2 }] }).mockRejectedValueOnce(new HttpError(503, 'unavailable', 'Temporary document failure'))
+  const client = createQueryClient()
+  const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path="one.mmd" block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByText('Temporary document failure')).toBeVisible()
+  expect(screen.queryByLabelText('Mermaid source', { exact: true })).toBeNull()
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Refresh files' }))
+  expect(await screen.findByLabelText('Mermaid source', { exact: true })).toHaveValue('flowchart LR\nA-->B')
+  expect(api.document).toHaveBeenCalledTimes(2)
+  unmount()
   client.clear()
 })

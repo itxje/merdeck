@@ -21,7 +21,7 @@ interface PreviewProps {
   onSourceChange?: (source: string) => void
   onLocate?: (range: { start: number, end: number }) => void
   // Returns a message when the named file cannot be opened, so the preview can say so.
-  onOpenFile?: (target: string) => string | undefined
+  onOpenFile?: (target: string) => string | undefined | Promise<string | undefined>
 }
 
 export function Preview({ source, title, onError, onSourceChange, onLocate, onOpenFile }: PreviewProps) {
@@ -48,6 +48,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
   const [note, setNote] = React.useState<{ source: string, text: string } | null>(null)
   const editorRef = React.useRef<HTMLTextAreaElement>(null)
   const cancelRef = React.useRef(false)
+  const linkRequestRef = React.useRef(0)
   const liveSourceRef = React.useRef<string | null>(source)
   const settled = !!svg && !error && !rendering && settledSource === source && settledThemeRevision === themeRevision
 
@@ -193,6 +194,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
 
   // Updated during commit, so a label edit that resolves after the draft changed or the preview unmounted is dropped.
   React.useLayoutEffect(() => {
+    linkRequestRef.current++
     liveSourceRef.current = source
     return () => {
       liveSourceRef.current = null
@@ -236,8 +238,19 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
     const file = onOpenFile && linked && graphicRef.current?.contains(linked) ? linked.getAttribute('data-file-link') : null
     if (!file)
       return false
-    const message = onOpenFile?.(file)
-    setNote(message ? { source, text: message } : null)
+    const request = ++linkRequestRef.current
+    const result = onOpenFile?.(file)
+    const show = (message: string | undefined) => {
+      if (liveSourceRef.current === source && linkRequestRef.current === request)
+        setNote(message ? { source, text: message } : null)
+    }
+    if (result instanceof Promise) {
+      setNote(null)
+      void result.then(show, () => show('That file cannot be opened. Try again.'))
+    }
+    else {
+      show(result)
+    }
     return true
   }
   const siteOf = (node: Element) => settled ? sites?.get(node.id.replace(/^diagram-\d+-/, '')) : undefined

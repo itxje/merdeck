@@ -180,3 +180,7 @@ The production adapter now uses the reviewed primitive and process-lifetime libc
 ### 2026-09-13 — evidence correction and validation consolidation
 
 Exact clean candidate `6c09919d8bfb569f3813ca48adbe9fac1fc53f51` passed the full normal local ARM64 gate. Subsequent review required replacing raw hosted evidence copies with guarded sanitized summaries and success/failure retention. The correction changes only verification/export/tests/workflow documentation; production backend source is unchanged. Latest authorization consolidates further checks into focused local export/workflow/lint/type/diff validation plus the mandatory full hosted x64/ext4 --native gate on the corrected candidate. It supersedes repeating the costly local aggregate for this verification-only delta and does not waive final acceptance. See the backend task for exact evidence/status. Experimental FFI and unverified minimum-libc/hardened environments remain disclosed limits.
+
+## Backend acceptance update
+
+On 2026-09-13 the owner confirmed normal native run 34772642752 passed on actual Linux x64/ext4 at `c3fb12bcde038eaa4de599d4ecce967293688160`, tree-identical to reviewed integration `9642799f0def47b685c57fa7e5558ed6bfc6f1d4`. This completes the backend implementation task without changing its historical failures. The overall directory feature and integrated acceptance remain implementing; the frontend candidate needs its own normal local and final integrated native gates.

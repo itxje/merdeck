@@ -17,7 +17,9 @@ function doc(path: string, source = 'A-->B'): DiagramDocument {
 it('file operations send the session token, move drafts, remove deleted drafts and end expired sessions', async () => {
   const client = createQueryClient()
   vi.spyOn(api, 'session').mockResolvedValue(session)
-  vi.spyOn(api, 'tree').mockResolvedValue({ entries: [], revision: version, truncated: false, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directory').mockImplementation(async request => ({ path: request.path, parent: request.path ? '' : null, entries: [], revision: version, complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 }))
+  vi.spyOn(api, 'directoryRevision').mockImplementation(async path => ({ path, revision: version, maxPathDepth: 64, pollIntervalMs: 30000 }))
+  vi.spyOn(api, 'closeDirectory').mockResolvedValue({ closed: true })
   vi.spyOn(api, 'revision').mockImplementation(async path => ({ path, version, state: 'present' }))
   vi.spyOn(api, 'document').mockImplementation(async path => doc(path))
   const moveEntry = vi.spyOn(api, 'moveEntry').mockImplementation(async request => ({ kind: request.kind, path: request.to }))
@@ -42,6 +44,27 @@ it('file operations send the session token, move drafts, remove deleted drafts a
   })
   expect(createEntry).toHaveBeenCalledWith({ kind: 'file', path: 'new.mmd' }, 'csrf')
   await waitFor(() => expect(result.current.session).toBeNull())
+  unmount()
+  client.clear()
+})
+
+it('reads an unopened file version before a mutation and refuses a failed preflight', async () => {
+  const client = createQueryClient()
+  vi.spyOn(api, 'session').mockResolvedValue(session)
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: '', parent: null, entries: [], revision: version, complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: '', revision: version, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'document').mockImplementation(async path => doc(path))
+  const remove = vi.spyOn(api, 'deleteEntry').mockResolvedValue({ kind: 'file', path: 'unopened.mmd' })
+  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  const { result, unmount } = renderHook(() => useWorkspace('', 0), { wrapper })
+  await waitFor(() => expect(result.current.session).toBeTruthy())
+  await act(() => result.current.entries.mutateAsync({ type: 'delete', request: { kind: 'file', path: 'unopened.mmd', expectedVersion: '' } }))
+  expect(remove).toHaveBeenCalledWith({ kind: 'file', path: 'unopened.mmd', expectedVersion: version }, 'csrf')
+  vi.mocked(api.document).mockRejectedValueOnce(new HttpError(403, 'forbidden', 'Cannot open'))
+  await act(async () => {
+    await expect(result.current.entries.mutateAsync({ type: 'delete', request: { kind: 'file', path: 'refused.mmd', expectedVersion: '' } })).rejects.toBeInstanceOf(HttpError)
+  })
+  expect(remove).toHaveBeenCalledOnce()
   unmount()
   client.clear()
 })

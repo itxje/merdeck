@@ -7,12 +7,13 @@ const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
   throw new Error('An explicit disposable sample root is required')
 
-test('a node that names a project file opens it, and a missing target only explains itself', async ({ page }) => {
+test('a node that names a project file opens it, and a missing target only explains itself', async ({ page, audit }) => {
   const target = `linked-target-${randomUUID()}.mmd`
   const index = `linked-index-${randomUUID()}.mmd`
   await writeFile(join(root, target), 'flowchart LR\n  Target[Opened] --> Done\n', { flag: 'wx' })
   await writeFile(join(root, index), `flowchart TB\n  A1["Architecture"] --> B1["Missing"]\n  click A1 "${target}"\n  click B1 "linked-absent.mmd"\n`, { flag: 'wx' })
   try {
+    audit.allowHttp(410, '/api/diagrams/document')
     await page.setViewportSize({ width: 1440, height: 1000 })
     await login(page, true)
     await choose(page, index)
@@ -25,7 +26,7 @@ test('a node that names a project file opens it, and a missing target only expla
     // path is the one a reader without a pointer takes.
     await page.locator('.diagram-graphic [data-file-link="linked-absent.mmd"]').focus()
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('status').filter({ hasText: 'That file is not in this project.' })).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: 'This file was deleted or renamed. Your draft is kept; it cannot recreate the file.' })).toBeVisible()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(index)
 
     await linked.locator('rect').first().click({ position: { x: 4, y: 4 } })
@@ -39,7 +40,7 @@ test('a node that names a project file opens it, and a missing target only expla
 })
 
 for (const title of ['', '---\ntitle: File overview\n---\n']) {
-  test(`relative node navigation retains source and drafts ${title ? 'with' : 'without'} title front matter`, async ({ page }) => {
+  test(`relative node navigation retains source and drafts ${title ? 'with' : 'without'} title front matter`, async ({ page, audit }) => {
     const directory = `navigation-${randomUUID()}`
     const fixture = join(root, directory)
     const index = `index-${randomUUID()}.mmd`
@@ -68,9 +69,10 @@ for (const title of ['', '---\ntitle: File overview\n---\n']) {
         writes.push(request.postData() ?? '')
     })
     try {
+      audit.allowHttp(410, '/api/diagrams/document')
       await page.setViewportSize({ width: 1440, height: 1000 })
       await login(page, true)
-      await choose(page, index)
+      await choose(page, `${directory}/${index}`)
       await live(page)
       const editor = page.getByLabel('Mermaid source', { exact: true })
       const linked = (target: string) => page.locator(`.diagram-graphic [data-file-link="${target}"]`)
@@ -87,7 +89,7 @@ for (const title of ['', '---\ntitle: File overview\n---\n']) {
       await expect(page.locator('.diagram-graphic [data-file-link]:focus')).toHaveCount(1)
       await linked('missing.mmd').focus()
       await page.keyboard.press('Enter')
-      await expect(page.getByRole('status').filter({ hasText: 'That file is not in this project.' })).toBeVisible()
+      await expect(page.getByRole('status').filter({ hasText: 'This file was deleted or renamed. Your draft is kept; it cannot recreate the file.' })).toBeVisible()
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${directory}/${index}`)
 
       const draft = `${source}%% Unsaved index note\n`
@@ -99,7 +101,7 @@ for (const title of ['', '---\ntitle: File overview\n---\n']) {
       await expect(editor).toHaveValue(targetSource)
       const targetDraft = `${targetSource}%% Unsaved target note\n`
       await editor.fill(targetDraft)
-      await choose(page, index)
+      await choose(page, `${directory}/${index}`)
       await expect(editor).toHaveValue(draft)
       await live(page)
 
@@ -107,17 +109,17 @@ for (const title of ['', '---\ntitle: File overview\n---\n']) {
       await page.keyboard.press('Enter')
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${directory}/notes.md`)
       await expect(editor).toHaveValue(noteSource)
-      await choose(page, index)
+      await choose(page, `${directory}/${index}`)
       await live(page)
       await linked('boundary.mermaid').focus()
       await page.keyboard.press('Space')
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${directory}/boundary.mermaid`)
       await expect(editor).toHaveValue(boundarySource)
-      await choose(page, index)
+      await choose(page, `${directory}/${index}`)
       await live(page)
       await linked('details/target.mmd').click()
       await expect(editor).toHaveValue(targetDraft)
-      await choose(page, index)
+      await choose(page, `${directory}/${index}`)
       await expect(editor).toHaveValue(draft)
       await live(page)
 

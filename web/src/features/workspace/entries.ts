@@ -8,7 +8,7 @@ export type EntryAction
     | { type: 'delete', kind: EntryKind, path: string, version?: string, unsaved?: boolean }
 
 // Mirrors the service's excluded folder names for early feedback; the service remains the authority.
-const excluded = new Set(['node_modules', 'vendor', 'dist', 'build', 'coverage', 'secrets'])
+const excluded = new Set(['node_modules', 'vendor', 'dist', 'build', 'coverage', 'secrets', 'target', '__pycache__'])
 
 export function entryPathProblem(value: string, kind: EntryKind, from?: string): string {
   if (!validPath(value))
@@ -44,4 +44,14 @@ export function entryOperation(action: EntryAction, target: string): EntryOperat
     return { type: 'move', request: action.kind === 'file' ? { kind: 'file', from: action.path, to: target, expectedVersion: action.version ?? '' } : { kind: 'directory', from: action.path, to: target } }
   }
   return { type: 'delete', request: action.kind === 'file' ? { kind: 'file', path: action.path, expectedVersion: action.version ?? '' } : { kind: 'directory', path: action.path } }
+}
+
+export function affectsDirectory(operation: EntryOperation, directory: string): boolean {
+  const parent = (path: string) => path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
+  if (operation.type === 'move') {
+    const { from, to, kind } = operation.request
+    return [from, to].some(path => parent(path) === directory || (kind === 'directory' && (directory === path || directory.startsWith(`${path}/`))))
+  }
+  const { path, kind } = operation.request
+  return parent(path) === directory || (kind === 'directory' && (directory === path || directory.startsWith(`${path}/`)))
 }

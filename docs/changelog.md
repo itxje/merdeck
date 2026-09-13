@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-13 18:41 [fix]
+
+Corrected selected-document refresh after transient failure and directory request lifetime around navigation and writes. The [bounded acceptance repair](task/20260913-1802-directory-frontend.md) preserves the original aggregate failure and reproduces its 429 on the unchanged executable. Focused unit checks passed 81 tests; targeted production browser checks passed 14 cases, including explicit namespace conflict recovery without cursor replay. README now states the exact candidate runtime and current v0.8.4 release; v0.9.0 and final hosted/native candidate acceptance remain pending. No full aggregate rerun or publication is claimed.
+
+## 2026-09-13 18:22 [progress]
+
+Implemented the [directory frontend candidate](task/20260913-1802-directory-frontend.md): independent browse history, bounded five-page navigation, deferred Markdown, retained drafts and validated unloaded file links. Frontend lint/types and 458 tests passed; corrected focused production browser coverage passed 12 cases after preserving two initial regression failures. The normal clean-candidate local gate and final integrated native acceptance remain pending. Recorded owner-confirmed backend native run 34772642752 and completed its task without replacing historical evidence. Overall feature plans stay implementing and prototypes stay needs-review.
+
 ## 2026-09-13 17:45 [progress]
 
 Corrected the directory byte-boundary test to count excluded raw records independently of filesystem order. The regression now observes actual consumed names, verifies pending-entry delivery and complete unique traversal with and without hidden names, while retaining late cancellation and the exact descriptor check. Hosted run 34772385404 remains recorded as failed at this assertion; production code is unchanged and full hosted native retry is still required. See the [backend task](task/20260913-1637-directory-backend.md).

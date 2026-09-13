@@ -1,7 +1,7 @@
 import type { ApiError } from '../../../../src/shared/contracts'
 
 export class HttpError extends Error {
-  constructor(readonly status: number, readonly code: string, message: string) {
+  constructor(readonly status: number, readonly code: string, message: string, readonly retryAfterSeconds?: number) {
     super(message)
     this.name = 'HttpError'
   }
@@ -38,7 +38,9 @@ export async function requestApi<T>(path: string, decode: (data: unknown) => T, 
     throw new HttpError(response.status, 'invalid_response', 'The service returned an invalid response.')
   if (!response.ok || result.success !== true) {
     const error = 'error' in result && isApiError(result.error) ? result.error : { code: 'invalid_response', message: 'The request failed.' }
-    throw new HttpError(response.status, error.code, error.message)
+    const retry = response.headers.get('Retry-After') ?? ''
+    const seconds = /^\d{1,3}$/.test(retry) && Number(retry) <= 300 ? Number(retry) : undefined
+    throw new HttpError(response.status, error.code, error.message, seconds)
   }
   if (!('data' in result))
     throw new HttpError(response.status, 'invalid_response', 'The service returned an invalid response.')

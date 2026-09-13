@@ -61,3 +61,13 @@ describe('explorer entry actions', () => {
     expect(entryErrorMessage(new TypeError('offline'))).toContain('Cannot reach the service')
   })
 })
+
+it('invalidates only directory scopes affected by an entry operation', async () => {
+  const { affectsDirectory } = await import('./entries')
+  const move = { type: 'move' as const, request: { kind: 'directory' as const, from: 'docs', to: 'guides' } }
+  for (const directory of ['', 'docs', 'docs/deep', 'guides/deep'])
+    expect(affectsDirectory(move, directory)).toBe(true)
+  expect(affectsDirectory(move, 'other')).toBe(false)
+  expect(affectsDirectory({ type: 'create', request: { kind: 'file', path: 'docs/a.mmd' } }, 'docs')).toBe(true)
+  expect(affectsDirectory({ type: 'delete', request: { kind: 'file', path: 'docs/a.mmd', expectedVersion: 'a'.repeat(64) } }, '')).toBe(false)
+})
