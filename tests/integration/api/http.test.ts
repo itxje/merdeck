@@ -9,7 +9,7 @@ import { createFixture, removeFixture } from '../files/fixtures'
 const token = 'a-private-test-token-that-is-long-enough'
 const origin = 'http://127.0.0.1:8787'
 const markdown = '\uFEFF# Notes\r\n\r\n```mermaid\r\ngraph TD\r\nA-->B\r\n```\r\n\r\nPreserved text.\r\n\r\n~~~mermaid\r\nsequenceDiagram\r\nAlice->>Bob: Hello\r\n~~~\r\n'
-const resources: { root: string, close: () => void }[] = []
+const resources: { root: string, close: () => Promise<void> }[] = []
 
 async function fixture(options: { unsupported?: boolean, environment?: Record<string, string>, time?: { now: number } } = {}) {
   const root = await createFixture('files-api-', options.unsupported)
@@ -54,7 +54,7 @@ const save = (doc: DiagramDocument, source = 'graph TD\nA-->C\n') => ({ path: do
 
 afterEach(async () => {
   for (const resource of resources.splice(0)) {
-    resource.close()
+    await resource.close()
     await removeFixture(resource.root)
   }
 })
@@ -139,7 +139,7 @@ describe('HTTP authentication boundary', () => {
     time.now += 60000
     expect(await data(await f.request('/api/session', { headers: auth.headers }))).toEqual({ authenticated: false })
     await error(await f.request('/api/diagrams/tree', { headers: auth.headers }), 401, 'unauthorized')
-    f.app.close()
+    await f.app.close()
     await error(await f.request('/api/health'), 503, 'unavailable')
   })
 
@@ -214,8 +214,8 @@ describe('HTTP authentication boundary', () => {
   test('signed sessions survive a restart with the same token and root, and logout still revokes them', async () => {
     const f = await fixture()
     const auth = await login(f)
-    f.app.close()
-    const restarted = createApp(f.config, { diagrams: f.diagrams })
+    await f.app.close()
+    const restarted = createApp(f.config, { diagrams: await createDiagramService(f.config) })
     try {
       const request = (path: string, init?: RequestInit) => restarted.request(`${f.config.allowedOrigins[0]}${path}`, init)
       expect(await data(await request('/api/session', { headers: auth.headers }))).toEqual(auth.session)
@@ -224,7 +224,7 @@ describe('HTTP authentication boundary', () => {
       await error(await request('/api/diagrams/tree', { headers: auth.headers }), 401, 'unauthorized')
     }
     finally {
-      restarted.close()
+      await restarted.close()
     }
   })
 
@@ -242,12 +242,12 @@ describe('HTTP authentication boundary', () => {
     ]
     for (const environment of variants) {
       const config = await loadConfig({ MERDECK_ROOT: f.root, MERDECK_TOKEN: token, MERDECK_POLL_INTERVAL_MS: '1000', MERDECK_MAX_FILE_BYTES: '1024', ...environment })
-      const other = createApp(config, { diagrams: f.diagrams })
+      const other = createApp(config, { diagrams: await createDiagramService(config) })
       try {
         expect(await data(await other.request(`${config.allowedOrigins[0]}/api/session`, { headers: { Cookie: auth.headers.Cookie } }))).toEqual({ authenticated: false })
       }
       finally {
-        other.close()
+        await other.close()
       }
     }
     const otherRoot = await fixture()
@@ -275,7 +275,7 @@ describe('HTTP open access', () => {
       expect(refused.headers.get('allow')).toBe('GET')
       await error(refused, 405, 'method_not_allowed')
     }
-    f.app.close()
+    await f.app.close()
     await error(await f.request('/api/session'), 503, 'unavailable')
   })
 
@@ -486,12 +486,12 @@ describe('mount and static boundaries', () => {
       await error(await f.request('/api/build', { headers: { Host: 'evil.test' } }), 403, 'forbidden')
     }
     const f = await fixture()
-    const bare = createApp(f.config, { diagrams: f.diagrams })
+    const bare = createApp(f.config, { diagrams: await createDiagramService(f.config) })
     try {
       expect(await data(await bare.request(`${origin}/api/build`))).toEqual({ identity: null, pollIntervalMs: 60000 })
     }
     finally {
-      bare.close()
+      await bare.close()
     }
   })
 })

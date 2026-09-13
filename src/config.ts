@@ -29,6 +29,7 @@ const environmentSchema = z.object({
   // it lists four levels completely rather than a thousand entries of an arbitrarily deep walk.
   MERDECK_MAX_TREE_ENTRIES: integer(1, 10000, 8000),
   MERDECK_MAX_TREE_DEPTH: integer(1, 32, 4),
+  MERDECK_MAX_PATH_DEPTH: integer(1, 64, 64),
   MERDECK_MAX_BLOCKS: integer(1, 1000, 100),
   MERDECK_POLL_INTERVAL_MS: integer(1000, 30000, 3000),
   MERDECK_SESSION_TTL_SECONDS: integer(60, 86400, 3600),
@@ -88,6 +89,7 @@ export async function loadConfig(environment: Record<string, string | undefined>
       maxFileBytes: env.MERDECK_MAX_FILE_BYTES,
       maxTreeEntries: env.MERDECK_MAX_TREE_ENTRIES,
       maxTreeDepth: env.MERDECK_MAX_TREE_DEPTH,
+      maxPathDepth: env.MERDECK_MAX_PATH_DEPTH,
       maxBlocks: env.MERDECK_MAX_BLOCKS,
       pollIntervalMs: env.MERDECK_POLL_INTERVAL_MS,
       sessionTtlSeconds: env.MERDECK_SESSION_TTL_SECONDS,

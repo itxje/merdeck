@@ -113,7 +113,7 @@ for (const mechanism of ['service-save', 'in-place', 'atomic'] as const) {
       }
       finally {
         resume.resolve()
-        app?.close()
+        await app?.close()
         await server.stop(true)
         await removeFixture(root)
         events.push({ phase: 'cleanup', serverStopped: true, fixtureRemoved: true })

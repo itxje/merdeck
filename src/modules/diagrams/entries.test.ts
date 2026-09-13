@@ -3,14 +3,13 @@ import type { RepositoryHooks } from './repository'
 import { link, mkdir, readdir, readFile, stat, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
+import { createFixtureService as createDiagramService, createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
 import { AppError } from '../../shared/errors'
-import { createDiagramService } from './index'
 
 let fixture: string
 let root: string
 let outside: string
-const limits = { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 4, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 }
+const limits = { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 4, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 }
 const flow = 'graph TD\nA-->B\n'
 
 beforeEach(async () => {
@@ -73,8 +72,8 @@ describe('contained file and folder operations', () => {
       [() => diagrams.createEntry({ kind: 'directory', path: 'node_modules' }), 'forbidden'],
       [() => diagrams.createEntry({ kind: 'file', path: 'docs/build/new.mmd' }), 'forbidden'],
       [() => diagrams.createEntry({ kind: 'file', path: 'new.txt' }), 'unsupported'],
-      [() => diagrams.createEntry({ kind: 'file', path: 'a/b/c/d/new.mmd' }), 'forbidden'],
-      [() => diagrams.createEntry({ kind: 'directory', path: 'a/b/c/d' }), 'forbidden'],
+      [() => diagrams.createEntry({ kind: 'file', path: `${'a/'.repeat(64)}new.mmd` }), 'forbidden'],
+      [() => diagrams.createEntry({ kind: 'directory', path: `${'a/'.repeat(64)}folder` }), 'forbidden'],
       [() => diagrams.createEntry({ kind: 'file', path: 'missing/new.mmd' }), 'not_found'],
       [() => diagrams.createEntry({ kind: 'directory', path: 'missing/folder' }), 'not_found'],
       [() => diagrams.createEntry({ kind: 'file', path: 'escape/new.mmd' }), 'forbidden'],

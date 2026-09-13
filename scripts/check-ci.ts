@@ -38,6 +38,7 @@ else {
   process.stdout.write('Local storage checks do not establish native acceptance. Native gate: pending.\n')
 }
 await run(['run', 'check'])
+await run(['scripts/check-directory-streaming.ts'])
 await run(['run', 'test:release'])
 await mkdir(join(project, 'tmp'), { recursive: true })
 const output = await mkdtemp(join(project, 'tmp/checked-release-'))
@@ -57,4 +58,5 @@ const bundleDestination = join(project, 'dist/bundle')
 if (await Bun.file(join(bundleDestination, 'manifest.json')).exists())
   await rename(bundleDestination, `${await mkdtemp(join(project, 'tmp/prior-bundle-'))}/bundle`)
 await rename(bundleOutput, bundleDestination)
+await run(['scripts/ci/evidence.ts'])
 process.stdout.write(`check:ci passed for ${target} with the architecture-independent bundle; native acceptance: ${native ? 'passed' : 'pending'}; remote CI/release: unobserved locally.\n`)

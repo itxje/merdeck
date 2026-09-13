@@ -1,8 +1,18 @@
-import type { FileConfig } from '../../../src/modules/diagrams'
+import type { DiagramService, DiagramServiceOptions, FileConfig } from '../../../src/modules/diagrams'
 import { lstat, mkdir, mkdtemp, realpath, rm, statfs } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
+import { createDiagramService } from '../../../src/modules/diagrams'
 
-export const fixtureLimits: FileConfig['limits'] = { maxFileBytes: 8192, maxTreeEntries: 100, maxTreeDepth: 8, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 }
+const fixtureServices = new Map<string, DiagramService[]>()
+export async function createFixtureService(config: FileConfig, options?: DiagramServiceOptions): Promise<DiagramService> {
+  const service = await createDiagramService(config, options)
+  const list = fixtureServices.get(config.projectRoot) ?? []
+  list.push(service)
+  fixtureServices.set(config.projectRoot, list)
+  return service
+}
+
+export const fixtureLimits: FileConfig['limits'] = { maxFileBytes: 8192, maxTreeEntries: 100, maxTreeDepth: 8, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 }
 
 export async function fixtureParent(unsupported = false): Promise<string> {
   const key = unsupported ? 'MERDECK_TEST_UNSUPPORTED_PARENT' : 'MERDECK_TEST_FIXTURE_PARENT'
@@ -32,6 +42,12 @@ export async function createFixture(prefix: string, unsupported = false): Promis
 }
 
 export async function removeFixture(path: string): Promise<void> {
+  for (const [root, services] of fixtureServices) {
+    if (root === path || root.startsWith(`${path}/`)) {
+      await Promise.all(services.map(service => service.close()))
+      fixtureServices.delete(root)
+    }
+  }
   await rm(path, { recursive: true, force: true })
   try {
     await lstat(path)

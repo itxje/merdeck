@@ -1,3 +1,4 @@
+import type { DiagramService } from './modules/diagrams'
 import type { BuildInfo } from './shared/build-info'
 import type { StaticAssets } from './shared/static-assets'
 import { resolve } from 'node:path'
@@ -17,9 +18,10 @@ export async function startService(options: { assets?: StaticAssets, buildInfo?:
     process.stdout.write(`${JSON.stringify({ ...info, bun: Bun.version, standalone: Bun.isStandaloneExecutable })}\n`)
     return
   }
+  let diagrams: DiagramService | undefined
   try {
     const config = await loadConfig(process.env)
-    const diagrams = await createDiagramService(config)
+    diagrams = await createDiagramService(config)
     if (Bun.isStandaloneExecutable && !options.assets)
       throw new Error('Embedded assets are missing')
     const services = config.apiBasePath === '/api'
@@ -33,13 +35,15 @@ export async function startService(options: { assets?: StaticAssets, buildInfo?:
         return
       stopping = true
       // Reject new work; graceful stop lets in-flight atomic saves finish.
-      app.close()
-      void server.stop(false)
+      void Promise.all([app.close(), server.stop(false)]).catch(() => {
+        process.exitCode = 1
+      })
     }
     process.once('SIGINT', shutdown)
     process.once('SIGTERM', shutdown)
   }
   catch (error) {
+    await diagrams?.close()
     process.stderr.write(`${error instanceof ConfigError ? error.message : 'Service startup failed.'}\n`)
     process.exitCode = 1
   }

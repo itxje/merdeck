@@ -73,5 +73,6 @@ export function createApp(config: AppConfig, services: AppServices) {
   return Object.assign(app, { close: () => {
     closed = true
     sessions?.close()
+    return services.diagrams.close()
   } })
 }

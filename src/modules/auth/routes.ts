@@ -74,6 +74,8 @@ export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions
     try {
       const data = await status(session)
       sessions.remove(old)
+      if (old)
+        await diagrams.closePrincipal(old.id, old.origin)
       c.header('Set-Cookie', cookie(config, sessions.cookieValue(session)))
       return c.json({ success: true as const, data })
     }
@@ -82,10 +84,12 @@ export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions
       throw error
     }
   })
-  router.delete('/session', (c) => {
+  router.delete('/session', async (c) => {
     const session = requireSession(sessions, c.req.raw, c.get('origin'))
     requireMutation(c.req.raw, c.get('origin'), session)
     sessions.remove(session)
+    if (session)
+      await diagrams.closePrincipal(session.id, session.origin)
     c.header('Set-Cookie', cookie(config))
     return c.json({ success: true as const, data: { authenticated: false as const } })
   })
