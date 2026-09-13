@@ -3,9 +3,8 @@ import type { RepositoryHooks } from './repository'
 import { link, mkdir, readdir, readFile, readlink, rename, stat, symlink, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from 'bun:test'
-import { createFixture, fixtureLimits, removeFixture } from '../../../tests/integration/files/fixtures'
+import { createFixtureService as createDiagramService, createFixture, fixtureLimits, removeFixture } from '../../../tests/integration/files/fixtures'
 import { AppError } from '../../shared/errors'
-import { createDiagramService } from './service'
 import '../../../tests/integration/api/read-consistency.test'
 
 async function withFixture(run: (root: string) => Promise<void>) {

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { createDiagramService } from '../../../src/modules/diagrams'
-import { createFixture, fixtureLimits, removeFixture } from './fixtures'
+import { createFixtureService as createDiagramService, createFixture, fixtureLimits, removeFixture } from './fixtures'
 
 async function run() {
   const root = await createFixture('files-domain-smoke-')

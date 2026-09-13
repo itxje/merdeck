@@ -1,12 +1,15 @@
-import type { CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DirectoryRequest, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
+import type { DirectoryContext, DirectoryOptions } from './directory'
 import type { FileConfig, RepositoryHooks } from './repository'
 import { Buffer } from 'node:buffer'
 import { createEntryRequestSchema, deleteEntryRequestSchema, moveEntryRequestSchema, relativePathSchema, saveDiagramRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
+import { DirectoryPager } from './directory'
 import { contentVersion, fileKind, parseDocument, replaceSource } from './parser'
 import { FileRepository } from './repository'
 
 export interface DiagramServiceOptions {
+  directory?: DirectoryOptions
   clock?: () => number
   repositoryHooks?: RepositoryHooks
 }
@@ -23,18 +26,50 @@ export class DiagramService {
   private snapshot: { value: TreeSnapshot, expiresAt: number } | undefined
   private refreshing: Promise<TreeSnapshot> | undefined
   private generation = 0
+  private closed = false
+  private readonly directories: DirectoryPager
 
-  private constructor(private readonly config: FileConfig, private readonly repository: FileRepository, private readonly clock: () => number) {}
+  private constructor(private readonly config: FileConfig, private readonly repository: FileRepository, private readonly clock: () => number, options: DiagramServiceOptions) {
+    this.directories = new DirectoryPager(config, repository, clock, options.directory)
+  }
 
   static async create(config: FileConfig, options: DiagramServiceOptions = {}): Promise<DiagramService> {
-    return new DiagramService(config, await FileRepository.create(config, options.repositoryHooks), options.clock ?? Date.now)
+    return new DiagramService(config, await FileRepository.create(config, options.repositoryHooks), options.clock ?? Date.now, options)
+  }
+
+  directoryPage(request: DirectoryRequest, context: DirectoryContext) {
+    return this.directories.directoryPage(request, context)
+  }
+
+  directoryRevision(path: string, context: DirectoryContext) {
+    return this.directories.directoryRevision(path, context)
+  }
+
+  closeDirectory(request: CloseDirectoryRequest, context: DirectoryContext) {
+    return this.directories.closeDirectory(request, context)
+  }
+
+  closePrincipal(principal: string, origin: string) {
+    return this.directories.closePrincipal(principal, origin)
+  }
+
+  async close(): Promise<void> {
+    this.closed = true
+    const results = await Promise.allSettled([this.directories.close(), this.mutations])
+    const failed = results.find(result => result.status === 'rejected')
+    if (failed?.status === 'rejected')
+      throw failed.reason
   }
 
   async storageStatus() {
+    if (this.closed)
+      throw new AppError('unavailable')
     return this.repository.storageStatus()
   }
 
   async readDocument(path: string): Promise<DiagramDocument> {
+    if (this.closed)
+      throw new AppError('unavailable')
     const { bytes } = await this.repository.read(path)
     return parseDocument(path, bytes, this.config.limits.maxBlocks).document
   }
@@ -52,13 +87,16 @@ export class DiagramService {
   }
 
   // Saves and file operations run one at a time, so a folder move cannot interleave with a save beneath it.
-  private async mutate<T>(action: () => Promise<T>): Promise<T> {
+  private async mutate<T>(paths: string[], subtrees: string[], action: () => Promise<T>): Promise<T> {
     const previous = this.mutations
     let release: () => void = () => {}
     this.mutations = new Promise<void>((resolve) => {
       release = resolve
     })
     await previous
+    const affected = (directory: string) => paths.some(path => path.split('/').slice(0, -1).join('/') === directory)
+      || subtrees.some(path => directory === path || directory.startsWith(`${path}/`))
+    this.directories.mutationStarted(affected)
     try {
       const result = await action()
       this.snapshot = undefined
@@ -66,49 +104,60 @@ export class DiagramService {
       return result
     }
     finally {
+      this.directories.mutationFinished(affected)
       release()
     }
   }
 
   async saveDiagram(request: SaveDiagramRequest): Promise<DiagramDocument> {
+    if (this.closed)
+      throw new AppError('unavailable')
     const parsed = saveDiagramRequestSchema.safeParse(request)
     if (!parsed.success)
       throw new AppError('invalid_request')
     const { path, source, selector, expectedVersion } = parsed.data
     if (Buffer.byteLength(source) > this.config.limits.maxFileBytes)
       throw new AppError('too_large')
-    const bytes = await this.mutate(() => this.repository.replace(path, expectedVersion, original => replaceSource(path, original, selector, source, this.config.limits.maxBlocks, this.config.limits.maxFileBytes)))
+    const bytes = await this.mutate([path], [], () => this.repository.replace(path, expectedVersion, original => replaceSource(path, original, selector, source, this.config.limits.maxBlocks, this.config.limits.maxFileBytes)))
     return parseDocument(path, bytes, this.config.limits.maxBlocks).document
   }
 
   async createEntry(request: CreateEntryRequest): Promise<EntryChange> {
+    if (this.closed)
+      throw new AppError('unavailable')
     const parsed = createEntryRequestSchema.safeParse(request)
     if (!parsed.success)
       throw new AppError('invalid_request')
     const { kind, path } = parsed.data
-    await this.mutate(() => kind === 'file' ? this.repository.createFile(path, template(path)) : this.repository.createDirectory(path))
+    await this.mutate([path], kind === 'directory' ? [path] : [], () => kind === 'file' ? this.repository.createFile(path, template(path)) : this.repository.createDirectory(path))
     return { kind, path }
   }
 
   async moveEntry(request: MoveEntryRequest): Promise<EntryChange> {
+    if (this.closed)
+      throw new AppError('unavailable')
     const parsed = moveEntryRequestSchema.safeParse(request)
     if (!parsed.success)
       throw new AppError('invalid_request')
     const move = parsed.data
-    await this.mutate(() => move.kind === 'file' ? this.repository.moveFile(move.from, move.to, move.expectedVersion) : this.repository.moveDirectory(move.from, move.to))
+    await this.mutate([move.from, move.to], move.kind === 'directory' ? [move.from, move.to] : [], () => move.kind === 'file' ? this.repository.moveFile(move.from, move.to, move.expectedVersion) : this.repository.moveDirectory(move.from, move.to))
     return { kind: move.kind, path: move.to }
   }
 
   async deleteEntry(request: DeleteEntryRequest): Promise<EntryChange> {
+    if (this.closed)
+      throw new AppError('unavailable')
     const parsed = deleteEntryRequestSchema.safeParse(request)
     if (!parsed.success)
       throw new AppError('invalid_request')
     const entry = parsed.data
-    await this.mutate(() => entry.kind === 'file' ? this.repository.deleteFile(entry.path, entry.expectedVersion) : this.repository.deleteDirectory(entry.path))
+    await this.mutate([entry.path], entry.kind === 'directory' ? [entry.path] : [], () => entry.kind === 'file' ? this.repository.deleteFile(entry.path, entry.expectedVersion) : this.repository.deleteDirectory(entry.path))
     return { kind: entry.kind, path: entry.path }
   }
 
   async treeSnapshot(options: { refresh?: boolean } = {}): Promise<TreeSnapshot> {
+    if (this.closed)
+      throw new AppError('unavailable')
     await this.repository.assertAvailable()
     if (!options.refresh && this.snapshot && this.clock() < this.snapshot.expiresAt)
       return structuredClone(this.snapshot.value)
@@ -160,7 +209,7 @@ export class DiagramService {
         }
         if (entry.kind === 'directory') {
           entries.push({ kind: 'directory', path })
-          if (directory.depth + 1 < maxTreeDepth)
+          if (directory.depth + 1 < Math.min(maxTreeDepth, this.config.limits.maxPathDepth))
             queue.push({ path, depth: directory.depth + 1 })
           else
             truncated = true

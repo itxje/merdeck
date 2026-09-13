@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-13 17:45 [progress]
+
+Corrected the directory byte-boundary test to count excluded raw records independently of filesystem order. The regression now observes actual consumed names, verifies pending-entry delivery and complete unique traversal with and without hidden names, while retaining late cancellation and the exact descriptor check. Hosted run 34772385404 remains recorded as failed at this assertion; production code is unchanged and full hosted native retry is still required. See the [backend task](task/20260913-1637-directory-backend.md).
+
+## 2026-09-13 17:40 [progress]
+
+Corrected directory verification exports to retain raw traces locally and publish only bounded, sanitized, identity-checked summaries. Existing hosted reporting now retains safe evidence on success and failure without changing release payloads. The production backend is unchanged from the prior complete local PASS; authorized focused validation covers this verification-only correction, with full hosted x64/ext4 acceptance still required. See the [backend task](task/20260913-1637-directory-backend.md).
+
+## 2026-09-13 17:22 [progress]
+
+Implemented the reviewed fixed-buffer native directory candidate and shared it with bounded growing-prefix move audits. Actual adapter source/bundle/compiled physical checks passed locally on ARM64 overlay and virtiofs; full local and hosted native acceptance remain pending. Added parser/error/cleanup and HTTP lifecycle regressions plus the physical harness in existing check:ci/--native paths. The [backend task](task/20260913-1637-directory-backend.md) retains exact evidence and the corrected startup-test isolation defect; no frontend or production acceptance is implied.
+
+## 2026-09-13 17:10 [decision]
+
+The [streaming correction](plan/20260913-1657-streaming-directory-correction.md) is authorized for candidate implementation after concrete review. The original directory plan now carries the reviewed fixed-buffer getdents64 clauses, with no wire/schema changes. Experimental FFI and dynamic glibc remain material prerequisites; actual application physical-streaming and complete local/native gates are required before integration acceptance. The backend claim stays in_progress, overall feature implementing and prototype needs-review.
+
+## 2026-09-13 17:05 [decision]
+
+Completed the bounded [directory primitive investigation](plan/20260913-1657-streaming-directory-correction.md) and recorded a [proposed fixed-buffer correction](decisions/20260913-1705-bounded-directory-primitive.md). Actual ARM64/overlay source, bundle and compiled probes demonstrate 4 KiB getdents64 streaming, bounded first-page syscalls, resume/EOF and resource cleanup. Experimental FFI adoption, actual x64/ext4 evidence and feature acceptance remain pending; synchronous I/O cannot guarantee prompt cancellation. No executable feature changes were made. The inherited checkpoint and its introduced failing resource test remain unaccepted, the backend stays in_progress, the feature implementing and prototype needs-review.
+
+## 2026-09-13 16:54 [pitfall]
+
+The [directory backend implementation](task/20260913-1637-directory-backend.md) is blocked at runtime acceptance. Actual Bun 1.4.2 Dir.read uses a whole-directory readdir array despite bufferSize 1; a retained-descriptor assertion fails and the first-read syscall trace reaches EOF across 10,003 names. Logical page/depth/auth tests pass but do not prove bounded underlying work. The provisional contracts, path-depth and lifecycle changes are not ready for integration. The feature plan stays implementing; the prototype stays needs-review. A verified streaming primitive and contract correction are required before implementation acceptance.
+
 ## 2026-09-13 16:33 [decision]
 
 Recorded the authorized [directory navigation and bounded pagination proposal](plan/20260913-1628-directory-navigation-pagination.md): per-directory metadata pages, single-use cursors with bounded resources and cleanup, independent path depth, deferred document blocks, and explicit mutation/restart semantics. The [scoped routing decision](decisions/20260913-1628-directory-contract-routing.md) preserves current compatibility and actual virtiofs admission. Investigation/proposal is complete; implementation and integrated acceptance remain pending, and the prototype stays needs-review. Existing PLAN-026 and PREVIEW-011 are unchanged.

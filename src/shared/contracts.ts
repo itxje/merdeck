@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const relativePathSchema = z.string().min(1).max(1024).refine(value =>
   // eslint-disable-next-line no-control-regex -- Control characters are forbidden in project paths.
   !/[\u0000-\u001F\u007F\\:%]/.test(value)
+  && !/[\uD800-\uDFFF]/u.test(value)
   && value.split('/').every(part => part !== '' && part !== '.' && part !== '..'),
 )
 export const contentVersionSchema = z.string().regex(/^[a-f0-9]{64}$/)
@@ -90,7 +91,7 @@ export type SessionStatus
     | ({ authenticated: true, access: 'token', csrfToken: string, expiresAt: string } & SessionCapabilities)
     | ({ authenticated: true, access: 'open' } & SessionCapabilities)
 
-export type ErrorCode = 'invalid_request' | 'method_not_allowed' | 'unsupported_media_type' | 'unauthorized' | 'forbidden' | 'not_found' | 'deleted' | 'conflict' | 'exists' | 'not_empty' | 'unsupported' | 'filesystem_unsupported' | 'too_large' | 'rate_limited' | 'unavailable' | 'internal_error'
+export type ErrorCode = 'directory_changed' | 'cursor_stale' | 'invalid_request' | 'method_not_allowed' | 'unsupported_media_type' | 'unauthorized' | 'forbidden' | 'not_found' | 'deleted' | 'conflict' | 'exists' | 'not_empty' | 'unsupported' | 'filesystem_unsupported' | 'too_large' | 'rate_limited' | 'unavailable' | 'internal_error'
 export interface ApiError {
   code: ErrorCode
   message: string
@@ -104,5 +105,47 @@ export interface HealthStatus {
 /** Public identity of the frontend build a service serves; `null` without a built interface. */
 export interface ApplicationBuild {
   identity: string | null
+  pollIntervalMs: number
+}
+
+export const directoryPathSchema = z.union([z.literal(''), relativePathSchema])
+export const directoryCursorSchema = z.string().regex(/^[a-f0-9]{64}$/)
+export const directoryRequestSchema = z.strictObject({
+  path: directoryPathSchema.default(''),
+  limit: z.number().int().min(1).max(200).default(100),
+  cursor: directoryCursorSchema.optional(),
+})
+export const directoryQuerySchema = z.strictObject({
+  path: directoryPathSchema.default(''),
+  limit: z.string().regex(/^[1-9]\d{0,2}$/).transform(Number).pipe(z.number().max(200)).default(100),
+  cursor: directoryCursorSchema.optional(),
+})
+export const directoryRevisionRequestSchema = z.strictObject({ path: directoryPathSchema.default('') })
+export const closeDirectoryRequestSchema = z.strictObject({ path: directoryPathSchema, cursor: directoryCursorSchema })
+export type DirectoryPath = z.infer<typeof directoryPathSchema>
+export type DirectoryRequest = z.infer<typeof directoryRequestSchema>
+export type CloseDirectoryRequest = z.infer<typeof closeDirectoryRequestSchema>
+export type DirectoryPageEntry
+  = | { kind: 'directory', path: RelativePath, children: 'unloaded' }
+    | { kind: 'file', path: RelativePath, fileKind: FileKind, state: 'deferred' }
+export interface DirectoryPage {
+  path: DirectoryPath
+  parent: DirectoryPath | null
+  revision: string
+  entries: DirectoryPageEntry[]
+  nextCursor: string | null
+  complete: boolean
+  stoppedBy: 'entries' | 'visits' | 'bytes' | 'depth' | null
+  visited: number
+  excluded: number
+  limit: number
+  maxPathDepth: number
+  pollIntervalMs: number
+  expiresAt: string | null
+}
+export interface DirectoryRevision {
+  path: DirectoryPath
+  revision: string
+  maxPathDepth: number
   pollIntervalMs: number
 }

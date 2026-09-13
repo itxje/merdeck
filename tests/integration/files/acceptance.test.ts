@@ -4,14 +4,13 @@ import { createHash } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { expect, test } from 'bun:test'
-import { createDiagramService } from '../../../src/modules/diagrams'
 import { safeError } from '../../../src/shared/errors'
-import { createFixture, removeFixture } from './fixtures'
+import { createFixtureService as createDiagramService, createFixture, removeFixture } from './fixtures'
 
 test('configured service exports preserve whole-file contracts for transport consumers', async () => {
   const fixture = await createFixture('files-contract-')
   try {
-    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
+    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 2048, maxTreeEntries: 100, maxTreeDepth: 8, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
     const source = '\uFEFF# Unicode π\r\n~~~mermaid\r\ngraph TD\r\n~~~\r\nUntouched'
     await writeFile(join(fixture, 'document.md'), source)
     const service = await createDiagramService(config)
@@ -33,7 +32,7 @@ test('configured service exports preserve whole-file contracts for transport con
 test('ordinary README contexts retain multiple byte-exact independently saved diagrams', async () => {
   const fixture = await createFixture('files-markdown-context-')
   try {
-    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 8192, maxTreeEntries: 100, maxTreeDepth: 8, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
+    const config: FileConfig = { projectRoot: fixture, limits: { maxFileBytes: 8192, maxTreeEntries: 100, maxTreeDepth: 8, maxPathDepth: 64, maxBlocks: 20, pollIntervalMs: 1000, sessionTtlSeconds: 3600, maxSessions: 100 } }
     const prefix = '\uFEFF# Guide π 😀\r\n\r\n- Bullet\r\n\r\n1. Ordered\r\n\r\n> Quote\r\n\r\n[Link](guide.md)\r\n\r\n[reference]: /guide "Guide"\r\n\r\n'
     const first = '```mermaid\r\nfirst\r\n```\r\n'
     const middle = '\r\n<div>\r\n```mermaid\r\nhidden in HTML\r\n```\r\n</div>\r\n\r\n- Nested diagram\r\n\r\n  ~~~mermaid\r\n  hidden in list\r\n  ~~~\r\n\r\n'

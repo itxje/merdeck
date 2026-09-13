@@ -1,24 +1,42 @@
 import type { BigIntStats } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 import type { AppConfig } from '../../config'
+import type { DirectoryPageEntry } from '../../shared/contracts'
 import type { StorageIdentity } from './filesystem'
 import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
 import { link, lstat, mkdir, open, opendir, realpath, rename, rmdir, unlink } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
+import { setImmediate as yieldEventLoop } from 'node:timers/promises'
 import { relativePathSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { inspectFilesystem, requireWritableFilesystem, retained } from './filesystem'
+import { initializeNativeDirectory, NativeDirectory } from './native-directory'
 import { contentVersion, fileKind } from './parser'
 
 export type FileConfig = Pick<AppConfig, 'projectRoot' | 'limits'>
 export interface RepositoryHooks {
+  beforeDirectoryRead?: () => void
+  afterMoveAudit?: () => Promise<void>
+  afterDirectoryRead?: (relative: string, name: string | null) => Promise<void>
+  directoryStreamOpened?: () => void
+  directoryStreamClosed?: () => void
   afterReadOpen?: (relativePath: string, handle: FileHandle) => Promise<void>
   afterDirectoryOpen?: (relativeDirectory: string) => Promise<void>
   afterFileOpen?: (relativePath: string) => Promise<void>
   afterTempWrite?: (relativePath: string) => Promise<void>
   writeTemporary?: (handle: FileHandle, bytes: Buffer) => Promise<void>
+}
+export interface DirectoryStream {
+  directory: Directory
+  read: (check: () => void) => Promise<string | null>
+  close: () => Promise<void>
+}
+export interface DirectoryView {
+  sample: (stream?: DirectoryStream) => Promise<string>
+  entry: (name: string) => Promise<DirectoryPageEntry | undefined>
+  open: () => Promise<DirectoryStream>
 }
 interface Directory {
   handle: FileHandle
@@ -95,6 +113,13 @@ function anchor(handle: FileHandle): string {
   return `/proc/self/fd/${handle.fd}`
 }
 
+async function closeDirectories(directories: Directory[]): Promise<void> {
+  const closures = await Promise.allSettled(directories.map(directory => directory.handle.close()))
+  const failed = closures.find(result => result.status === 'rejected')
+  if (failed?.status === 'rejected')
+    throw fsError(failed.reason)
+}
+
 export class FileRepository {
   private constructor(private readonly config: FileConfig, private readonly rootIdentity: BigIntStats, private readonly hooks: RepositoryHooks) {}
 
@@ -105,6 +130,7 @@ export class FileRepository {
       const stat = await lstat(config.projectRoot, { bigint: true })
       if (stat.isSymbolicLink() || !stat.isDirectory() || await realpath(config.projectRoot) !== config.projectRoot)
         throw new AppError('unavailable')
+      initializeNativeDirectory()
       const repository = new FileRepository(config, stat, hooks)
       await repository.withDirectory('', async () => {})
       return repository
@@ -114,44 +140,57 @@ export class FileRepository {
     }
   }
 
-  private async validateDirectory(directory: Directory): Promise<void> {
+  private async validateDirectory(directory: Directory, check: () => void = () => {}): Promise<void> {
     const expected = join(this.config.projectRoot, directory.relative)
-    await this.validateRoot()
+    check()
+    await this.validateRoot(check)
     try {
+      check()
       if (await realpath(directory.anchor) !== expected)
         throw new AppError(directory.relative ? 'forbidden' : 'unavailable')
+      check()
       const actual = await lstat(expected, { bigint: true })
+      check()
       if (!actual.isDirectory() || !sameIdentity(actual, await directory.handle.stat({ bigint: true })))
         throw new AppError('forbidden')
     }
     catch (error) {
+      if (error instanceof AppError && ['directory_changed', 'cursor_stale', 'unauthorized'].includes(error.code))
+        throw error
       if (!directory.relative)
         throw new AppError('unavailable')
       throw fsError(error)
     }
   }
 
-  private async validateRoot(): Promise<void> {
+  private async validateRoot(check: () => void = () => {}): Promise<void> {
     try {
+      check()
       const root = await lstat(this.config.projectRoot, { bigint: true })
+      check()
       if (!sameIdentity(root, this.rootIdentity) || root.birthtimeNs !== this.rootIdentity.birthtimeNs || !root.isDirectory() || await realpath(this.config.projectRoot) !== this.config.projectRoot)
         throw new AppError('unavailable')
     }
-    catch {
+    catch (error) {
+      if (error instanceof AppError && ['directory_changed', 'cursor_stale', 'unauthorized'].includes(error.code))
+        throw error
       throw new AppError('unavailable')
     }
   }
 
-  private async withDirectory<T>(relative: string, action: (directory: Directory) => Promise<T>, missing: 'deleted' | 'not_found' = 'deleted'): Promise<T> {
+  private async withDirectory<T>(relative: string, action: (directory: Directory, chain: Directory[]) => Promise<T>, missing: 'deleted' | 'not_found' = 'deleted', check: () => void = () => {}): Promise<T> {
+    this.checkDirectoryPath(relative)
     const opened: Directory[] = []
     try {
+      check()
       const rootHandle = await open(this.config.projectRoot, directoryFlags).catch(() => {
         throw new AppError('unavailable')
       })
       let directory: Directory = { handle: rootHandle, relative: '', anchor: anchor(rootHandle) }
       opened.push(directory)
-      await this.validateDirectory(directory)
+      await this.validateDirectory(directory, check)
       for (const component of relative ? relative.split('/') : []) {
+        check()
         const handle = await open(`${directory.anchor}/${component}`, directoryFlags).catch((error: unknown) => {
           const mapped = fsError(error)
           throw mapped.code === 'deleted' ? new AppError(missing) : mapped
@@ -159,17 +198,16 @@ export class FileRepository {
         directory = { handle, relative: directory.relative ? `${directory.relative}/${component}` : component, anchor: anchor(handle) }
         opened.push(directory)
         await this.hooks.afterDirectoryOpen?.(directory.relative)
-        await this.validateDirectory(directory)
+        await this.validateDirectory(directory, check)
       }
-      return await action(directory)
+      check()
+      return await action(directory, opened)
     }
     catch (error) {
       throw fsError(error)
     }
     finally {
-      await Promise.all(opened.map(directory => directory.handle.close())).catch((error: unknown) => {
-        throw fsError(error)
-      })
+      await closeDirectories(opened)
     }
   }
 
@@ -222,10 +260,128 @@ export class FileRepository {
     }
   }
 
+  checkDirectoryPath(relative: string): void {
+    if (relative)
+      allowedDirectoryPath(relative)
+    if (relative && relative.split('/').length > this.config.limits.maxPathDepth)
+      throw new AppError('forbidden')
+  }
+
+  // Each page gets a fresh ancestor chain; only the stream target survives this callback.
+  async withListingDirectory<T>(relative: string, check: () => void, action: (view: DirectoryView) => Promise<T>): Promise<T> {
+    return this.withDirectory(relative, async (directory, chain) => {
+      const identity = (stat: BigIntStats) => [stat.dev, stat.ino, stat.birthtimeNs].map(String)
+      const metadata = (stat: BigIntStats) => [...identity(stat), ...[stat.mtimeNs, stat.ctimeNs, stat.size, stat.nlink].map(String)]
+      const sample = async (stream?: DirectoryStream) => {
+        check()
+        const before = await directory.handle.stat({ bigint: true })
+        const ancestors: string[][] = []
+        for (const item of chain) {
+          check()
+          await this.validateDirectory(item, check)
+          check()
+          ancestors.push(identity(await item.handle.stat({ bigint: true })))
+        }
+        if (stream) {
+          check()
+          const retained = await stream.directory.handle.stat({ bigint: true })
+          if (JSON.stringify(metadata(before)) !== JSON.stringify(metadata(retained)))
+            throw new AppError('directory_changed')
+        }
+        check()
+        const after = await directory.handle.stat({ bigint: true })
+        if (JSON.stringify(metadata(before)) !== JSON.stringify(metadata(after)))
+          throw new AppError('directory_changed')
+        return JSON.stringify([ancestors, metadata(after)])
+      }
+      return action({
+        sample,
+        entry: async (name) => {
+          check()
+          if (!this.isVisible(name))
+            return undefined
+          const path = relative ? `${relative}/${name}` : name
+          if (!relativePathSchema.safeParse(path).success)
+            return undefined
+          await this.validateDirectory(directory, check)
+          check()
+          let stat: BigIntStats
+          try {
+            stat = await lstat(`${directory.anchor}/${name}`, { bigint: true })
+          }
+          catch (error) {
+            const mapped = fsError(error)
+            throw mapped.code === 'deleted' ? new AppError('directory_changed') : mapped
+          }
+          if (stat.isDirectory())
+            return { kind: 'directory', path, children: 'unloaded' }
+          if (!stat.isFile() || stat.nlink !== 1n)
+            return undefined
+          try {
+            return { kind: 'file', path, fileKind: fileKind(path), state: 'deferred' }
+          }
+          catch {
+            return undefined
+          }
+        },
+        open: async () => {
+          check()
+          const handle = await open(`${directory.anchor}/.`, directoryFlags)
+          const owned: Directory = { handle, anchor: anchor(handle), relative }
+          let iterator: NativeDirectory | undefined
+          try {
+            check()
+            await this.validateDirectory(owned, check)
+            check()
+            iterator = NativeDirectory.open(`${owned.anchor}/.`)
+            await yieldEventLoop()
+            check()
+            const nativeStat = await lstat(`/proc/self/fd/${iterator.descriptor}/.`, { bigint: true })
+            check()
+            const ownedStat = await handle.stat({ bigint: true })
+            if (!sameIdentity(nativeStat, ownedStat) || nativeStat.birthtimeNs !== ownedStat.birthtimeNs)
+              throw new AppError('directory_changed')
+            await this.validateDirectory(owned, check)
+            this.hooks.directoryStreamOpened?.()
+            const stream = iterator
+            let closing: Promise<void> | undefined
+            return {
+              directory: owned,
+              read: async (currentCheck) => {
+                this.hooks.beforeDirectoryRead?.()
+                const name = await stream.read(currentCheck)
+                await this.hooks.afterDirectoryRead?.(relative, name)
+                return name
+              },
+              close: () => closing ??= (async () => {
+                try {
+                  await stream.close()
+                }
+                finally {
+                  await handle.close()
+                  this.hooks.directoryStreamClosed?.()
+                }
+              })(),
+            }
+          }
+          catch (error) {
+            try {
+              await iterator?.close()
+            }
+            finally {
+              await handle.close()
+            }
+            throw error
+          }
+        },
+      })
+    }, 'not_found', check)
+  }
+
   async read(path: string): Promise<FileRead> {
     allowedPath(path)
     const parts = path.split('/')
-    if (parts.length > this.config.limits.maxTreeDepth)
+    if (parts.length > this.config.limits.maxPathDepth)
       throw new AppError('forbidden')
     const name = parts.pop()!
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -263,8 +419,8 @@ export class FileRepository {
     return !name.startsWith('.') && !ignoredDirectories.has(name) && relativePathSchema.safeParse(name).success
   }
 
-  async assertAvailable(): Promise<void> {
-    await this.withDirectory('', async () => {})
+  async assertAvailable(check: () => void = () => {}): Promise<void> {
+    await this.withDirectory('', async () => {}, 'deleted', check)
   }
 
   async storageStatus() {
@@ -316,7 +472,7 @@ export class FileRepository {
   async replace(path: string, expectedVersion: string, transform: (bytes: Buffer) => Buffer): Promise<Buffer> {
     allowedPath(path)
     const parts = path.split('/')
-    if (parts.length > this.config.limits.maxTreeDepth)
+    if (parts.length > this.config.limits.maxPathDepth)
       throw new AppError('forbidden')
     const name = parts.pop()!
     return this.withDirectory(parts.join('/'), async (directory) => {
@@ -377,10 +533,9 @@ export class FileRepository {
     })
   }
 
-  private split(path: string, directory: boolean): { parent: string, name: string } {
+  private split(path: string): { parent: string, name: string } {
     const parts = path.split('/')
-    // A folder at the depth limit could not hold any reachable file.
-    if (parts.length > this.config.limits.maxTreeDepth - (directory ? 1 : 0))
+    if (parts.length > this.config.limits.maxPathDepth)
       throw new AppError('forbidden')
     const name = parts.pop()!
     return { parent: parts.join('/'), name }
@@ -388,7 +543,7 @@ export class FileRepository {
 
   async createFile(path: string, bytes: Buffer): Promise<void> {
     allowedPath(path)
-    const { parent, name } = this.split(path, false)
+    const { parent, name } = this.split(path)
     await this.withDirectory(parent, async (directory) => {
       await this.assertWritable(directory)
       const target = `${directory.anchor}/${name}`
@@ -416,7 +571,7 @@ export class FileRepository {
 
   async createDirectory(path: string): Promise<void> {
     allowedDirectoryPath(path)
-    const { parent, name } = this.split(path, true)
+    const { parent, name } = this.split(path)
     await this.withDirectory(parent, async (directory) => {
       await this.assertWritable(directory)
       await mkdir(`${directory.anchor}/${name}`).catch((error: unknown) => {
@@ -431,8 +586,8 @@ export class FileRepository {
     allowedPath(to)
     if (from === to || fileKind(from) !== fileKind(to))
       throw new AppError('invalid_request')
-    const source = this.split(from, false)
-    const target = this.split(to, false)
+    const source = this.split(from)
+    const target = this.split(to)
     await this.withDirectory(source.parent, sourceDirectory => this.withDirectory(target.parent, async (targetDirectory) => {
       const identity = await this.assertWritable(sourceDirectory)
       await this.assertWritable(targetDirectory)
@@ -469,13 +624,92 @@ export class FileRepository {
     }, 'not_found'))
   }
 
+  private async auditMove(from: string, to: string): Promise<() => Promise<void>> {
+    if (to.length <= from.length && to.split('/').length <= from.split('/').length)
+      return async () => {}
+    const started = Date.now()
+    const check = () => {
+      if (Date.now() - started >= 5000)
+        throw new AppError('too_large')
+    }
+    const observations: { path: string, sample: string }[] = []
+    const stack = [from]
+    let visits = 0
+    let directories = 1
+    while (stack.length) {
+      check()
+      const path = stack.pop()!
+      await this.withListingDirectory(path, check, async (view) => {
+        const sample = await view.sample()
+        observations.push({ path, sample })
+        const stream = await view.open()
+        try {
+          while (true) {
+            check()
+            // Refuse before an additional read; reaching the exact bound does not prove EOF.
+            if (visits >= 8192)
+              throw new AppError('too_large')
+            const name = await stream.read(check)
+            if (name === null)
+              break
+            visits++
+            if (!this.isVisible(name))
+              continue
+            const child = `${path}/${name}`
+            if (!relativePathSchema.safeParse(child).success || child.split('/').length > this.config.limits.maxPathDepth)
+              continue
+            await this.validateDirectory(stream.directory)
+            check()
+            const stat = await lstat(`${stream.directory.anchor}/${name}`, { bigint: true }).catch((error: unknown) => {
+              const mapped = fsError(error)
+              throw mapped.code === 'deleted' ? new AppError('conflict') : mapped
+            })
+            if (!stat.isDirectory() && !stat.isFile())
+              continue
+            const projected = `${to}${child.slice(from.length)}`
+            if (projected.length > 1024 || projected.split('/').length > this.config.limits.maxPathDepth)
+              throw new AppError('forbidden')
+            if (stat.isDirectory()) {
+              if (++directories > 1024)
+                throw new AppError('too_large')
+              stack.push(child)
+            }
+          }
+          if (await view.sample(stream) !== sample)
+            throw new AppError('conflict')
+        }
+        finally {
+          await stream.close()
+        }
+      })
+    }
+    await this.hooks.afterMoveAudit?.()
+    return async () => {
+      for (const observation of observations) {
+        check()
+        try {
+          await this.withListingDirectory(observation.path, check, async (view) => {
+            if (await view.sample() !== observation.sample)
+              throw new AppError('conflict')
+          })
+        }
+        catch (error) {
+          if (error instanceof AppError && ['not_found', 'directory_changed'].includes(error.code))
+            throw new AppError('conflict')
+          throw error
+        }
+      }
+    }
+  }
+
   async moveDirectory(from: string, to: string): Promise<void> {
     allowedDirectoryPath(from)
     allowedDirectoryPath(to)
     if (from === to || to.startsWith(`${from}/`))
       throw new AppError('invalid_request')
-    const source = this.split(from, true)
-    const target = this.split(to, true)
+    const source = this.split(from)
+    const target = this.split(to)
+    const verifyAudit = await this.auditMove(from, to)
     await this.withDirectory(source.parent, sourceDirectory => this.withDirectory(target.parent, async (targetDirectory) => {
       await this.assertWritable(sourceDirectory)
       await this.assertWritable(targetDirectory)
@@ -484,6 +718,7 @@ export class FileRepository {
       const original = await lstat(sourcePath, { bigint: true })
       if (!original.isDirectory() || original.dev !== this.rootIdentity.dev)
         throw new AppError('forbidden')
+      await verifyAudit()
       // An empty placeholder claims the name; renaming onto it fails if anything appears inside.
       await mkdir(targetPath).catch((error: unknown) => {
         throw entryError(error)
@@ -493,6 +728,7 @@ export class FileRepository {
         if (!sameIdentity(original, await lstat(sourcePath, { bigint: true })))
           throw new AppError('conflict')
         await this.validateDirectory(sourceDirectory)
+        await verifyAudit()
         await rename(sourcePath, targetPath)
       }
       catch (error) {
@@ -508,7 +744,7 @@ export class FileRepository {
 
   async deleteFile(path: string, expectedVersion: string): Promise<void> {
     allowedPath(path)
-    const { parent, name } = this.split(path, false)
+    const { parent, name } = this.split(path)
     await this.withDirectory(parent, async (directory) => {
       const identity = await this.assertWritable(directory)
       const original = await this.readIn(directory, name, path, true)
@@ -525,7 +761,7 @@ export class FileRepository {
 
   async deleteDirectory(path: string): Promise<void> {
     allowedDirectoryPath(path)
-    const { parent, name } = this.split(path, true)
+    const { parent, name } = this.split(path)
     await this.withDirectory(parent, async (directory) => {
       await this.assertWritable(directory)
       const target = `${directory.anchor}/${name}`
