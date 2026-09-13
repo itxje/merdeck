@@ -1,4 +1,4 @@
-import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DirectoryRequest, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DirectoryRequest, DirectorySearchRequest, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
 import type { DirectoryContext, DirectoryOptions } from './directory'
 import type { FileConfig, RepositoryHooks } from './repository'
 import { Buffer } from 'node:buffer'
@@ -39,6 +39,10 @@ export class DiagramService {
 
   directoryPage(request: DirectoryRequest, context: DirectoryContext) {
     return this.directories.directoryPage(request, context)
+  }
+
+  searchDirectory(request: DirectorySearchRequest, context: DirectoryContext) {
+    return this.directories.searchDirectory(request, context)
   }
 
   directoryRevision(path: string, context: DirectoryContext) {

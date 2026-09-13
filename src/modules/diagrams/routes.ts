@@ -5,7 +5,7 @@ import type { DirectoryContext } from './directory'
 import type { DiagramService } from './service'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { closeDirectoryRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, directoryQuerySchema, directoryRevisionRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, saveDiagramRequestSchema } from '../../shared/contracts'
+import { closeDirectoryRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, directoryQuerySchema, directoryRevisionRequestSchema, directorySearchRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, saveDiagramRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { jsonInput, queryInput } from '../../shared/lib/http-input'
 import { requireMutation, requireSession } from '../auth/routes'
@@ -33,6 +33,10 @@ export function diagramRoutes(config: AppConfig, diagrams: DiagramService, sessi
   router.get('/diagrams/directory', async (c) => {
     const request = queryInput(new URL(c.req.url), directoryQuerySchema)
     return c.json({ success: true as const, data: await diagrams.directoryPage(request, c.get('directoryContext')) })
+  })
+  router.get('/diagrams/search', async (c) => {
+    const request = queryInput(new URL(c.req.url), directorySearchRequestSchema)
+    return c.json({ success: true as const, data: await diagrams.searchDirectory(request, c.get('directoryContext')) })
   })
   router.get('/diagrams/directory/revision', async (c) => {
     const { path } = queryInput(new URL(c.req.url), directoryRevisionRequestSchema)

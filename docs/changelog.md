@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 21:30 [progress]
+
+The explorer searches below the browsed folder again, now through the service: typing looks through every subfolder by name, without reading file contents, and lists up to 200 matches with paths below the folder. The walk applies the same exclusions and path checks as a directory page, stops at 20,000 names or before the request deadline, and says so when it stops. See [20260913-2045-directory-search](task/20260913-2045-directory-search.md).
+
 ## 2026-09-13 20:35 [fix]
 
 The explorer orders what it has loaded again: folders first, then names with numbers compared by value, whatever native order the directory page arrived in. See [20260913-2030-explorer-order](task/20260913-2030-explorer-order.md).

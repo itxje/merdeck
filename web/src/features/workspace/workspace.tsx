@@ -20,12 +20,14 @@ import { EntryDialog } from './entry-dialog'
 import { boundedWidth, explorerWidth as explorerBounds, useExplorerWidth } from './explorer-width'
 import { useFileFilter } from './file-filter'
 import { FileTree } from './file-tree'
+import { useDirectorySearch } from './use-directory-search'
 import { useWorkspace } from './use-workspace'
 
 const introduction = 'Browse, edit and preview diagrams in your project files.'
 
 export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
   const state = useWorkspace(path, block, directory)
+  const search = useDirectorySearch(directory, !!state.session)
   const [token, setToken] = React.useState('')
   const [loginError, setLoginError] = React.useState('')
   const [treeOpen, setTreeOpen] = React.useState(false)
@@ -153,6 +155,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const submitEntry = async (operation: EntryOperation) => {
     const start = navigationRef.current
     await state.entries.mutateAsync(operation)
+    search.refresh()
     const current = navigationRef.current
     if (!current.access || current.access !== start.access || current.csrf !== start.csrf)
       return
@@ -177,7 +180,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
 
   const canChange = !!state.session?.storage.writable && state.online && !state.listing.stale && !state.listing.error && !state.entries.isPending && !state.savePending
   const [kinds, chooseKinds] = useFileFilter()
-  const treeProps = { listing: state.listing, directory, browse, drafts: state.drafts, path, block, select, refresh: state.refresh, canChange, onAction: openEntry, kinds, chooseKinds }
+  const treeProps = { listing: state.listing, directory, browse, drafts: state.drafts, path, block, select, refresh: state.refresh, canChange, onAction: openEntry, kinds, chooseKinds, search: search.view, onQueryChange: search.onQueryChange }
   const openReview = () => {
     state.review.reset()
 

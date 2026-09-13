@@ -188,7 +188,8 @@ test('empty Markdown and unsupported file states remain readable and recoverable
     await choose(page, 'welcome.mmd')
     await live(page)
     await page.getByLabel('Filter files').fill('does-not-exist')
-    await expect(page.getByText('No matching files in the loaded window', { exact: true })).toBeVisible()
+    // Typing searches this folder and its subfolders rather than only the loaded window.
+    await expect(page.getByText('No matches in this folder or below', { exact: true })).toBeVisible()
   }
   finally {
     await rm(path, { force: true })

@@ -50,6 +50,7 @@ Canonical exports are in `src/shared/contracts.ts`; frontend imports must be `im
 | DELETE `/session` | Cookie, Origin and `X-CSRF-Token` | `{ authenticated: false }`; revoke session and clear cookie; 405 with open access |
 | GET `/diagrams/directory` | Authenticated session unless open access | Immediate metadata-only `DirectoryPage`, bounded single-use continuation |
 | GET `/diagrams/directory/revision` | Authenticated session unless open access | Metadata `DirectoryRevision`, no enumeration or content reads |
+| GET `/diagrams/search` | Authenticated session unless open access | Names-only breadth-first `DirectorySearch` below one folder: at most 20,000 names read and 200 matches, same exclusions and ancestry checks as a page, partial rather than failed when a subfolder changes |
 | POST `/diagrams/directory/close` | Existing mutation boundary | Idempotent cursor disposal, strict `{path,cursor}` JSON |
 | GET `/diagrams/tree` | Authenticated session unless open access | `TreeSnapshot`; flat relative entries, detected block summaries, revision and truncation flag |
 | GET `/diagrams/document?path=...` | `ReadDocumentRequest` | `DiagramDocument`; file kind, complete-file version and each selectable block's source |

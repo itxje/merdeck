@@ -136,3 +136,41 @@ it('keeps every folder reachable under a nonmatching file search and delegates d
   expect(onAction).toHaveBeenCalledWith({ type: 'delete', kind: 'directory', path: 'docs' })
   unmount()
 })
+
+it('searches this folder and its subfolders once text is typed, and returns to the folder view when cleared', async () => {
+  const user = userEvent.setup()
+  const onQueryChange = vi.fn()
+  const select = vi.fn()
+  const browse = vi.fn()
+  const result = { path: 'nsiod', query: 'relay', complete: false, stoppedBy: 'matches' as const, visited: 900, skipped: 0, entries: [
+    { kind: 'file' as const, path: 'nsiod/mermaid/mesh-v1/13-relay-gantt.mmd', fileKind: 'mermaid' as const, state: 'deferred' as const },
+    { kind: 'directory' as const, path: 'nsiod/relay-notes', children: 'unloaded' as const },
+    { kind: 'file' as const, path: 'nsiod/mermaid/mesh-v1/03-relay-state.mmd', fileKind: 'mermaid' as const, state: 'deferred' as const },
+    { kind: 'file' as const, path: 'nsiod/relay.md', fileKind: 'markdown' as const, state: 'deferred' as const },
+  ] }
+  const view = (search: { query: string, pending: boolean, error: unknown, result: typeof result | undefined }, kinds: FileFilter = 'mermaid') => (
+    <TooltipProvider>
+      <FileTree listing={{ entries: tree.entries, firstPage: 1, lastPage: 1, loading: false, stale: false, error: null, notice: '', retryAt: 0, canNext: false, complete: true, depth: false, maxPathDepth: 64, next: vi.fn(), restart: vi.fn(), suspend: vi.fn() }} directory="nsiod" browse={browse} drafts={{}} path="" block={0} select={select} refresh={vi.fn()} canChange onAction={vi.fn()} kinds={kinds} chooseKinds={vi.fn()} search={search} onQueryChange={onQueryChange} />
+    </TooltipProvider>
+  )
+  const { rerender, unmount } = render(view({ query: '', pending: false, error: null, result: undefined }))
+  expect(screen.getByText('Search looks in this folder and its subfolders.')).toBeVisible()
+  await user.type(screen.getByRole('textbox', { name: 'Filter files' }), 'relay')
+  expect(onQueryChange).toHaveBeenLastCalledWith('relay')
+  rerender(view({ query: 'relay', pending: true, error: null, result: undefined }))
+  expect(screen.getByText('Searching…')).toBeVisible()
+
+  rerender(view({ query: 'relay', pending: false, error: null, result }))
+  const results = screen.getByRole('navigation', { name: 'Search results' })
+  // Paths show below the browsed folder, ordered, with the chosen file type applied to files but not folders.
+  const rows = [...results.querySelectorAll('button')].map(button => button.textContent)
+  expect(rows).toEqual(['mermaid/mesh-v1/03-relay-state.mmd', 'mermaid/mesh-v1/13-relay-gantt.mmd', 'relay-notes'])
+  expect(screen.getByText('Showing the first 200 matches. Refine the search to see the rest.')).toBeVisible()
+  await user.click(screen.getByRole('button', { name: 'mermaid/mesh-v1/13-relay-gantt.mmd' }))
+  expect(select).toHaveBeenCalledWith('nsiod/mermaid/mesh-v1/13-relay-gantt.mmd')
+  await user.click(screen.getByRole('button', { name: 'relay-notes' }))
+  expect(browse).toHaveBeenCalledWith('nsiod/relay-notes')
+  expect(onQueryChange).toHaveBeenLastCalledWith('')
+  expect(screen.getByRole('textbox', { name: 'Filter files' })).toHaveValue('')
+  unmount()
+})

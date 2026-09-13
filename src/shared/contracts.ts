@@ -121,13 +121,30 @@ export const directoryQuerySchema = z.strictObject({
   cursor: directoryCursorSchema.optional(),
 })
 export const directoryRevisionRequestSchema = z.strictObject({ path: directoryPathSchema.default('') })
+// A name search below one folder; the query is plain text matched against paths under that folder.
+export const directorySearchRequestSchema = z.strictObject({
+  path: directoryPathSchema.default(''),
+  query: z.string().trim().min(1).max(200).refine(value => ![...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)),
+})
 export const closeDirectoryRequestSchema = z.strictObject({ path: directoryPathSchema, cursor: directoryCursorSchema })
 export type DirectoryPath = z.infer<typeof directoryPathSchema>
 export type DirectoryRequest = z.infer<typeof directoryRequestSchema>
 export type CloseDirectoryRequest = z.infer<typeof closeDirectoryRequestSchema>
+export type DirectorySearchRequest = z.infer<typeof directorySearchRequestSchema>
 export type DirectoryPageEntry
   = | { kind: 'directory', path: RelativePath, children: 'unloaded' }
     | { kind: 'file', path: RelativePath, fileKind: FileKind, state: 'deferred' }
+// Matches are whole visible entries below `path`. `complete` is false when a budget, depth or a folder that
+// changed or refused access cut the walk short, so an absent file is never evidence that it does not exist.
+export interface DirectorySearch {
+  path: DirectoryPath
+  query: string
+  entries: DirectoryPageEntry[]
+  complete: boolean
+  stoppedBy: 'matches' | 'visits' | 'time' | null
+  visited: number
+  skipped: number
+}
 export interface DirectoryPage {
   path: DirectoryPath
   parent: DirectoryPath | null

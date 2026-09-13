@@ -651,3 +651,55 @@ test('permission failure is not misreported as an empty directory', async () => 
   }
   finally { await chmod(join(root, 'private'), 0o700) }
 })
+
+test('search finds diagrams in every subfolder below the chosen folder, by name or by folder', async () => {
+  const root = await fixture()
+  await mkdir(join(root, 'nsiod/mermaid/mesh-v1/deep'), { recursive: true })
+  await mkdir(join(root, 'nsiod/other'), { recursive: true })
+  await mkdir(join(root, 'nsiod/mermaid/node_modules'), { recursive: true })
+  await mkdir(join(root, 'nsiod/mermaid/target'), { recursive: true })
+  await mkdir(join(root, 'nsiod/mermaid/.hidden'), { recursive: true })
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/03-relay-state.mmd'), 'graph TD')
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mmd'), 'gantt')
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/notes.txt'), 'relay')
+  await writeFile(join(root, 'nsiod/mermaid/node_modules/relay.mmd'), 'graph TD')
+  await writeFile(join(root, 'nsiod/mermaid/target/relay.mmd'), 'graph TD')
+  await writeFile(join(root, 'nsiod/mermaid/.hidden/relay.mmd'), 'graph TD')
+  await writeFile(join(root, 'nsiod/other/relay.mmd'), 'graph TD')
+  const diagrams = await service(root)
+
+  const found = await diagrams.searchDirectory({ path: 'nsiod/mermaid', query: 'RELAY' }, context)
+  expect(found.complete).toBe(true)
+  expect(found.stoppedBy).toBeNull()
+  // Hidden and generated folders stay excluded, unsupported files are not listed and nothing outside the folder is found.
+  expect(found.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/03-relay-state.mmd', 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mmd'])
+  expect(found.entries.every(entry => entry.kind === 'file' && entry.state === 'deferred')).toBe(true)
+
+  // A folder name matches too, so its contents are reachable from the name the reader remembers.
+  const byFolder = await diagrams.searchDirectory({ path: 'nsiod', query: 'mesh-v1' }, context)
+  expect(byFolder.entries.map(entry => entry.path)).toContain('nsiod/mermaid/mesh-v1')
+  expect(byFolder.entries.map(entry => entry.path)).toContain('nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mmd')
+
+  const fromRoot = await diagrams.searchDirectory({ path: '', query: 'relay' }, context)
+  expect(fromRoot.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/03-relay-state.mmd', 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mmd', 'nsiod/other/relay.mmd'])
+})
+
+test('search stops at its match budget and reports a partial result', async () => {
+  const root = await fixture()
+  await mkdir(join(root, 'many'))
+  for (let i = 0; i < 205; i++)
+    await writeFile(join(root, `many/diagram-${i}.mmd`), 'graph TD')
+  const diagrams = await service(root)
+  const found = await diagrams.searchDirectory({ path: '', query: 'diagram' }, context)
+  expect(found.entries).toHaveLength(200)
+  expect(found.stoppedBy).toBe('matches')
+  expect(found.complete).toBe(false)
+})
+
+test('search refuses malformed queries and paths before reading the project', async () => {
+  const root = await fixture()
+  const diagrams = await service(root)
+  for (const request of [{ path: '', query: '' }, { path: '', query: '   ' }, { path: '', query: 'x'.repeat(201) }, { path: '', query: 'a\u0007b' }, { path: '../escape', query: 'a' }, { path: 'a/../b', query: 'a' }])
+    await expect(diagrams.searchDirectory(request, context)).rejects.toMatchObject({ code: expect.stringMatching(/invalid_request|forbidden/) })
+  await expect(diagrams.searchDirectory({ path: 'missing', query: 'a' }, context)).rejects.toMatchObject({ code: expect.stringMatching(/not_found|deleted/) })
+})

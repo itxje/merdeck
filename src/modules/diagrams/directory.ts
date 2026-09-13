@@ -1,9 +1,9 @@
-import type { CloseDirectoryRequest, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision } from '../../shared/contracts'
+import type { CloseDirectoryRequest, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DirectorySearch, DirectorySearchRequest } from '../../shared/contracts'
 import type { DirectoryStream, DirectoryView, FileConfig, FileRepository } from './repository'
 import { Buffer } from 'node:buffer'
 import { randomBytes } from 'node:crypto'
 import { setImmediate as yieldEventLoop } from 'node:timers/promises'
-import { closeDirectoryRequestSchema, directoryRequestSchema, directoryRevisionRequestSchema } from '../../shared/contracts'
+import { closeDirectoryRequestSchema, directoryRequestSchema, directoryRevisionRequestSchema, directorySearchRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { contentVersion } from './parser'
 
@@ -46,6 +46,10 @@ interface Traversal {
   finish: () => void
 }
 const parent = (path: string) => path ? path.split('/').slice(0, -1).join('/') : null
+// A search reads names only. These budgets bound one request well inside the operation deadline.
+const searchVisits = 20000
+const searchMatches = 200
+const skippable = new Set(['directory_changed', 'not_found', 'forbidden', 'deleted', 'unsupported'])
 function completion() {
   let finish = () => {}
   const finished = new Promise<void>((resolve) => {
@@ -250,6 +254,86 @@ export class DirectoryPager {
         check()
         return { path, revision: this.revision(path, sample), maxPathDepth: this.config.limits.maxPathDepth, pollIntervalMs: this.config.limits.pollIntervalMs }
       })
+      check()
+      return result
+    }
+    finally {
+      this.operations.delete(operation)
+      operation.finish()
+    }
+  }
+
+  // Breadth-first over names below one folder, with the same visibility, path and ancestry checks a page
+  // applies. A folder that changes, vanishes or refuses access is left out and marks the result partial.
+  async searchDirectory(request: DirectorySearchRequest, context: DirectoryContext): Promise<DirectorySearch> {
+    const parsed = directorySearchRequestSchema.safeParse(request)
+    if (!parsed.success)
+      throw new AppError('invalid_request')
+    const { path, query } = parsed.data
+    this.repository.checkDirectoryPath(path)
+    const operation = this.begin(path, context)
+    const check = () => this.check(operation, context)
+    const needle = query.toLocaleLowerCase()
+    const result: DirectorySearch = { path, query, entries: [], complete: true, stoppedBy: null, visited: 0, skipped: 0 }
+    // Stop cleanly before the operation deadline would refuse the whole request.
+    const soft = operation.started + Math.floor(this.deadlineMs * 0.6)
+    try {
+      await this.root(check)
+      check()
+      const queue = [path]
+      while (queue.length && !result.stoppedBy) {
+        const folder = queue.shift()!
+        if (folder && folder.split('/').length >= this.config.limits.maxPathDepth) {
+          result.complete = false
+          continue
+        }
+        try {
+          await this.repository.withListingDirectory(folder, check, async (view) => {
+            const stream = await view.open()
+            try {
+              while (true) {
+                check()
+                if (result.visited >= searchVisits) {
+                  result.stoppedBy = 'visits'
+                  return
+                }
+                if (this.clock() >= soft) {
+                  result.stoppedBy = 'time'
+                  return
+                }
+                const name = await stream.read(check)
+                if (name === null)
+                  return
+                result.visited++
+                const entry = await view.entry(name)
+                if (!entry)
+                  continue
+                if (entry.kind === 'directory')
+                  queue.push(entry.path)
+                const below = path ? entry.path.slice(path.length + 1) : entry.path
+                if (!below.toLocaleLowerCase().includes(needle))
+                  continue
+                if (result.entries.length >= searchMatches) {
+                  result.stoppedBy = 'matches'
+                  return
+                }
+                result.entries.push(entry)
+              }
+            }
+            finally {
+              await stream.close()
+            }
+          })
+        }
+        catch (error) {
+          if (folder === path || !(error instanceof AppError) || !skippable.has(error.code))
+            throw error
+          result.skipped++
+          result.complete = false
+        }
+      }
+      if (result.stoppedBy || queue.length)
+        result.complete = false
       check()
       return result
     }
