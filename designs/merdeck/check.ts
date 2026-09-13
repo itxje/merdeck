@@ -21,8 +21,8 @@ async function main() {
   assert.deepEqual(metadata.designSystems, [])
   assert.equal(metadata.primaryDesignSystem, null)
   const assets = Object.values(metadata.assets).flatMap(asset => asset.versions)
-  assert.deepEqual(assets.map(asset => asset.path).sort(), ['Merdeck.html', 'brand.html'])
-  const expectedStatus: Record<string, string> = { 'Merdeck.html': 'needs-review', 'brand.html': 'approved' }
+  assert.deepEqual(assets.map(asset => asset.path).sort(), ['Directory-navigation.html', 'Merdeck.html', 'brand.html'])
+  const expectedStatus: Record<string, string> = { 'Directory-navigation.html': 'needs-review', 'Merdeck.html': 'needs-review', 'brand.html': 'approved' }
   for (const asset of assets)
     assert.equal(asset.status, expectedStatus[asset.path], `${asset.path} must stay ${expectedStatus[asset.path]}`)
   const brand = await readFile(resolve(directory, 'brand.html'), 'utf8')

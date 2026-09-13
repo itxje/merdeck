@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-12
+> Updated: 2026-09-13
 
 ## Usage
 
@@ -68,6 +68,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**LAYOUT-009 Distinguish folders from files in the explorer**](LAYOUT-009.md) `P2`
 - [x] [**PREVIEW-011 Refuse only the preview security boundary and admit the remaining Mermaid syntax**](PREVIEW-011.md) `P1`
 
+- [x] [**20260913-1737-directory-navigation-design Directory navigation prototype and frontend proposal**](20260913-1737-directory-navigation-design.md) `P1`
 - [x] [**20260913-1626-directory-browsing-contract Directory browsing investigation and contract**](20260913-1626-directory-browsing-contract.md) `P1`
 
 - [-] [**20260913-1637-directory-backend Implement bounded directory browsing backend**](20260913-1637-directory-backend.md) `P1`

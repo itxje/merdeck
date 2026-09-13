@@ -111,3 +111,51 @@ Evidence files: `tmp/design/check-results.json`, `desktop-light.png`, `desktop-d
 ## Official API references
 
 Checked on 2026-09-07: [Mermaid rendering](https://mermaid.js.org/config/usage.html), [root-level HTML label configuration](https://mermaid.js.org/config/schema-docs/config.html#htmllabels), [Base UI Button](https://base-ui.com/react/components/button), [Vite builds](https://vite.dev/guide/build.html), and [Rolldown single-bundle behavior](https://rolldown.rs/reference/OutputOptions.codeSplitting).
+
+## Focused directory navigation variant
+
+`Directory-navigation.html` is a separate, self-contained TypeScript-authored variant.
+It preserves the approved brand and current header/source/preview layout while replacing
+only the explorer flow. It imports the current production Preview and its 0.8.4 policy;
+the historical `Merdeck.html` and brand sheet are preserved byte-for-byte. The new asset
+is **needs-review**. No new dependencies or alternative component library were added.
+
+Enter **docs**, then **platform**, and use ancestors, Up or Root. Edit the overview first
+to see the selected root-relative file and draft survive browsing. **archive** contains
+seven small fixture pages: advancing to page six drops page one and offers Restart.
+Filters affect files in the loaded five-page window only; folders remain reachable.
+**docs/guide.md** demonstrates deferred block loading, **notes.md** zero blocks,
+**unreadable.md** a failed read, and **empty** no supported entries. **Prototype states**
+exposes loading/error/stale/depth states. On narrow screens use the file drawer and
+source/preview tabs; Escape returns focus to its trigger. Themes use existing controls.
+
+This variant uses in-memory fixture state, not production API or cursor emulation.
+Saving updates that fixture only; refresh resets navigation and drafts. File mutation,
+URL/history, session and production cursor lifecycle acceptance remain in the
+[frontend integration plan](../../docs/plan/20260913-1746-directory-frontend.md).
+
+Rebuild and run focused checks from the repository root after the two frozen installs:
+
+```bash
+bun designs/merdeck/directory-build.ts
+bun test --coverage ./designs/merdeck/directory-model.test.ts
+node_modules/.bin/tsc --noEmit -p designs/merdeck/tsconfig.json
+node_modules/.bin/eslint designs/merdeck/directory-*.ts designs/merdeck/directory-*.tsx designs/merdeck/check.ts
+```
+
+Use the same tmux naming and project-local nsl setup described above, with a separate
+`directory-preview` window launching `bun designs/merdeck/directory-serve.ts` under
+`nsl run -n "merdeck-design-$path_hash"`. Reuse an existing owned window instead of
+starting a duplicate. This server serves only its index and exact variant HTML path.
+Discover the port with `nsl get`, then run the browser check in tmux:
+
+```bash
+export MERDECK_DIRECTORY_DESIGN_URL="$(node_modules/.bin/nsl get "merdeck-design-$path_hash")/merdeck/Directory-navigation.html"
+# Set PLAYWRIGHT_BROWSERS_PATH to the existing installed Chromium location if needed.
+bun designs/merdeck/directory-check.ts
+git diff --check
+```
+
+Evidence goes to ignored `tmp/directory-design/`: `check-results.json`,
+`browser-diagnostics.json`, desktop/narrow screenshots and build resource metadata.
+These focused checks do not establish production or native release acceptance.

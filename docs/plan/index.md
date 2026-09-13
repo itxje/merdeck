@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-12
+> Updated: 2026-09-13
 
 ## Usage
 
@@ -35,6 +35,7 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**PLAN-026 Distinguish folders from files in the explorer**](PLAN-026.md) `2026-09-12`
 - [x] [**PLAN-025 Refuse only the preview security boundary and admit the remaining Mermaid syntax**](PLAN-025.md) `2026-09-12`
 
+- [x] [**20260913-1746-directory-frontend Directory navigation design and frontend integration**](20260913-1746-directory-frontend.md) `2026-09-13`
 - [-] [**20260913-1628-directory-navigation-pagination Directory navigation and bounded pagination**](20260913-1628-directory-navigation-pagination.md) `2026-09-13`
 
 - [-] [**20260913-1657-streaming-directory-correction Bounded directory primitive correction**](20260913-1657-streaming-directory-correction.md) `2026-09-13`
