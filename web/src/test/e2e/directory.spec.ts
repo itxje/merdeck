@@ -55,7 +55,10 @@ test('directory history, ancestors, deep save and legacy links preserve an indep
     await expect(explorer.getByRole('button', { name: 'deep.mmd', exact: true })).toBeVisible()
     await expect(explorer.getByRole('navigation', { name: 'Directory breadcrumbs' }).getByRole('button', { name: 'e', exact: true })).toHaveAttribute('aria-current', 'location')
   }
-  finally { await rm(owned, { recursive: true, force: true }) }
+  finally {
+    await page.close()
+    await rm(owned, { recursive: true, force: true })
+  }
 })
 
 test('directory pages advance past the old root budget with a five-page window and unlisted links', async ({ page }, info) => {
@@ -109,7 +112,10 @@ test('directory pages advance past the old root budget with a five-page window a
     await live(page)
     await page.screenshot({ path: info.outputPath('directory-desktop.png'), fullPage: true, animations: 'disabled' })
   }
-  finally { await rm(owned, { recursive: true, force: true }) }
+  finally {
+    await page.close()
+    await rm(owned, { recursive: true, force: true })
+  }
 })
 
 test('excluded-only continuations and filtered folders remain navigable, with deferred Markdown states', async ({ page, audit }) => {
@@ -145,7 +151,10 @@ test('excluded-only continuations and filtered folders remain navigable, with de
     await explorer.getByRole('button', { name: 'blocks.md', exact: true }).click()
     await expect(explorer.getByRole('list', { name: 'Diagrams in blocks.md' }).getByRole('button')).toHaveCount(2)
   }
-  finally { await rm(owned, { recursive: true, force: true }) }
+  finally {
+    await page.close()
+    await rm(owned, { recursive: true, force: true })
+  }
 })
 
 test('narrow source theme changes preserve fitted preview geometry and directory keyboard navigation', async ({ page }, info) => {
@@ -226,6 +235,58 @@ test('stale directory responses cannot replace a new location and external remov
   }
   finally {
     release()
+    await page.close()
+    await rm(owned, { recursive: true, force: true })
+  }
+})
+
+test('a real namespace change rejects one continuation and Restart recovers without replay or draft loss', async ({ page, audit }) => {
+  // Only this deliberately induced page conflict is expected; assert its exact
+  // code and count below. Revision conflicts and rate limits remain unexpected.
+  audit.allowHttp(409, '/api/diagrams/directory')
+  const owned = await mkdtemp(join(root, 'namespace-'))
+  const top = basename(owned)
+  for (let n = 0; n < 110; n++)
+    await writeFile(join(owned, `${n}.mmd`), source)
+  const conflicts: number[] = []
+  const requests: boolean[] = []
+  page.on('response', (response) => {
+    if (new URL(response.url()).pathname === '/api/diagrams/directory' && response.status() >= 400)
+      conflicts.push(response.status())
+  })
+  try {
+    await login(page, true)
+    await choose(page, 'welcome.mmd')
+    const editor = page.getByLabel('Mermaid source', { exact: true })
+    const draft = `${await editor.inputValue()}%% Namespace race draft\n`
+    await editor.fill(draft)
+    await browse(page, top)
+    const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
+    await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
+    await page.route('**/api/diagrams/directory?*', async (route) => {
+      const url = new URL(route.request().url())
+      if (url.searchParams.get('path') === top) {
+        const continuation = url.searchParams.has('cursor')
+        requests.push(continuation)
+        if (continuation && requests.length === 1)
+          await writeFile(join(owned, 'external.mmd'), source)
+      }
+      await route.continue()
+    })
+    const changed = page.waitForResponse(response => new URL(response.url()).pathname === '/api/diagrams/directory' && response.status() === 409)
+    await explorer.getByRole('button', { name: 'Next page', exact: true }).click()
+    expect(await (await changed).json()).toMatchObject({ success: false, error: { code: 'directory_changed' } })
+    await expect(explorer.getByRole('status').filter({ hasText: 'Listing is not current' })).toBeVisible()
+    await expect(editor).toHaveValue(draft)
+    await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled()
+    await explorer.getByRole('button', { name: 'Restart', exact: true }).click()
+    await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
+    expect(requests).toEqual([true, false])
+    expect(conflicts).toEqual([409])
+    await expect(editor).toHaveValue(draft)
+  }
+  finally {
+    await page.close()
     await rm(owned, { recursive: true, force: true })
   }
 })

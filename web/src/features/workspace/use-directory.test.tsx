@@ -152,3 +152,71 @@ it('closes an expired cursor and requires a fresh run without losing the display
   unmount()
   client.clear()
 })
+
+it('uses page revision metadata instead of a parallel initial probe on every navigation', async () => {
+  const { client, wrapper } = setup()
+  let finish!: (value: DirectoryPage) => void
+  vi.mocked(api.directory).mockImplementationOnce(() => new Promise((resolve) => {
+    finish = resolve
+  }))
+  const { result, rerender, unmount } = renderHook(({ path }) => useDirectory(path, 0, true, undefined, 30000, 1), { wrapper, initialProps: { path: '' } })
+  await waitFor(() => expect(api.directory).toHaveBeenCalledOnce())
+  expect(api.directoryRevision).not.toHaveBeenCalled()
+  await act(async () => finish(page()))
+  await waitFor(() => expect(result.current.canNext).toBe(true))
+  rerender({ path: 'docs' })
+  await waitFor(() => expect(result.current.entries[0]?.path).toBe('docs/1.mmd'))
+  expect(api.directoryRevision).not.toHaveBeenCalled()
+  unmount()
+  client.clear()
+})
+
+it('cancels an older revision probe before Next so its late value cannot restart the newer page', async () => {
+  const { client, wrapper } = setup()
+  const { result, unmount } = renderHook(() => useDirectory('', 0, true, undefined, 30000, 1), { wrapper })
+  await waitFor(() => expect(result.current.canNext).toBe(true))
+  let probeSignal!: AbortSignal
+  let finish!: (value: Awaited<ReturnType<typeof api.directoryRevision>>) => void
+  vi.mocked(api.directoryRevision).mockImplementation((_path, signal) => {
+    probeSignal = signal
+    return new Promise((resolve) => {
+      finish = resolve
+    })
+  })
+  act(() => {
+    void client.refetchQueries({ queryKey: ['directory-revision'] })
+  })
+  await waitFor(() => expect(probeSignal).toBeDefined())
+  act(() => result.current.next())
+  await waitFor(() => expect(result.current.lastPage).toBe(2))
+  expect(probeSignal.aborted).toBe(true)
+  await act(async () => finish({ path: '', revision: 'b'.repeat(64), maxPathDepth: 64, pollIntervalMs: 30000 }))
+  expect(result.current.lastPage).toBe(2)
+  expect(api.directory).toHaveBeenCalledTimes(2)
+  unmount()
+  client.clear()
+})
+
+it('honors revision Retry-After on manual restart and focus without retrying a page cursor', async () => {
+  const { client, wrapper } = setup()
+  const { result, unmount } = renderHook(() => useDirectory('', 0, true, undefined, 30000, 1), { wrapper })
+  await waitFor(() => expect(result.current.canNext).toBe(true))
+  vi.mocked(api.directoryRevision).mockRejectedValueOnce(new HttpError(429, 'rate_limited', 'Wait', 1))
+  await act(() => client.refetchQueries({ queryKey: ['directory-revision'] }))
+  await waitFor(() => expect(result.current.retryAt).toBeGreaterThan(Date.now()))
+  act(() => {
+    result.current.restart()
+    focusManager.setFocused(false)
+    focusManager.setFocused(true)
+  })
+  await act(async () => {})
+  expect(api.directory).toHaveBeenCalledOnce()
+  expect(api.directoryRevision).toHaveBeenCalledOnce()
+  await waitFor(() => expect(result.current.retryAt).toBe(0), { timeout: 2000 })
+  act(() => result.current.restart())
+  await waitFor(() => expect(api.directory).toHaveBeenCalledTimes(2))
+  expect(vi.mocked(api.directory).mock.calls.every(([request]) => !request.cursor)).toBe(true)
+  unmount()
+  client.clear()
+  focusManager.setFocused(undefined)
+})

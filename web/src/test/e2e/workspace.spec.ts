@@ -86,6 +86,7 @@ test('real files, independent Markdown drafts, save snapshots, conflicts, respon
   await expect(editor).toHaveValue(/Tested --> Newer/)
   expect(await readFile(join(root, 'docs/overview.md'), 'utf8')).toContain('Tested --> Submitted')
 
+  await expect(page.getByRole('navigation', { name: 'Files and diagrams', exact: true })).toHaveAttribute('aria-busy', 'false')
   const externalBytes = (await readFile(join(root, 'docs/overview.md'), 'utf8')).replace('Submitted', 'External')
   await writeFile(join(root, 'docs/replacement.md'), externalBytes)
   await rename(join(root, 'docs/replacement.md'), join(root, 'docs/overview.md'))
@@ -193,6 +194,9 @@ test('clean external refresh, detected stale save and deletion keep original fil
     expect((await response).status()).toBe(409)
     await expect(editor).toHaveValue('flowchart LR\n  Local --> Draft\n')
     expect(await readFile(standalonePath, 'utf8')).toContain('Independent --> Writer')
+    // The preceding save conflict restarts the namespace listing. Finish that read
+    // before the separate external-deletion scenario changes the directory.
+    await expect(page.getByRole('navigation', { name: 'Files and diagrams', exact: true })).toHaveAttribute('aria-busy', 'false')
     await rename(standalonePath, join(root, 'renamed.mmd'))
     await expect(page.getByRole('alert').filter({ hasText: 'deleted or renamed' })).toBeVisible({ timeout: 12000 })
     await expect(editor).toHaveValue('flowchart LR\n  Local --> Draft\n')
@@ -205,6 +209,7 @@ test('clean external refresh, detected stale save and deletion keep original fil
     await expect(editor).toHaveValue('flowchart LR\n  Local --> Draft\n')
   }
   finally {
+    await page.close()
     await rename(join(root, 'renamed.mmd'), standalonePath).catch(() => {})
     await writeFile(standalonePath, initial)
   }

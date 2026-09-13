@@ -111,6 +111,8 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await expect(dialog).toHaveCount(0)
     await rm(join(root, folder, 'nested', '.keep'))
     await explorer.getByRole('button', { name: 'Refresh files', exact: true }).click()
+    // Existing rows remain visible while refresh temporarily disables mutations.
+    await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeEnabled()
 
     await explorer.getByRole('button', { name: 'nested', exact: true }).focus()
     await page.keyboard.press('F2')
@@ -142,6 +144,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await expect(page.getByRole('dialog')).toHaveCount(0)
   }
   finally {
+    await page.close()
     await rm(join(root, folder), { recursive: true, force: true })
   }
 })

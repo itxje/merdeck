@@ -33,7 +33,7 @@ function renderTree(kinds: FileFilter, chooseKinds = vi.fn(), snapshot: Director
   const onAction = vi.fn()
   const view = render(
     <TooltipProvider>
-      <FileTree listing={{ entries: snapshot.entries, firstPage: 1, lastPage: 1, loading: false, stale: false, error: null, notice: '', retryAt: 0, canNext: false, complete: true, depth: false, maxPathDepth: 64, next: vi.fn(), restart: vi.fn() }} directory="" browse={browse} drafts={{}} path="" block={0} select={vi.fn()} refresh={vi.fn()} canChange onAction={onAction} kinds={kinds} chooseKinds={chooseKinds} />
+      <FileTree listing={{ entries: snapshot.entries, firstPage: 1, lastPage: 1, loading: false, stale: false, error: null, notice: '', retryAt: 0, canNext: false, complete: true, depth: false, maxPathDepth: 64, next: vi.fn(), restart: vi.fn(), suspend: vi.fn() }} directory="" browse={browse} drafts={{}} path="" block={0} select={vi.fn()} refresh={vi.fn()} canChange onAction={onAction} kinds={kinds} chooseKinds={chooseKinds} />
     </TooltipProvider>,
   )
   return { ...view, chooseKinds, browse, onAction }

@@ -95,8 +95,8 @@ it('clears server cache on auth expiration while locking recoverable drafts and 
     saving = result.current.save()
   })
   await waitFor(() => expect(api.save).toHaveBeenCalledTimes(1))
-  vi.mocked(api.directoryRevision).mockRejectedValue(new HttpError(401, 'unauthorized', 'Expired'))
-  await act(() => client.refetchQueries({ queryKey: ['directory-revision'] }))
+  vi.mocked(api.revision).mockRejectedValue(new HttpError(401, 'unauthorized', 'Expired'))
+  await act(() => client.refetchQueries({ queryKey: ['revision'] }))
   await waitFor(() => expect(result.current.session).toBeNull())
   expect(result.current.file?.locked).toBe(true)
   expect(result.current.file?.sources[0]).toBe('recoverable')
@@ -355,6 +355,71 @@ it('keeps dirty documents and saving independent of a failed browse directory', 
   await act(() => result.current.save())
   expect(api.save).toHaveBeenCalledOnce()
   expect(result.current.file?.saved).toBe(true)
+  unmount()
+  client.clear()
+})
+
+it('manual refresh retries only the selected failed document with an unchanged revision and never replays a cursor', async () => {
+  const { client, wrapper } = setup()
+  vi.mocked(api.document).mockRejectedValueOnce(new HttpError(503, 'unavailable', 'Temporary read failure'))
+  const first = { path: '', parent: null, entries: [], revision: version, complete: false, nextCursor: 'c'.repeat(64), expiresAt: new Date(Date.now() + 60000).toISOString(), stoppedBy: 'entries' as const, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 }
+  vi.mocked(api.directory).mockResolvedValueOnce(first)
+  vi.spyOn(api, 'closeDirectory').mockResolvedValue({ closed: true })
+  const { result, unmount } = renderHook(() => useWorkspace('one.mmd', 0), { wrapper })
+  await waitFor(() => expect(result.current.documentQuery.isError).toBe(true))
+  await waitFor(() => expect(result.current.listing.canNext).toBe(true))
+  act(() => result.current.listing.next())
+  await waitFor(() => expect(api.directory).toHaveBeenCalledTimes(2))
+  await waitFor(() => expect(result.current.listing.loading).toBe(false))
+  act(() => result.current.refresh())
+  await waitFor(() => expect(result.current.file?.sources[0]).toBe('A-->B'))
+  expect(api.document).toHaveBeenCalledTimes(2)
+  expect(vi.mocked(api.directory).mock.calls.map(([request]) => request.cursor)).toEqual([undefined, first.nextCursor, undefined])
+  expect(vi.mocked(api.document).mock.calls.every(([path]) => path === 'one.mmd')).toBe(true)
+  unmount()
+  client.clear()
+})
+
+it('settles namespace polling before a local write and restarts once after its response', async () => {
+  const { client, wrapper } = setup()
+  const { result, unmount } = renderHook(() => useWorkspace('one.mmd', 0), { wrapper })
+  await waitFor(() => expect(result.current.file).toBeDefined())
+  let probeSignal!: AbortSignal
+  vi.mocked(api.directoryRevision).mockImplementation((_path, signal) => {
+    probeSignal = signal
+    return new Promise(() => {})
+  })
+  act(() => {
+    void client.refetchQueries({ queryKey: ['directory-revision'] })
+  })
+  await waitFor(() => expect(probeSignal).toBeDefined())
+  let complete!: (document: DiagramDocument) => void
+  let canceledBeforeWrite = false
+  vi.spyOn(api, 'save').mockImplementation(() => {
+    canceledBeforeWrite = probeSignal.aborted
+    return new Promise((resolve) => {
+      complete = resolve
+    })
+  })
+  act(() => result.current.dispatch({ type: 'edit', path: 'one.mmd', block: 0, source: 'Changed' }))
+  let pending!: Promise<void>
+  act(() => {
+    pending = result.current.save()
+  })
+  await waitFor(() => expect(api.save).toHaveBeenCalledOnce())
+  expect(canceledBeforeWrite).toBe(true)
+  const probes = vi.mocked(api.directoryRevision).mock.calls.length
+  const pages = vi.mocked(api.directory).mock.calls.length
+  await act(() => client.refetchQueries({ queryKey: ['directory-revision'] }))
+  expect(api.directoryRevision).toHaveBeenCalledTimes(probes)
+  expect(api.directory).toHaveBeenCalledTimes(pages)
+  await act(async () => {
+    complete(doc('one.mmd', 'Changed', 'b'.repeat(64)))
+    await pending
+  })
+  await waitFor(() => expect(result.current.listing.loading).toBe(false))
+  expect(api.directory).toHaveBeenCalledTimes(pages + 1)
+  expect(vi.mocked(api.directory).mock.calls.every(([request]) => !request.cursor)).toBe(true)
   unmount()
   client.clear()
 })

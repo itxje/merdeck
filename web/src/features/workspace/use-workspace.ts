@@ -98,6 +98,7 @@ export function useWorkspace(path: string, block: number, directory = '') {
   const interval = session?.pollIntervalMs ?? 3000
   const listing = useDirectory(directory, epoch, !!session, session ? sessionCsrf(session) : undefined, interval)
   const restartDirectory = listing.restart
+  const suspendDirectory = listing.suspend
   const revisionKey = ['revision', epoch, path] as const
   const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : interval, retry: false })
   const observed = revision.data?.state === 'present' ? revision.data.version : ''
@@ -180,7 +181,10 @@ export function useWorkspace(path: string, block: number, directory = '') {
     const id = ++counterRef.current
     const currentGeneration = generationRef.current
     dispatch({ type: 'saving', path, id, block })
+    let resumeDirectory = () => {}
     try {
+      if (parentDirectory(path) === directory)
+        resumeDirectory = await suspendDirectory()
       await client.cancelQueries({ predicate: query => query.queryKey[0] === 'document' || query.queryKey[0] === 'revision' })
       const document = await saveMutation.mutateAsync({ request: { path, selector: selected.selector, expectedVersion: file.baseline.version, source }, csrf: sessionCsrf(session) })
       if (currentGeneration !== generationRef.current)
@@ -196,8 +200,6 @@ export function useWorkspace(path: string, block: number, directory = '') {
       if (!latest || (latest.state === 'present' && (latest.version === file.baseline.version || latest.version === document.version)))
         client.setQueryData(['revision', epoch, path], { path, state: 'present', version: document.version })
       client.setQueryData(['document', epoch, path, document.version], document)
-      if (parentDirectory(path) === directory)
-        restartDirectory()
     }
     catch (error) {
       if (currentGeneration !== generationRef.current)
@@ -207,11 +209,12 @@ export function useWorkspace(path: string, block: number, directory = '') {
       else dispatch({ type: 'error', path, id, message: errorMessage(error) })
     }
     finally {
+      resumeDirectory()
       activeSavesRef.current--
       if (currentGeneration === generationRef.current)
         busyRef.current = false
     }
-  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch, directory, restartDirectory])
+  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch, directory, suspendDirectory])
   const review = useMutation({
     networkMode: 'always',
     mutationFn: async (filePath: string) => {
@@ -229,22 +232,28 @@ export function useWorkspace(path: string, block: number, directory = '') {
     mutationFn: async (operation: EntryOperation) => {
       if (!session)
         throw new HttpError(401, 'unauthorized', 'Sign in to continue.')
-      await client.cancelQueries({ predicate: query => query.queryKey[0] === 'document' || query.queryKey[0] === 'revision' })
-      if (operation.type === 'create')
-        return api.createEntry(operation.request, sessionCsrf(session))
-      const generation = generationRef.current
-      if (operation.request.kind === 'file' && !operation.request.expectedVersion) {
-        const filePath = operation.type === 'move' ? operation.request.from : operation.request.path
-        const document = await api.document(filePath, new AbortController().signal)
-        if (generation !== generationRef.current || document.path !== filePath)
-          throw new HttpError(409, 'conflict', 'The file state changed. Try again.')
+      const resumeDirectory = affectsDirectory(operation, directory) ? await suspendDirectory() : () => {}
+      try {
+        await client.cancelQueries({ predicate: query => query.queryKey[0] === 'document' || query.queryKey[0] === 'revision' })
+        if (operation.type === 'create')
+          return await api.createEntry(operation.request, sessionCsrf(session))
+        const generation = generationRef.current
+        if (operation.request.kind === 'file' && !operation.request.expectedVersion) {
+          const filePath = operation.type === 'move' ? operation.request.from : operation.request.path
+          const document = await api.document(filePath, new AbortController().signal)
+          if (generation !== generationRef.current || document.path !== filePath)
+            throw new HttpError(409, 'conflict', 'The file state changed. Try again.')
+          if (operation.type === 'move')
+            return await api.moveEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
+          return await api.deleteEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
+        }
         if (operation.type === 'move')
-          return api.moveEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
-        return api.deleteEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
+          return await api.moveEntry(operation.request, sessionCsrf(session))
+        return await api.deleteEntry(operation.request, sessionCsrf(session))
       }
-      if (operation.type === 'move')
-        return api.moveEntry(operation.request, sessionCsrf(session))
-      return api.deleteEntry(operation.request, sessionCsrf(session))
+      finally {
+        resumeDirectory()
+      }
     },
     onSuccess: (_change, operation, context) => {
       if (context.generation !== generationRef.current)
@@ -254,9 +263,6 @@ export function useWorkspace(path: string, block: number, directory = '') {
         dispatch({ type: 'move', kind: operation.request.kind, from: operation.request.from, to: operation.request.to })
       if (operation.type === 'delete' && operation.request.kind === 'file')
         dispatch({ type: 'remove', path: operation.request.path })
-      // Restart namespace traversal; old document paths must not be replayed after a move.
-      if (affectsDirectory(operation, directory))
-        restartDirectory()
     },
     onError: (error) => {
       if (error instanceof HttpError && error.status === 401)
@@ -284,6 +290,7 @@ export function useWorkspace(path: string, block: number, directory = '') {
   const refresh = () => {
     restartDirectory()
     void client.invalidateQueries({ queryKey: ['revision', epoch, path] })
+    void client.invalidateQueries({ queryKey: ['document', epoch, path, observed], exact: true })
     void client.invalidateQueries({ queryKey: ['session'] })
   }
   const hasUnsaved = Object.values(drafts).some(item => dirty(item) || item.saving)

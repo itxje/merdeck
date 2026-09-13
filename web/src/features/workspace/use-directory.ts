@@ -23,6 +23,7 @@ interface Run {
 }
 interface View { run: Run | null, pages: Page[], loading: boolean, stale: boolean, error: unknown, notice: string, retryAt: number }
 const empty: View = { run: null, pages: [], loading: false, stale: false, error: null, notice: '', retryAt: 0 }
+const rateDelay = (error: unknown) => error instanceof HttpError && error.status === 429 ? Math.max(1000, (error.retryAfterSeconds ?? 60) * 1000) : null
 
 // Page queries are dispatched only by this run. No observer may refetch a consumed cursor.
 export function useDirectory(path: string, epoch: number, enabled: boolean, csrf: string | undefined, interval: number, limit = 100) {
@@ -32,6 +33,8 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
   const restartNoticeRef = React.useRef('')
   const [view, setView] = React.useState<View>(empty)
   const [restartNumber, setRestartNumber] = React.useState(0)
+  const [paused, setPaused] = React.useState(false)
+  const pausesRef = React.useRef(0)
   const close = React.useCallback((directory: string, cursor: string | null) => {
     if (cursor)
       void api.closeDirectory({ path: directory, cursor }, csrf).catch(() => { /* Unknown or unauthorized streams expire on the service. */ })
@@ -39,12 +42,16 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
   const revision = useQuery({
     queryKey: ['directory-revision', epoch, path],
     queryFn: ({ signal }) => api.directoryRevision(path, signal),
-    enabled,
+    // A page already supplies this metadata. Probe only after its run is ready.
+    enabled: enabled && !paused && !view.loading && view.run?.live === true && view.run.path === path && view.run.epoch === epoch && view.run.csrf === csrf && view.pages.length > 0,
+    staleTime: interval,
     retry: false,
-    refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : interval,
+    refetchOnWindowFocus: query => rateDelay(query.state.error) === null,
+    refetchOnReconnect: query => rateDelay(query.state.error) === null,
+    refetchInterval: query => rateDelay(query.state.error) ?? (query.state.error ? Math.min(interval * 4, 30000) : interval),
   })
   const requestPage = React.useCallback(async (run: Run, cursor?: string) => {
-    if (!run.live || run.busy)
+    if (!run.live || run.busy || pausesRef.current > 0)
       return
     run.busy = true
     run.cursor = null
@@ -52,6 +59,10 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
     const key = ['directory-page', epoch, path, limit, run.id, number] as const
     setView(previous => ({ ...previous, run, loading: true, error: null }))
     try {
+      // A pre-page probe must not overwrite the newer revision carried by its page.
+      await client.cancelQueries({ queryKey: ['directory-revision', epoch, path], exact: true })
+      if (!run.live || run.stopped)
+        return
       const data = await client.fetchQuery({
         queryKey: key,
         retry: false,
@@ -109,6 +120,8 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
       setView(empty)
       return
     }
+    if (paused)
+      return
     const run: Run = { id: ++counterRef.current, epoch, csrf, path, live: true, busy: false, cursor: null, pages: [], sequence: 0, expires: 0, revision: null, retryAt: 0, stopped: false, notice: restartNoticeRef.current }
     restartNoticeRef.current = ''
     currentRef.current = run
@@ -127,7 +140,7 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
       void client.cancelQueries({ queryKey: ['directory-revision', epoch, path] })
       client.removeQueries({ queryKey: ['directory-revision', epoch, path] })
     }
-  }, [enabled, epoch, path, limit, csrf, restartNumber, requestPage, close, client])
+  }, [enabled, epoch, path, limit, csrf, restartNumber, paused, requestPage, close, client])
   const stop = React.useCallback((notice: string) => {
     const run = currentRef.current
     if (!run?.live)
@@ -149,6 +162,15 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
     }
   }, [enabled, path, revision.data, stop])
   React.useEffect(() => {
+    const delay = rateDelay(revision.error)
+    const run = currentRef.current
+    if (delay === null || !run?.live)
+      return
+    run.retryAt = Math.max(run.retryAt, revision.errorUpdatedAt + delay)
+
+    setView(previous => ({ ...previous, retryAt: run.retryAt }))
+  }, [revision.error, revision.errorUpdatedAt])
+  React.useEffect(() => {
     if (!view.retryAt)
       return
     const timer = window.setTimeout(() => {
@@ -167,9 +189,26 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
     const timer = window.setTimeout(stop, Math.max(0, Date.parse(latest.expiresAt) - Date.now()), 'Listing expired. Restart to continue.')
     return () => window.clearTimeout(timer)
   }, [latest?.expiresAt, enabled, view.stale, stop])
-  const valid = enabled && view.run?.live && view.run.path === path && view.run.epoch === epoch && view.run.csrf === csrf && currentRef.current === view.run
+  const valid = enabled && (view.run?.live || paused) && view.run?.path === path && view.run.epoch === epoch && view.run.csrf === csrf && currentRef.current === view.run
   const active = valid ? view : empty
-  const stale = active.stale || revision.isError
+  const stale = active.stale || paused || revision.isError
+  const suspend = React.useCallback(async () => {
+    pausesRef.current++
+    setPaused(true)
+    if (currentRef.current)
+      currentRef.current.stopped = true
+    // Cancel before the mutation enters the service's namespace-change window.
+    await client.cancelQueries({ predicate: query => query.queryKey[0] === 'directory-page' || query.queryKey[0] === 'directory-revision' })
+    let resumed = false
+    return () => {
+      if (resumed)
+        return
+      resumed = true
+      pausesRef.current--
+      if (pausesRef.current === 0)
+        setPaused(false)
+    }
+  }, [client])
   const next = () => {
     const run = currentRef.current
     if (!valid || !run?.cursor || run.busy || run.stopped || stale)
@@ -181,7 +220,7 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
     void requestPage(run, run.cursor)
   }
   const restart = React.useCallback(() => {
-    if (!enabled || (currentRef.current?.retryAt ?? 0) > Date.now())
+    if (!enabled || pausesRef.current > 0 || (currentRef.current?.retryAt ?? 0) > Date.now())
       return
     if (currentRef.current) {
       currentRef.current.stopped = true
@@ -190,5 +229,5 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
     }
     setRestartNumber(value => value + 1)
   }, [enabled, close, path])
-  return { entries: active.pages.flatMap(page => page.data.entries), firstPage: active.pages[0]?.number ?? 1, lastPage: active.pages.at(-1)?.number ?? 0, loading: active.loading || (enabled && !valid), stale, error: active.error ?? revision.error, notice: active.notice, retryAt: active.retryAt, canNext: !!valid && !!currentRef.current?.cursor && !active.loading && !stale, complete: !!valid && !!latest?.complete, depth: !!valid && latest?.stoppedBy === 'depth', maxPathDepth: latest?.maxPathDepth ?? 64, next, restart }
+  return { entries: active.pages.flatMap(page => page.data.entries), firstPage: active.pages[0]?.number ?? 1, lastPage: active.pages.at(-1)?.number ?? 0, loading: active.loading || (enabled && !valid), stale, error: active.error ?? revision.error, notice: active.notice, retryAt: active.retryAt, canNext: !!valid && !!currentRef.current?.cursor && !active.loading && !stale, complete: !!valid && !!latest?.complete, depth: !!valid && latest?.stoppedBy === 'depth', maxPathDepth: latest?.maxPathDepth ?? 64, next, restart, suspend }
 }
