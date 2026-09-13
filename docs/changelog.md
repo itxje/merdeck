@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 17:40 [progress]
+
+Corrected directory verification exports to retain raw traces locally and publish only bounded, sanitized, identity-checked summaries. Existing hosted reporting now retains safe evidence on success and failure without changing release payloads. The production backend is unchanged from the prior complete local PASS; authorized focused validation covers this verification-only correction, with full hosted x64/ext4 acceptance still required. See the [backend task](task/20260913-1637-directory-backend.md).
+
 ## 2026-09-13 17:22 [progress]
 
 Implemented the reviewed fixed-buffer native directory candidate and shared it with bounded growing-prefix move audits. Actual adapter source/bundle/compiled physical checks passed locally on ARM64 overlay and virtiofs; full local and hosted native acceptance remain pending. Added parser/error/cleanup and HTTP lifecycle regressions plus the physical harness in existing check:ci/--native paths. The [backend task](task/20260913-1637-directory-backend.md) retains exact evidence and the corrected startup-test isolation defect; no frontend or production acceptance is implied.

@@ -1,8 +1,10 @@
+import type { DirectoryEvidence } from './ci/directory-evidence'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { copyFile, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { createFixture, describeFixture, removeFixture } from '../tests/integration/files/fixtures'
+import { directoryEvidenceSchema } from './ci/directory-evidence'
 import { project, requireSession } from './ci/process'
 
 requireSession()
@@ -10,8 +12,25 @@ const evidence = await mkdtemp(join(project, 'tmp/directory-physical-'))
 const commit = Bun.spawnSync(['git', 'rev-parse', 'HEAD'], { cwd: project })
 assert.equal(commit.exitCode, 0)
 await writeFile(join(evidence, 'source.json'), `${JSON.stringify({ commit: commit.stdout.toString().trim(), startedAt: new Date().toISOString(), adapterHash: createHash('sha256').update(await readFile(join(project, 'src/modules/diagrams/native-directory.ts'))).digest('hex') })}\n`)
+const digestFile = async (path: string) => createHash('sha256').update(await readFile(path)).digest('hex')
+const sourceStatus = Bun.spawnSync(['git', 'status', '--porcelain'], { cwd: project })
+assert.equal(sourceStatus.exitCode, 0)
+const report: DirectoryEvidence = {
+  schemaVersion: 1,
+  commit: commit.stdout.toString().trim(),
+  sourceClean: !sourceStatus.stdout.toString().trim(),
+  adapterHash: await digestFile(join(project, 'src/modules/diagrams/native-directory.ts')),
+  driverHash: await digestFile(join(project, 'scripts/directory-streaming/driver.ts')),
+  bun: '1.4.2',
+  architecture: process.arch as 'arm64' | 'x64',
+  filesystemType: 'unknown',
+  status: 'failed',
+  error: 'verification_failed',
+  modes: (['source', 'bundle', 'compiled'] as const).map(mode => ({ mode, status: 'pending', buildHash: null, firstPages: [], traversals: [], eintrCalls: null, cancellation: null, audit: null })),
+}
 const root = await createFixture('files-physical-directory-')
 const identity = await describeFixture(root)
+report.filesystemType = identity.filesystemType
 async function command(args: string[], name: string) {
   const child = Bun.spawn(args, { cwd: project, stdout: 'pipe', stderr: 'pipe', timeout: 180000 })
   const [exit, stdout, stderr] = await Promise.all([child.exited, new Response(child.stdout).text(), new Response(child.stderr).text()])
@@ -20,6 +39,7 @@ async function command(args: string[], name: string) {
   assert.equal(child.signalCode, null)
   return stdout
 }
+let failure: unknown
 try {
   if (identity.filesystemType !== process.env.MERDECK_TEST_EXPECTED_FS)
     throw new Error('Physical streaming requires the explicitly measured fixture filesystem')
@@ -37,25 +57,38 @@ try {
   await command([process.execPath, 'build', source, '--compile', '--minify', '--outfile', compiled], 'build-compiled')
   const summaries = []
   for (const [mode, invocation] of [['source', [process.execPath, source]], ['bundle', [process.execPath, bundle]], ['compiled', [compiled]]] as const) {
+    const proof = report.modes.find(item => item.mode === mode)!
+    proof.status = 'failed'
+    proof.buildHash = await digestFile(mode === 'source' ? source : mode === 'bundle' ? bundle : compiled)
     const trace = join(evidence, `${mode}.strace`)
     await command(['strace', '-f', '-yy', '-s', '256', '-e', 'trace=getdents64', '-o', trace, ...invocation, root, 'first'], `${mode}-first`)
     const lines = (await readFile(trace, 'utf8')).split('\n')
     const calls = lines.filter(line => line.includes('getdents64(') && ['small', 'huge'].some(path => line.includes(`<${root}/${path}>`)))
-    for (const path of ['small', 'huge']) {
+    for (const path of ['small', 'huge'] as const) {
       const matching = calls.filter(line => line.includes(`<${root}/${path}>`))
       assert.equal(matching.length, 1, `${mode}/${path}: first page must issue exactly one fixed refill before EOF`)
       assert.match(matching[0]!, /, 4096\)\s+= [1-9]\d*$/)
+      const details = /\/\* (\d+) entries \*\/, 4096\)\s+= (\d+)$/.exec(matching[0]!)
+      assert(details)
+      proof.firstPages.push({ fixture: path, calls: 1, capacity: 4096, rawRecords: Number(details[1]), returnedBytes: Number(details[2]), eof: false })
     }
     const traversal = await command([...invocation, root, 'traverse'], `${mode}-traverse`)
+    proof.traversals = traversal.trim().split('\n').map((line) => {
+      const row = JSON.parse(line)
+      return { fixture: row.path, pages: row.pages, visited: row.visited, excluded: row.excluded, entries: row.entries, complete: row.complete }
+    })
     for (const [action, injection] of [['fault', 'error=EINTR'], ['cancel', 'delay_exit=200ms']] as const) {
       const faultTrace = join(evidence, `${mode}-${action}.strace`)
-      await command(['strace', '-f', '-yy', '-e', 'trace=getdents64', '-e', `inject=getdents64:${injection}:when=1`, '-P', join(root, 'small'), '-o', faultTrace, ...invocation, root, action], `${mode}-${action}`)
+      const faultOutput = await command(['strace', '-f', '-yy', '-e', 'trace=getdents64', '-e', `inject=getdents64:${injection}:when=1`, '-P', join(root, 'small'), '-o', faultTrace, ...invocation, root, action], `${mode}-${action}`)
       const faultCalls = (await readFile(faultTrace, 'utf8')).split('\n').filter(line => line.includes('getdents64('))
       assert.equal(faultCalls.length, 1, `${mode}/${action}: native call must not retry after cancellation/error`)
       assert.match(faultCalls[0]!, action === 'fault' ? /EINTR.*INJECTED/ : /DELAYED/)
+      if (action === 'fault')
+        proof.eintrCalls = faultCalls.length
+      else proof.cancellation = { calls: faultCalls.length, elapsedMs: JSON.parse(faultOutput).elapsedMs }
     }
     const auditTrace = join(evidence, `${mode}-audit.strace`)
-    await command(['strace', '-f', '-yy', '-e', 'trace=getdents64', '-P', join(root, 'huge'), '-o', auditTrace, ...invocation, root, 'audit'], `${mode}-audit`)
+    const auditOutput = await command(['strace', '-f', '-yy', '-e', 'trace=getdents64', '-P', join(root, 'huge'), '-o', auditTrace, ...invocation, root, 'audit'], `${mode}-audit`)
     const auditCalls = (await readFile(auditTrace, 'utf8')).split('\n').filter(line => line.includes('getdents64('))
     assert(auditCalls.length > 0 && auditCalls.length <= 8192)
     for (const line of auditCalls)
@@ -66,21 +99,35 @@ try {
       return sum + Number(match[1])
     }, 0)
     assert(rawRecords <= 8192 + 170, 'Audit cannot read the entire directory or an unbounded prefix')
+    proof.audit = { calls: auditCalls.length, rawRecords, consumed: JSON.parse(auditOutput).reads, eof: false }
+    proof.status = 'passed'
     summaries.push({ mode, firstPageCalls: calls, traversal: traversal.trim().split('\n').map(line => JSON.parse(line)), sha256: createHash('sha256').update(await readFile(mode === 'source' ? source : mode === 'bundle' ? bundle : compiled)).digest('hex') })
   }
   const adapterHash = createHash('sha256').update(await readFile(join(project, 'src/modules/diagrams/native-directory.ts'))).digest('hex')
   await writeFile(join(evidence, 'summary.json'), `${JSON.stringify({ status: 'passed', identity, adapterHash, bun: Bun.version, architecture: process.arch, nativeAcceptance: 'not established by this adapter harness', summaries }, null, 2)}\n`)
+  report.status = 'passed'
+  report.error = null
   process.stdout.write(`Physical application-adapter source/bundle/compiled checks passed: ${evidence}\n`)
+}
+catch (error) {
+  report.status = 'failed'
+  report.error = 'verification_failed'
+  failure = error
 }
 finally {
   try {
-    // The existing hosted uploader collects this directory; keep large build intermediates outside it.
-    const retained = join(project, 'tmp/ci-evidence', basename(evidence))
-    await mkdir(retained, { recursive: true })
-    for (const name of await readdir(evidence)) {
-      if (/\.(?:log|json|strace)$/.test(name))
-        await copyFile(join(evidence, name), join(retained, name))
-    }
+    await removeFixture(root)
   }
-  finally { await removeFixture(root) }
+  catch (error) {
+    report.status = 'failed'
+    report.error = 'cleanup_failed'
+    failure ??= error
+  }
+  finally {
+    // Raw traces/logs stay local. The shared exporter accepts only this strict, bounded proof.
+    await writeFile(join(evidence, 'report.json'), `${JSON.stringify(directoryEvidenceSchema.parse(report), null, 2)}\n`)
+  }
 }
+
+if (failure)
+  throw failure

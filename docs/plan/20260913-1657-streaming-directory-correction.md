@@ -175,3 +175,8 @@ The executable scope additionally includes committed physical-streaming applicat
 ### 2026-09-13 17:22 UTC — candidate implementation verification
 
 The production adapter now uses the reviewed primitive and process-lifetime libc retention, with a fixed close binding to avoid Linux close retries. Local actual-adapter source/bundle/compiled first-page, traversal, errno/cancellation and ownership evidence is recorded in the [backend task](../task/20260913-1637-directory-backend.md), separately for overlay and virtiofs. The committed harness joins the existing normal check:ci/--native flow and its evidence upload path. The full local aggregate and real Linux x64/ext4 gates remain required. This correction and the overall feature stay implementing; prototype needs-review and original authorization provenance are unchanged.
+
+
+### 2026-09-13 — evidence correction and validation consolidation
+
+Exact clean candidate `6c09919d8bfb569f3813ca48adbe9fac1fc53f51` passed the full normal local ARM64 gate. Subsequent review required replacing raw hosted evidence copies with guarded sanitized summaries and success/failure retention. The correction changes only verification/export/tests/workflow documentation; production backend source is unchanged. Latest authorization consolidates further checks into focused local export/workflow/lint/type/diff validation plus the mandatory full hosted x64/ext4 --native gate on the corrected candidate. It supersedes repeating the costly local aggregate for this verification-only delta and does not waive final acceptance. See the backend task for exact evidence/status. Experimental FFI and unverified minimum-libc/hardened environments remain disclosed limits.

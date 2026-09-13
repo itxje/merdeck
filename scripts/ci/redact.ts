@@ -28,3 +28,12 @@ export async function redactedOutput(stream: ReadableStream<Uint8Array>, secrets
   }
   finally { reader.releaseLock() }
 }
+
+// Defense in depth for bounded report text; strict directory proof has no free-text fields.
+export function redactReport(value: string, root: string): string {
+  return value.split('\n').map((line) => {
+    if (/getdents64\(|^\s*\d+\s*\||\b(?:Cookie|Set-Cookie|Authorization):/i.test(line))
+      return '<sensitive diagnostic line omitted>'
+    return line.replaceAll(root, '<checkout>').replace(/(^|[\s"'=(])\/[^/\s"'<>][^\s"'<>]*/g, '$1<local-path>')
+  }).join('\n')
+}
