@@ -96,6 +96,13 @@ function shortcuts(rename: MenuItem, remove: MenuItem) {
   }
 }
 
+const names = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+function byName(a: { kind: string, path: string }, b: { kind: string, path: string }) {
+  if (a.kind !== b.kind)
+    return a.kind === 'directory' ? -1 : 1
+  return names.compare(a.path.slice(a.path.lastIndexOf('/') + 1), b.path.slice(b.path.lastIndexOf('/') + 1)) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
+}
+
 export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, filterRef }: Props) {
   const crumbsRef = React.useRef<HTMLElement>(null)
   const focusDirectoryRef = React.useRef(false)
@@ -117,8 +124,10 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
   const listed = files.filter(item => kinds === 'all' || item.fileKind === kinds)
   const matches = (value: string) => value.toLowerCase().includes(filter.toLowerCase())
   const shown = listed.filter(item => matches(item.path))
-  // Unloaded descendants never hide a folder, even while file filters are active.
-  const visible = entries.filter(item => item.kind === 'directory' || shown.includes(item))
+  // Unloaded descendants never hide a folder, even while file filters are active. The server pages in
+  // native directory order, so the loaded window is sorted here: folders first, then names with numbers
+  // compared by value, so `2-a` precedes `10-a`.
+  const visible = entries.filter(item => item.kind === 'directory' || shown.includes(item)).sort(byName)
   const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !shown.some(entry => entry.path === name))
   const folder = directory
   const rowMenu = (target: string) => ({

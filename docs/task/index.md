@@ -75,3 +75,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20260913-1657-streaming-directory-investigation Investigate bounded directory primitives**](20260913-1657-streaming-directory-investigation.md) `P1`
 - [x] [**20260913-1802-directory-frontend Implement directory navigation and frontend acceptance**](20260913-1802-directory-frontend.md) `P1`
+- [x] [**20260913-2030-explorer-order Sort the loaded explorer window**](20260913-2030-explorer-order.md) `P2`

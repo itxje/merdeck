@@ -49,6 +49,21 @@ it('lists every supported file, its folders and an empty folder by default', () 
   unmount()
 })
 
+it('orders the loaded window with folders first and numbered names by value, whatever order the page arrived in', () => {
+  const unordered: DirectoryPage = { ...tree, entries: [
+    { kind: 'file', path: '10-late.mmd', fileKind: 'mermaid', state: 'deferred' },
+    { kind: 'file', path: 'c01-compare.mmd', fileKind: 'mermaid', state: 'deferred' },
+    { kind: 'directory', path: 'zeta', children: 'unloaded' },
+    { kind: 'file', path: '02-early.mmd', fileKind: 'mermaid', state: 'deferred' },
+    { kind: 'directory', path: 'alpha', children: 'unloaded' },
+    { kind: 'file', path: '00-map.mmd', fileKind: 'mermaid', state: 'deferred' },
+  ] }
+  const { unmount } = renderTree('all', vi.fn(), unordered)
+  const rows = screen.getAllByRole('button').map(button => (button.textContent ?? '').replace(/Unopened$/, '')).filter(name => /^(?:alpha|zeta|\d\d-|c01)/.test(name))
+  expect(rows).toEqual(['alpha', 'zeta', '00-map.mmd', '02-early.mmd', '10-late.mmd', 'c01-compare.mmd'])
+  unmount()
+})
+
 it('enters unloaded folders and keeps files in the same icon column', async () => {
   const { container, unmount, browse } = renderTree('all')
   const user = userEvent.setup()

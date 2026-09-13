@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-13 20:35 [fix]
+
+The explorer orders what it has loaded again: folders first, then names with numbers compared by value, whatever native order the directory page arrived in. See [20260913-2030-explorer-order](task/20260913-2030-explorer-order.md).
+
 ## 2026-09-13 20:09 [release]
 
 Published [v0.9.1](https://github.com/itxje/merdeck/releases/tag/v0.9.1) with independent directory navigation, bounded pagination and deferred Markdown loading. Exact commit `390adabc00385997f6e49a6771c450be465cbfed` passed full native source/executable/bundle acceptance and release verification. Downloaded archive checksum and build metadata were verified. Completed the feature/correction plans and existing [delivery task](task/20260913-1802-directory-frontend.md); original failed checkpoints and the unpublished immutable v0.9.0 tag remain recorded. Prototypes remain needs-review and runtime/storage limitations remain unchanged.
