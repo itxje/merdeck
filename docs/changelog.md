@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-13 17:22 [progress]
+
+Implemented the reviewed fixed-buffer native directory candidate and shared it with bounded growing-prefix move audits. Actual adapter source/bundle/compiled physical checks passed locally on ARM64 overlay and virtiofs; full local and hosted native acceptance remain pending. Added parser/error/cleanup and HTTP lifecycle regressions plus the physical harness in existing check:ci/--native paths. The [backend task](task/20260913-1637-directory-backend.md) retains exact evidence and the corrected startup-test isolation defect; no frontend or production acceptance is implied.
+
+## 2026-09-13 17:10 [decision]
+
+The [streaming correction](plan/20260913-1657-streaming-directory-correction.md) is authorized for candidate implementation after concrete review. The original directory plan now carries the reviewed fixed-buffer getdents64 clauses, with no wire/schema changes. Experimental FFI and dynamic glibc remain material prerequisites; actual application physical-streaming and complete local/native gates are required before integration acceptance. The backend claim stays in_progress, overall feature implementing and prototype needs-review.
+
 ## 2026-09-13 17:05 [decision]
 
 Completed the bounded [directory primitive investigation](plan/20260913-1657-streaming-directory-correction.md) and recorded a [proposed fixed-buffer correction](decisions/20260913-1705-bounded-directory-primitive.md). Actual ARM64/overlay source, bundle and compiled probes demonstrate 4 KiB getdents64 streaming, bounded first-page syscalls, resume/EOF and resource cleanup. Experimental FFI adoption, actual x64/ext4 evidence and feature acceptance remain pending; synchronous I/O cannot guarantee prompt cancellation. No executable feature changes were made. The inherited checkpoint and its introduced failing resource test remain unaccepted, the backend stays in_progress, the feature implementing and prototype needs-review.

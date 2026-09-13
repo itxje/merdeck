@@ -1,5 +1,5 @@
 import type { DirectoryPage } from '../../shared/contracts'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readlink, writeFile } from 'node:fs/promises'
 import { afterEach, expect, test } from 'bun:test'
 import { createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
 import { createApp } from '../../app'
@@ -95,4 +95,38 @@ test('verified sessions bind cursors; logout and expiry dispose stream resources
   expect((await f.request('/diagrams/directory?path=folder', { headers: second })).status).toBe(401)
   await f.app.close()
   expect(f.handles()).toBe(0)
+})
+
+test('HTTP cancellation after a native read and quota rejection release actual descriptors', async () => {
+  const root = await createFixture('files-directory-http-abort-')
+  await writeFile(`${root}/a.md`, '')
+  await writeFile(`${root}/b.md`, '')
+  const config = await loadConfig({ MERDECK_ROOT: root })
+  const abort = new AbortController()
+  let cancel = false
+  const diagrams = await createDiagramService(config, { repositoryHooks: {
+    afterDirectoryRead: async () => {
+      if (cancel)
+        abort.abort()
+    },
+  } })
+  const app = createApp(config, { diagrams })
+  cleanup.push(async () => {
+    await app.close()
+    await removeFixture(root)
+  })
+  for (let index = 0; index < 32; index++)
+    expect((await app.request(`${origin}/api/diagrams/directory?limit=1`)).status).toBe(200)
+  expect((await app.request(`${origin}/api/diagrams/directory?limit=1`)).status).toBe(429)
+  await diagrams.closePrincipal('open', origin)
+  cancel = true
+  expect((await app.request(new Request(`${origin}/api/diagrams/directory?limit=1`, { signal: abort.signal }))).status).toBe(503)
+  await app.close()
+  const links = await Promise.all((await readdir('/proc/self/fd')).map(async (fd) => {
+    try {
+      return await readlink(`/proc/self/fd/${fd}`)
+    }
+    catch { return '' }
+  }))
+  expect(links.filter(link => link === root)).toHaveLength(0)
 })

@@ -38,6 +38,7 @@ else {
   process.stdout.write('Local storage checks do not establish native acceptance. Native gate: pending.\n')
 }
 await run(['run', 'check'])
+await run(['scripts/check-directory-streaming.ts'])
 await run(['run', 'test:release'])
 await mkdir(join(project, 'tmp'), { recursive: true })
 const output = await mkdtemp(join(project, 'tmp/checked-release-'))

@@ -1,4 +1,4 @@
-import type { BigIntStats, Dir } from 'node:fs'
+import type { BigIntStats } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 import type { AppConfig } from '../../config'
 import type { DirectoryPageEntry } from '../../shared/contracts'
@@ -8,13 +8,16 @@ import { randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
 import { link, lstat, mkdir, open, opendir, realpath, rename, rmdir, unlink } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
+import { setImmediate as yieldEventLoop } from 'node:timers/promises'
 import { relativePathSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { inspectFilesystem, requireWritableFilesystem, retained } from './filesystem'
+import { initializeNativeDirectory, NativeDirectory } from './native-directory'
 import { contentVersion, fileKind } from './parser'
 
 export type FileConfig = Pick<AppConfig, 'projectRoot' | 'limits'>
 export interface RepositoryHooks {
+  beforeDirectoryRead?: () => void
   afterMoveAudit?: () => Promise<void>
   afterDirectoryRead?: (relative: string, name: string | null) => Promise<void>
   directoryStreamOpened?: () => void
@@ -27,7 +30,7 @@ export interface RepositoryHooks {
 }
 export interface DirectoryStream {
   directory: Directory
-  read: () => Promise<string | null>
+  read: (check: () => void) => Promise<string | null>
   close: () => Promise<void>
 }
 export interface DirectoryView {
@@ -127,6 +130,7 @@ export class FileRepository {
       const stat = await lstat(config.projectRoot, { bigint: true })
       if (stat.isSymbolicLink() || !stat.isDirectory() || await realpath(config.projectRoot) !== config.projectRoot)
         throw new AppError('unavailable')
+      initializeNativeDirectory()
       const repository = new FileRepository(config, stat, hooks)
       await repository.withDirectory('', async () => {})
       return repository
@@ -324,34 +328,28 @@ export class FileRepository {
           check()
           const handle = await open(`${directory.anchor}/.`, directoryFlags)
           const owned: Directory = { handle, anchor: anchor(handle), relative }
-          let iterator: Dir | undefined
+          let iterator: NativeDirectory | undefined
           try {
             check()
             await this.validateDirectory(owned, check)
-            // Acceptance blocker: Bun 1.4.2 materializes readdir here despite bufferSize: 1.
-            // This adapter requires a verified streaming replacement before integration.
-            // Bun 1.4.2 returns a Buffer itself for buffer-encoded Dir.read(), rather than a Dirent.
             check()
-            iterator = await opendir(owned.anchor, { bufferSize: 1, recursive: false, encoding: 'buffer' as BufferEncoding })
+            iterator = NativeDirectory.open(`${owned.anchor}/.`)
+            await yieldEventLoop()
+            check()
+            const nativeStat = await lstat(`/proc/self/fd/${iterator.descriptor}/.`, { bigint: true })
+            check()
+            const ownedStat = await handle.stat({ bigint: true })
+            if (!sameIdentity(nativeStat, ownedStat) || nativeStat.birthtimeNs !== ownedStat.birthtimeNs)
+              throw new AppError('directory_changed')
+            await this.validateDirectory(owned, check)
             this.hooks.directoryStreamOpened?.()
             const stream = iterator
             let closing: Promise<void> | undefined
             return {
               directory: owned,
-              read: async () => {
-                const item: unknown = await stream.read()
-                let name: string | null
-                if (item === null) {
-                  name = null
-                }
-                else {
-                  const bytes = Buffer.isBuffer(item) ? item : (item as { name: Buffer }).name
-                  if (!Buffer.isBuffer(bytes))
-                    throw new AppError('unavailable')
-                  const decoded = bytes.toString('utf8')
-                  // Empty is an excluded name, so undecodable names still consume the visit budget.
-                  name = Buffer.from(decoded).equals(bytes) ? decoded : ''
-                }
+              read: async (currentCheck) => {
+                this.hooks.beforeDirectoryRead?.()
+                const name = await stream.read(currentCheck)
                 await this.hooks.afterDirectoryRead?.(relative, name)
                 return name
               },
@@ -651,7 +649,7 @@ export class FileRepository {
             // Refuse before an additional read; reaching the exact bound does not prove EOF.
             if (visits >= 8192)
               throw new AppError('too_large')
-            const name = await stream.read()
+            const name = await stream.read(check)
             if (name === null)
               break
             visits++

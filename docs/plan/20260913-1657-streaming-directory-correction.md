@@ -1,13 +1,13 @@
 # 20260913-1657-streaming-directory-correction Bounded directory primitive correction
 
-- **status**: draft
+- **status**: implementing
 - **createdAt**: 2026-09-13 16:57
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-13 17:10 (reviewed candidate implementation authorization)
 - **relatedTask**: 20260913-1657-streaming-directory-investigation
 
 ## Context
 
-**Viable bounded primitive proposal; production adoption and feature acceptance remain blocked pending review and implementation verification.** The experiment establishes physical streaming on actual Linux ARM64/overlay with Bun 1.4.2. It does not establish production safety of experimental FFI, actual x64 execution, ext4 acceptance, or a passing directory feature.
+**Reviewed candidate authorized for implementation; production adoption and feature acceptance remain pending actual application verification.** The experiment establishes physical streaming on actual Linux ARM64/overlay with Bun 1.4.2. It does not establish production safety of experimental FFI, actual x64 execution, ext4 acceptance, or a passing directory feature.
 
 The clean diagnostic branch first fast-forwarded local baseline `a74391983abdcb64c7f8a4d8d52988e59a2c61b6`, then the exact incomplete checkpoint `40f20fbc0b44ea7784fdd5540027e7c088e726ff`. The latter is **unaccepted inherited executable history**, not this investigation's implementation. Its full gate exited 1 on the introduced descriptor resource regression; subsequent gate stages did not run. The retained assertion in `src/modules/diagrams/directory.test.ts` expects two owned descriptors after page one. Do not remove or weaken it. The backend task remains `in_progress`, the feature plan `implementing`, and the prototype `needs-review`.
 
@@ -90,7 +90,7 @@ The slow probe models pending cancellation/shutdown flags and retained ownership
 
 ### Exact replacement clauses for the feature plan
 
-These are **proposed replacements**, not applied to [the implementing feature plan](20260913-1628-directory-navigation-pagination.md) until review.
+The following reviewed replacements are now applied to [the implementing feature plan](20260913-1628-directory-navigation-pagination.md). Their prior draft proposal and evidence remain recorded below.
 
 **Section 1 — replace the first paragraph:**
 
@@ -154,7 +154,7 @@ Before adoption: review the explicit experimental-FFI and glibc >= 2.30 prerequi
 
 ## Annotations and sources
 
-The correction stays draft pending review. Investigation completion is not feature completion, design approval or integration permission. No new dependency was added, so no registry-version claim is needed.
+The correction is implementing under the concrete candidate authorization recorded below. Investigation completion is not feature completion, design approval or integration permission. No new dependency was added, so no registry-version claim is needed.
 
 Official references read and compared with the pinned/local implementation:
 
@@ -163,3 +163,15 @@ Official references read and compared with the pinned/local implementation:
 - [readdir API](https://man7.org/linux/man-pages/man3/readdir.3.html), [opendir/fdopendir ownership](https://man7.org/linux/man-pages/man3/opendir.3.html), [glibc buffer allocation](https://github.com/bminor/glibc/blob/glibc-2.41/sysdeps/unix/sysv/linux/opendir.c), [glibc readdir64](https://github.com/bminor/glibc/blob/glibc-2.41/sysdeps/unix/sysv/linux/readdir64.c).
 - [FFI status and pointer rules](https://bun.com/docs/runtime/ffi) and [legacy documentation address](https://bun.sh/docs/runtime/ffi), both checked; [pinned FFI module](https://github.com/oven-sh/bun/blob/bun-v1.4.2/src/js/bun/ffi.ts), plus locally generated bridge inspection.
 - [Pinned fs/Dir source](https://github.com/oven-sh/bun/blob/bun-v1.4.2/src/js/node/fs.ts), [Glob JS adapter](https://github.com/oven-sh/bun/blob/bun-v1.4.2/src/js/builtins/Glob.ts), [native Glob result materialization](https://github.com/oven-sh/bun/blob/bun-v1.4.2/src/runtime/api/glob.rs), [node:fs.glob cache](https://github.com/oven-sh/bun/blob/bun-v1.4.2/src/js/internal/fs/glob.ts).
+
+### 2026-09-13 17:10 UTC — reviewed implementation authorization
+
+Concrete review of the diagnostic proposal, primitive, ABI bridge, physical traces and PMA criteria found no blocking strategy defect. Candidate implementation of the narrow TypeScript bun:ffi getdents64 correction is authorized under the existing 2026-09-13 owner implementation scope. This is an implementation review decision, not an owner-specific acceptance of experimental FFI production risk and not production acceptance.
+
+Implement a fixed-name, lifecycle-owned glibc loader for little-endian Linux LP64 x64/arm64 with glibc >= 2.30; use i64_fast and immediate same-thread errno capture, a checked 4096-byte record buffer and the existing two descriptors. Both directory pages and growing-prefix move audits must use it, with no eager fallback. Preserve wire shapes, quotas, actual metadata validation, save/identity guarantees, no-snapshot semantics, logical deadlines and post-native-call yield/state checks. Keep the prior physical resource regression meaningful.
+
+The executable scope additionally includes committed physical-streaming application-adapter source/bundle/compiled acceptance harnesses connected to the existing normal check:ci and hosted --native path. No helper, C/addon, package dependency, runtime upgrade, web/design change or unrelated CI redesign is authorized. Source, bundle and compiled actual x64/ext4 execution, full local/native gates and compatibility limitations remain mandatory before integration/release acceptance. The existing backend task remains in_progress under backend-maintainer/20260913. No new claim is required; the overall feature remains implementing and prototype needs-review.
+
+### 2026-09-13 17:22 UTC — candidate implementation verification
+
+The production adapter now uses the reviewed primitive and process-lifetime libc retention, with a fixed close binding to avoid Linux close retries. Local actual-adapter source/bundle/compiled first-page, traversal, errno/cancellation and ownership evidence is recorded in the [backend task](../task/20260913-1637-directory-backend.md), separately for overlay and virtiofs. The committed harness joins the existing normal check:ci/--native flow and its evidence upload path. The full local aggregate and real Linux x64/ext4 gates remain required. This correction and the overall feature stay implementing; prototype needs-review and original authorization provenance are unchanged.

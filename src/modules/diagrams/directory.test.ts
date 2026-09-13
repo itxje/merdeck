@@ -128,8 +128,8 @@ test('empty, excluded-only and byte-limited pages preserve forward traversal', a
   } while (true)
   expect(new Set(paths).size).toBe(13)
   expect(paths.length).toBe(13)
-  expect(visited).toBe(1113)
-  expect(excluded).toBe(1100)
+  expect(visited).toBe(1115) // Raw native records include both dot entries.
+  expect(excluded).toBe(1102)
   expect(boundaries.has('bytes')).toBe(true)
 }, 15000)
 
@@ -162,7 +162,7 @@ test('a huge directory reaches EOF without content reads or prefix rescans', asy
   } while (true)
   expect(paths.length).toBe(10003)
   expect(new Set(paths).size).toBe(10003)
-  expect(reads).toBe(10004)
+  expect(reads).toBe(10006) // Files, two dot records and the EOF read.
   expect(contentReads).toBe(0)
   expect([opened, closed]).toEqual([1, 1])
 }, 60000)
@@ -180,7 +180,7 @@ test('actual metadata excludes symlinks, hard links, ignored names and invalid U
   const diagrams = await service(root)
   const page = await diagrams.directoryPage({ path: '', limit: 100 }, context)
   expect(page.entries.map(entry => entry.path).sort()).toEqual(['folder', 'valid-�.md'])
-  expect(page.excluded).toBe(6)
+  expect(page.excluded).toBe(8)
   for (const path of ['alias', 'target', '.hidden', 'folder/../folder', '/'])
     await expect(diagrams.directoryPage({ path, limit: 100 }, context)).rejects.toBeDefined()
 })
@@ -408,7 +408,7 @@ test('excluded-only pages stop on visits and remain explicitly continuable', asy
   const diagrams = await service(root)
   const page = await diagrams.directoryPage({ path: '', limit: 100 }, context)
   expect(page).toMatchObject({ entries: [], visited: 1024, excluded: 1024, stoppedBy: 'visits', complete: false })
-  expect(await next(diagrams, page)).toMatchObject({ entries: [], visited: 76, excluded: 76, complete: true, stoppedBy: null, nextCursor: null })
+  expect(await next(diagrams, page)).toMatchObject({ entries: [], visited: 78, excluded: 78, complete: true, stoppedBy: null, nextCursor: null })
 })
 
 test('stream quotas bound per-session and global reservations and permit disposal at capacity', async () => {

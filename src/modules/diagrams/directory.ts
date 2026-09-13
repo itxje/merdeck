@@ -2,6 +2,7 @@ import type { CloseDirectoryRequest, DirectoryPage, DirectoryPageEntry, Director
 import type { DirectoryStream, DirectoryView, FileConfig, FileRepository } from './repository'
 import { Buffer } from 'node:buffer'
 import { randomBytes } from 'node:crypto'
+import { setImmediate as yieldEventLoop } from 'node:timers/promises'
 import { closeDirectoryRequestSchema, directoryRequestSchema, directoryRevisionRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { contentVersion } from './parser'
@@ -304,6 +305,8 @@ export class DirectoryPager {
             throw new AppError('directory_changed')
         }
         const page = await this.readPage(current, view, check)
+        await yieldEventLoop()
+        check()
         if (await view.sample(current.stream) !== sample)
           throw new AppError('directory_changed')
         check()
@@ -374,7 +377,7 @@ export class DirectoryPager {
           throw new AppError('directory_changed')
       }
       else {
-        const name = await state.stream.read()
+        const name = await state.stream.read(check)
         if (name === null) {
           page.complete = true
           break
