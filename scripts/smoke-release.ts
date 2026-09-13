@@ -102,7 +102,7 @@ export async function smokeRelease(directory: string, tag: string) {
         throw new Error(`Embedded asset HTTP mismatch: ${asset.path}`)
       checkedAssets++
     }
-    for (const path of ['/api/diagrams/tree', '/api/diagrams/document?path=welcome.mmd']) {
+    for (const path of ['/api/diagrams/tree', '/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/document?path=welcome.mmd']) {
       if ((await fetch(`${origin}${path}`)).status !== 401)
         throw new Error('Binary authentication boundary failed')
     }

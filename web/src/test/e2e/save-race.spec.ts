@@ -142,7 +142,7 @@ for (const scenario of ['own save', 'in-place', 'atomic', 'deletion', 'auth chan
         await expect(page.getByRole('alert').filter({ hasText: 'deleted or renamed' })).toBeVisible()
       }
       if (scenario === 'auth change') {
-        for (const kind of ['tree', 'revision', 'document'])
+        for (const kind of ['tree', 'directory', 'directory/revision', 'directory/close', 'revision', 'document'])
           audit.allowHttp(401, `/api/diagrams/${kind}`)
         await page.context().clearCookies()
         await page.getByRole('button', { name: 'Refresh files' }).click()

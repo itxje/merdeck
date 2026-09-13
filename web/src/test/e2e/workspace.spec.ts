@@ -212,7 +212,7 @@ test('clean external refresh, detected stale save and deletion keep original fil
 
 test('lost authentication retains a locked draft and explicit logout clears it', async ({ page, audit }) => {
   test.setTimeout(45000)
-  for (const path of ['/api/diagrams/tree', '/api/diagrams/document', '/api/diagrams/revision'])
+  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/revision'])
     audit.allowHttp(401, path)
   await login(page)
   await choose(page, 'welcome.mmd')

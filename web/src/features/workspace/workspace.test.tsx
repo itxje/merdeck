@@ -36,7 +36,8 @@ it('labels login controls, keeps tokens out of persistence and clears failed sub
 })
 it('opens directly with open access, without sign-in or Log out, and names the mode in the status bar', async () => {
   vi.spyOn(api, 'session').mockResolvedValue({ authenticated: true, access: 'open', version: '0.0.0-test', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, identity: 'stable', filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } })
-  vi.spyOn(api, 'tree').mockResolvedValue({ entries: [], revision: 'a'.repeat(64), truncated: false, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: '', parent: null, entries: [], revision: 'a'.repeat(64), complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: '', revision: 'a'.repeat(64), maxPathDepth: 64, pollIntervalMs: 30000 })
   const client = createQueryClient()
   const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path="" block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
   expect(await screen.findByText('Open access')).toBeVisible()

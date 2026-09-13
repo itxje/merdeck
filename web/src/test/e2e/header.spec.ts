@@ -10,7 +10,7 @@ async function size(locator: Locator) {
 
 test('header keeps the brand, the open file, saving, a theme switch and log out, and the explorer offers refresh', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await login(page)
+  await login(page, true)
   const header = page.getByRole('banner')
   await expect(header).toContainText('Merdeck')
   await expect(header).not.toContainText('Project files')
@@ -60,10 +60,10 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   expect((await size(refresh.locator('svg'))).width).toBeCloseTo(16, 0)
   await search.focus()
   await page.keyboard.press('Shift+Tab')
-  await expect(refresh).toBeFocused()
+  await expect(explorer.getByRole('button', { name: 'Restart', exact: true })).toBeFocused()
   await refresh.hover()
   await expect(page.locator('[data-slot="tooltip-content"]', { hasText: 'Refresh files' })).toBeVisible()
-  const request = page.waitForRequest(item => new URL(item.url()).pathname === '/api/diagrams/tree')
+  const request = page.waitForRequest(item => new URL(item.url()).pathname === '/api/diagrams/directory')
   await refresh.click()
   await request
 

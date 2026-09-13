@@ -14,7 +14,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/shared/c
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
-import { absoluteSourceLimit, errorMessage } from './api'
+import { absoluteSourceLimit, errorMessage, parentDirectory, sessionCsrf, validPath } from './api'
 import { warningMessage } from './drafts'
 import { EntryDialog } from './entry-dialog'
 import { boundedWidth, explorerWidth as explorerBounds, useExplorerWidth } from './explorer-width'
@@ -24,8 +24,8 @@ import { useWorkspace } from './use-workspace'
 
 const introduction = 'Browse, edit and preview diagrams in your project files.'
 
-export function Workspace({ path, block, navigate }: { path: string, block: number, navigate: (path: string, block: number) => void }) {
-  const state = useWorkspace(path, block)
+export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
+  const state = useWorkspace(path, block, directory)
   const [token, setToken] = React.useState('')
   const [loginError, setLoginError] = React.useState('')
   const [treeOpen, setTreeOpen] = React.useState(false)
@@ -75,7 +75,7 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
   const maxBytes = state.session?.maxSourceBytes ?? absoluteSourceLimit
   const tooLarge = sourceBytes > maxBytes
   const hasWarning = !!file?.warning || !!file?.locked
-  const disconnected = !state.online || state.tree.isError || state.revision.isError
+  const disconnected = !state.online || state.revision.isError
   const canSave = !!state.session?.storage.writable && changed && !file?.saving && !state.savePending && !hasWarning && !tooLarge && !disconnected
   const save = state.save
   const doSave = React.useCallback(() => {
@@ -93,15 +93,46 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
     window.addEventListener('keydown', keydown)
     return () => window.removeEventListener('keydown', keydown)
   }, [doSave])
-  // A diagram may name a sibling file; opening it is the same navigation the explorer performs.
-  const openLinkedFile = React.useCallback((target: string) => {
-    const base = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : ''
-    const resolved = `${base}${target}`
-    if (!state.tree.data?.entries.some(entry => entry.kind === 'file' && entry.path === resolved))
-      return state.tree.data?.truncated ? 'That file is not in the listed part of this project.' : 'That file is not in this project.'
-    navigate(resolved, 0)
-    return undefined
-  }, [navigate, path, state.tree.data])
+  const linkSession = state.session
+  const readTarget = state.readTarget
+  const linkReadRef = React.useRef<AbortController | null>(null)
+  const linkedRequestRef = React.useRef(0)
+  const linkScopeRef = React.useRef<AbortController | null>(null)
+  const csrf = state.session ? sessionCsrf(state.session) : undefined
+  React.useLayoutEffect(() => {
+    const controller = new AbortController()
+    linkScopeRef.current = controller
+    return () => controller.abort()
+  }, [path, block, source, state.session?.access, csrf])
+  const navigationRef = React.useRef({ path, block, directory, access: state.session?.access, csrf })
+  React.useLayoutEffect(() => {
+    navigationRef.current = { path, block, directory, access: state.session?.access, csrf }
+  }, [path, block, directory, state.session?.access, csrf])
+  const openLinkedFile = React.useCallback(async (target: string) => {
+    const request = ++linkedRequestRef.current
+    const controller = linkScopeRef.current
+    const base = parentDirectory(path)
+    const resolved = `${base ? `${base}/` : ''}${target}`
+    if (!linkSession || !controller || controller.signal.aborted || !validPath(resolved))
+      return 'That file cannot be opened.'
+    try {
+      linkReadRef.current?.abort()
+      const read = new AbortController()
+      linkReadRef.current = read
+      const document = await readTarget(resolved, AbortSignal.any([controller.signal, read.signal]))
+      if (controller.signal.aborted || linkScopeRef.current !== controller || request !== linkedRequestRef.current)
+        return undefined
+      if (document.path !== resolved)
+        return 'That file cannot be opened.'
+      navigate(resolved, 0)
+      return undefined
+    }
+    catch (error) {
+      if (!controller.signal.aborted)
+        return errorMessage(error)
+      return undefined
+    }
+  }, [navigate, path, linkSession, readTarget])
 
   const select = (next: string, index = 0) => {
     navigate(next, index)
@@ -120,27 +151,33 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
     setEntryOpen(true)
   }
   const submitEntry = async (operation: EntryOperation) => {
+    const start = navigationRef.current
     await state.entries.mutateAsync(operation)
+    const current = navigationRef.current
+    if (!current.access || current.access !== start.access || current.csrf !== start.csrf)
+      return
     setEntryOpen(false)
-    // The selection follows a created, moved or deleted file.
+    const { path, block, directory } = current
+    // Reconcile browsing independently from the selected file and retained drafts.
     if (operation.type === 'create') {
-      if (operation.request.kind === 'file')
+      if (operation.request.kind === 'file' && current === start)
         select(operation.request.path)
     }
     else if (operation.type === 'move') {
       const { kind, from, to } = operation.request
-      if (path === from)
-        navigate(to, block)
-      else if (kind === 'directory' && path.startsWith(`${from}/`))
-        navigate(`${to}${path.slice(from.length)}`, block)
+      const remap = (value: string) => value === from || (kind === 'directory' && value.startsWith(`${from}/`)) ? `${to}${value.slice(from.length)}` : value
+      navigate(remap(path), block, kind === 'file' && path === from ? parentDirectory(to) : remap(directory))
     }
-    else if (operation.request.kind === 'file' && path === operation.request.path) {
-      navigate('', 0)
+    else {
+      const removed = operation.request.path
+      const inFolder = operation.request.kind === 'directory' && (directory === removed || directory.startsWith(`${removed}/`))
+      navigate(path === removed ? '' : path, path === removed ? 0 : block, inFolder ? parentDirectory(removed) : directory)
     }
   }
-  const canChange = !!state.session?.storage.writable && !disconnected && !state.entries.isPending && !state.savePending
+
+  const canChange = !!state.session?.storage.writable && state.online && !state.listing.stale && !state.listing.error && !state.entries.isPending && !state.savePending
   const [kinds, chooseKinds] = useFileFilter()
-  const treeProps = { tree: state.tree.data, drafts: state.drafts, path, block, select, refresh: state.refresh, loading: state.tree.isPending, failed: state.tree.isError, canChange, onAction: openEntry, kinds, chooseKinds }
+  const treeProps = { listing: state.listing, directory, browse, drafts: state.drafts, path, block, select, refresh: state.refresh, canChange, onAction: openEntry, kinds, chooseKinds }
   const openReview = () => {
     state.review.reset()
 
@@ -149,8 +186,6 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
     state.review.mutate(path)
   }
   const activeError = state.documentQuery.error ?? state.revision.error
-  const entry = state.tree.data?.entries.find(item => item.path === path)
-  const unsupported = entry?.kind === 'file' && entry.state !== 'available'
   const deleted = state.revision.data?.state === 'deleted'
   // Reloading would close these dialogs and forget a typed token.
   const dialogsOpen = treeOpen || logoutOpen || reviewOpen || entryOpen || !!token
@@ -370,8 +405,8 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                     : (
                         <div className="empty-state">
                           <FolderOpen />
-                          <h2>{!path ? 'Choose a diagram' : deleted ? 'File deleted or renamed' : activeError ? 'Unable to open this file' : unsupported ? 'File unavailable' : !file ? 'Opening file…' : 'No Mermaid blocks'}</h2>
-                          <p>{!path ? 'Select a file or an individual Markdown diagram from the explorer.' : deleted ? 'The original path is no longer available. Renamed files appear separately in the explorer.' : activeError ? errorMessage(activeError) : unsupported ? 'This file is unreadable, unsupported or exceeds the configured size limit.' : !file ? 'Reading the current project file.' : 'This Markdown file has no supported top-level Mermaid fences, or this block no longer exists.'}</p>
+                          <h2>{!path ? 'Choose a diagram' : deleted ? 'File deleted or renamed' : activeError ? 'Unable to open this file' : !file ? 'Opening file…' : 'No Mermaid blocks'}</h2>
+                          <p>{!path ? 'Select a file or an individual Markdown diagram from the explorer.' : deleted ? 'The original path is no longer available. Renamed files appear separately in the explorer.' : activeError ? errorMessage(activeError) : !file ? 'Reading the current project file.' : 'This Markdown file has no supported top-level Mermaid fences, or this block no longer exists.'}</p>
                           <Button variant="outline" onClick={() => setTreeOpen(true)}>Browse files</Button>
                           {path && <Button variant="ghost" onClick={state.refresh}>Refresh file</Button>}
                         </div>
@@ -449,7 +484,7 @@ export function Workspace({ path, block, navigate }: { path: string, block: numb
                 if (state.review.data) {
                   state.reload(state.review.data)
 
-                  navigate(path, 0)
+                  navigate(path, 0, directory)
 
                   setSyntaxError('')
 

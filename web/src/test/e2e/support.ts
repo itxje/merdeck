@@ -69,8 +69,25 @@ export async function login(page: Page, reuseSession = false) {
   if (reuseSession)
     sessionCookies = await page.context().cookies()
 }
+export async function browse(page: Page, directory: string) {
+  const explorer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  const scope = await explorer.isVisible() ? explorer : page.getByRole('complementary', { name: 'Project files', exact: true })
+  await scope.getByRole('button', { name: 'Root', exact: true }).click()
+  await expect(page).toHaveURL(url => url.searchParams.get('directory') === '""' || url.searchParams.get('directory') === '')
+  for (const part of directory.split('/').filter(Boolean)) {
+    const row = scope.getByRole('navigation', { name: 'Files and diagrams', exact: true }).getByRole('button', { name: part, exact: true })
+    await expect(row).toBeVisible()
+    await row.click()
+  }
+}
 export async function choose(page: Page, name: string) {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const file = name === 'overview.md' ? 'docs/overview.md' : name
+  if (file.includes('/'))
+    await browse(page, file.slice(0, file.lastIndexOf('/')))
+  else if (['welcome.mmd', 'sequence.mermaid'].includes(file))
+    await browse(page, '')
+  const base = file.split('/').at(-1)!
+  const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   await page.getByRole('button', { name: new RegExp(`^${escaped}(?: Unsaved changes)?$`) }).first().click()
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeAttached()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })

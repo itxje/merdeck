@@ -22,7 +22,7 @@ function description(action: EntryAction): string {
       : 'Change the name or parent folder. Everything inside moves with it, including files the explorer does not show.'
   }
   if (action.kind === 'directory')
-    return `Permanently delete the empty folder ${action.path}?`
+    return `Delete the folder ${action.path}? The service will refuse if it contains any files.`
   return `Permanently delete ${action.path} from the project folder? This cannot be undone here.${action.unsaved ? ' Unsaved changes to this file in this tab are discarded.' : ''}`
 }
 

@@ -1,4 +1,4 @@
-import type { CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
 import { HttpError, requestApi } from '@/shared/lib/http'
 
 export type Session = Extract<SessionStatus, { authenticated: true }>
@@ -105,10 +105,90 @@ export function decodeEntry(value: unknown): EntryChange {
   const item = object(value)
   return item.kind === 'file' || item.kind === 'directory' ? { kind: item.kind, path: path(item.path) } : invalid()
 }
+function directoryPath(value: unknown): string {
+  return value === '' ? '' : path(value)
+}
+function exact(item: Record<string, unknown>, fields: string[]) {
+  if (Object.keys(item).length !== fields.length || fields.some(field => !(field in item)))
+    invalid()
+}
+export const parentDirectory = (value: string) => value.includes('/') ? value.slice(0, value.lastIndexOf('/')) : ''
+export function decodeDirectoryRevision(value: unknown): DirectoryRevision {
+  const item = object(value)
+  exact(item, ['path', 'revision', 'maxPathDepth', 'pollIntervalMs'])
+  const relative = directoryPath(item.path)
+  const maxPathDepth = integer(item.maxPathDepth, 1, 64)
+  if (relative && relative.split('/').length > maxPathDepth)
+    return invalid()
+  return { path: relative, revision: version(item.revision), maxPathDepth, pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000) }
+}
+export function decodeDirectoryPage(value: unknown): DirectoryPage {
+  const item = object(value)
+  exact(item, ['path', 'parent', 'revision', 'entries', 'nextCursor', 'complete', 'stoppedBy', 'visited', 'excluded', 'limit', 'maxPathDepth', 'pollIntervalMs', 'expiresAt'])
+  const relative = directoryPath(item.path)
+  const parent = item.parent === null ? null : directoryPath(item.parent)
+  if (parent !== (relative ? parentDirectory(relative) : null))
+    return invalid()
+  const limit = integer(item.limit, 1, 200)
+  const maxPathDepth = integer(item.maxPathDepth, 1, 64)
+  const depth = relative ? relative.split('/').length : 0
+  const names = new Set<string>()
+  const rawEntries = array(item.entries)
+  if (rawEntries.length > limit)
+    return invalid()
+  const entries = rawEntries.map((value): DirectoryPageEntry => {
+    const entry = object(value)
+    const name = path(entry.path)
+    if (parentDirectory(name) !== relative || names.has(name) || name.split('/').some(part => part.startsWith('.') || ['node_modules', 'vendor', 'dist', 'build', 'coverage', 'secrets', 'target', '__pycache__'].includes(part)))
+      return invalid()
+    names.add(name)
+    if (entry.kind === 'directory') {
+      exact(entry, ['kind', 'path', 'children'])
+      if (entry.children !== 'unloaded')
+        return invalid()
+      return { kind: 'directory', path: name, children: 'unloaded' }
+    }
+    exact(entry, ['kind', 'path', 'fileKind', 'state'])
+    if (entry.kind !== 'file' || entry.state !== 'deferred' || !/\.(?:mmd|mermaid|md)$/.test(name))
+      return invalid()
+    const fileKind = kind(entry.fileKind)
+    if ((fileKind === 'markdown') !== name.endsWith('.md'))
+      return invalid()
+    return { kind: 'file', path: name, fileKind, state: 'deferred' }
+  })
+  const visited = integer(item.visited, 0, 1024)
+  const excluded = integer(item.excluded, 0, visited)
+  const complete = boolean(item.complete)
+  const nextCursor = item.nextCursor === null ? null : version(item.nextCursor)
+  const expiresAt = item.expiresAt === null ? null : string(item.expiresAt)
+  const stoppedBy = item.stoppedBy
+  if (depth > maxPathDepth || (depth === maxPathDepth && stoppedBy !== 'depth') || (entries.length > 0 && depth >= maxPathDepth) || (expiresAt !== null && (!Number.isFinite(Date.parse(expiresAt)) || new Date(expiresAt).toISOString() !== expiresAt)))
+    return invalid()
+  if (complete
+    ? nextCursor !== null || expiresAt !== null || stoppedBy !== null
+    : stoppedBy === 'depth'
+      ? depth !== maxPathDepth || entries.length !== 0 || visited !== 0 || excluded !== 0 || nextCursor !== null || expiresAt !== null
+      : !['entries', 'visits', 'bytes'].includes(String(stoppedBy)) || nextCursor === null || expiresAt === null) {
+    return invalid()
+  }
+  return { path: relative, parent, revision: version(item.revision), entries, nextCursor, complete, stoppedBy: stoppedBy as DirectoryPage['stoppedBy'], visited, excluded, limit, maxPathDepth, pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), expiresAt }
+}
 export const api = {
   session: (signal?: AbortSignal) => requestApi('/session', decodeSession, signal ? { signal } : {}),
   login: (token: string) => requestApi('/session', decodeSession, { method: 'POST', body: { token } }),
   logout: (csrfToken: string) => requestApi('/session', decodeSession, { method: 'DELETE', csrfToken }),
+  directory: (request: DirectoryRequest, signal: AbortSignal) => {
+    const query = new URLSearchParams({ path: request.path, limit: String(request.limit) })
+    if (request.cursor)
+      query.set('cursor', request.cursor)
+    return requestApi(`/diagrams/directory?${query}`, decodeDirectoryPage, { signal })
+  },
+  directoryRevision: (directory: string, signal: AbortSignal) => requestApi(`/diagrams/directory/revision?path=${encodeURIComponent(directory)}`, decodeDirectoryRevision, { signal }),
+  closeDirectory: (body: CloseDirectoryRequest, csrfToken?: string) => requestApi('/diagrams/directory/close', (value) => {
+    const item = object(value)
+    exact(item, ['closed'])
+    return item.closed === true ? { closed: true as const } : invalid()
+  }, { method: 'POST', body, csrfToken }),
   tree: (signal: AbortSignal) => requestApi('/diagrams/tree', decodeTree, { signal }),
   document: (file: string, signal: AbortSignal) => requestApi(`/diagrams/document?path=${encodeURIComponent(file)}`, decodeDocument, { signal }),
   revision: (file: string, signal: AbortSignal) => requestApi(`/diagrams/revision?path=${encodeURIComponent(file)}`, decodeRevision, { signal }),

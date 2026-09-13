@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { expect, live, login, test } from './support'
+import { browse, expect, live, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 const tokenFile = process.env.MERDECK_SMOKE_TOKEN_FILE
@@ -16,7 +16,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
   const folder = `manage-${randomUUID().slice(0, 8)}`
   try {
     await page.setViewportSize({ width: 1440, height: 900 })
-    await login(page)
+    await login(page, true)
     const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
     const dialog = page.getByRole('dialog')
     const pathInput = dialog.getByLabel('Path', { exact: true })
@@ -82,10 +82,14 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await expect(explorer.getByRole('button', { name: /^renamed\.mmd/ })).toHaveAttribute('aria-current', 'true')
     expect(await readFile(join(root, folder, 'nested', 'renamed.mmd'), 'utf8')).toBe(draft)
 
-    // A folder with visible contents cannot be deleted from its menu.
-    await explorer.getByRole('button', { name: 'nested', exact: true }).click({ button: 'right' })
-    await expect(page.getByRole('menuitem', { name: 'Delete…' })).toBeDisabled()
-    await page.keyboard.press('Escape')
+    // Only the server can prove a folder empty, including unloaded contents.
+    await browse(page, folder)
+    await explorer.getByRole('button', { name: 'Actions for nested', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Delete…' }).click()
+    await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    await expect(dialog.getByRole('alert')).toHaveText('This folder still contains files, including any the explorer does not show. Move or delete them first.')
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await browse(page, `${folder}/nested`)
 
     await explorer.getByRole('button', { name: /^renamed\.mmd/ }).focus()
     await page.keyboard.press('Delete')
@@ -97,6 +101,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     expect(await readdir(join(root, folder, 'nested'))).toEqual([])
 
     // Files the explorer does not show still keep a folder from being deleted.
+    await browse(page, folder)
     await writeFile(join(root, folder, 'nested', '.keep'), '')
     await explorer.getByRole('button', { name: 'Actions for nested', exact: true }).click()
     await page.getByRole('menuitem', { name: 'Delete…' }).click()
@@ -105,6 +110,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(dialog).toHaveCount(0)
     await rm(join(root, folder, 'nested', '.keep'))
+    await explorer.getByRole('button', { name: 'Refresh files', exact: true }).click()
 
     await explorer.getByRole('button', { name: 'nested', exact: true }).focus()
     await page.keyboard.press('F2')
@@ -113,13 +119,14 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: 'empty', exact: true }).focus()
     await page.keyboard.press('Delete')
-    await expect(dialog).toContainText(`Permanently delete the empty folder ${folder}/empty?`)
+    await expect(dialog).toContainText(`Delete the folder ${folder}/empty? The service will refuse if it contains any files.`)
     await dialog.getByRole('button', { name: 'Delete', exact: true }).click()
     // The open dialog hides the explorer from role queries until the deletion finishes.
     await expect(dialog).toHaveCount(0)
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toHaveCount(0)
     expect(await readdir(join(root, folder))).toEqual([])
 
+    await browse(page, '')
     // Narrow screens reach the same actions from the file drawer.
     await page.setViewportSize({ width: 390, height: 844 })
     await page.getByRole('button', { name: 'Open project files', exact: true }).click()

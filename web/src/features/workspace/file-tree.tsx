@@ -1,26 +1,28 @@
-import type { DiagramBlockSummary, TreeSnapshot } from '../../../../src/shared/contracts'
+import type { DiagramBlockSummary } from '../../../../src/shared/contracts'
 import type { Drafts, FileDraft } from './drafts'
 import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
-import { ChevronDown, ChevronRight, FileCode2, FilePlus2, FileText, Folder, FolderOpen, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
+import type { useDirectory } from './use-directory'
+import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, Folder, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
+import { errorMessage, parentDirectory } from './api'
 import { dirty } from './drafts'
 import { fileExtensions } from './file-filter'
 
 interface Props {
-  tree: TreeSnapshot | undefined
+  listing: ReturnType<typeof useDirectory>
+  directory: string
+  browse: (path: string) => void
   drafts: Drafts
   path: string
   block: number
   select: (path: string, block?: number) => void
   refresh: () => void
-  loading: boolean
-  failed: boolean
   canChange: boolean
   onAction: (action: EntryAction) => void
   kinds: FileFilter
@@ -94,19 +96,31 @@ function shortcuts(rename: MenuItem, remove: MenuItem) {
   }
 }
 
-export function FileTree({ tree, drafts, path, block, select, refresh, loading, failed, canChange, onAction, kinds, chooseKinds, filterRef }: Props) {
+export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, filterRef }: Props) {
+  const crumbsRef = React.useRef<HTMLElement>(null)
+  const focusDirectoryRef = React.useRef(false)
+  const openDirectory = (next: string) => {
+    focusDirectoryRef.current = next !== directory
+    browse(next)
+  }
+  React.useEffect(() => {
+    if (focusDirectoryRef.current) {
+      focusDirectoryRef.current = false
+      crumbsRef.current?.querySelector<HTMLButtonElement>('[aria-current="location"]')?.focus()
+    }
+  }, [directory])
   const [filter, setFilter] = React.useState('')
-  const [collapsed, setCollapsed] = React.useState<Set<string>>(() => new Set())
   const [menu, setMenu] = React.useState<string | null>(null)
-  const entries = tree?.entries ?? []
+  const { entries, loading, error } = listing
+  const failed = !!error
   const files = entries.filter(item => item.kind === 'file')
   const listed = files.filter(item => kinds === 'all' || item.fileKind === kinds)
   const matches = (value: string) => value.toLowerCase().includes(filter.toLowerCase())
   const shown = listed.filter(item => matches(item.path))
-  // A folder stays visible while it holds a listed file; with every type listed, its own name matches too.
-  const visible = entries.filter(item => item.kind === 'file' ? shown.includes(item) : shown.some(file => file.path.startsWith(`${item.path}/`)) || (kinds === 'all' && matches(item.path)))
-  const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !files.some(entry => entry.path === name))
-  const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
+  // Unloaded descendants never hide a folder, even while file filters are active.
+  const visible = entries.filter(item => item.kind === 'directory' || shown.includes(item))
+  const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !shown.some(entry => entry.path === name))
+  const folder = directory
   const rowMenu = (target: string) => ({
     open: menu === target,
     onOpenChange: (open: boolean) => setMenu(open ? target : null),
@@ -120,14 +134,30 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
       <div className="tree-heading">
         <span>EXPLORER</span>
         <span className="tree-heading-actions">
-          <HeadingAction label="New file" disabled={!canChange} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
-          <HeadingAction label="New folder" disabled={!canChange} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
+          <HeadingAction label="New file" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
+          <HeadingAction label="New folder" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
           <HeadingAction label="Refresh files" onClick={refresh}><RefreshCw /></HeadingAction>
         </span>
       </div>
+      <nav ref={crumbsRef} className="directory-crumbs" aria-label="Directory breadcrumbs">
+        <Button variant="ghost" size="sm" aria-current={!directory ? 'location' : undefined} onClick={() => openDirectory('')}>Root</Button>
+        {directory.split('/').filter(Boolean).map((part, index, parts) => (
+          <React.Fragment key={parts.slice(0, index + 1).join('/')}>
+            <ChevronRight aria-hidden="true" />
+            <Button variant="ghost" size="sm" title={parts.slice(0, index + 1).join('/')} aria-current={index === parts.length - 1 ? 'location' : undefined} onClick={() => openDirectory(parts.slice(0, index + 1).join('/'))}>{part}</Button>
+          </React.Fragment>
+        ))}
+      </nav>
+      <div className="directory-tools">
+        <Button variant="outline" size="sm" disabled={!directory} onClick={() => openDirectory(parentDirectory(directory))}>
+          <ArrowUp />
+          Up
+        </Button>
+        <Button variant="ghost" size="sm" disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}>Restart</Button>
+      </div>
       <div className="tree-search">
         <Search aria-hidden="true" />
-        <Input ref={filterRef} aria-label="Filter files" placeholder="Find a file…" value={filter} onChange={event => setFilter(event.target.value)} />
+        <Input ref={filterRef} aria-label="Filter files" placeholder="Find in loaded files…" value={filter} onChange={event => setFilter(event.target.value)} />
       </div>
       <div className="tree-kinds">
         <ToggleGroup
@@ -146,43 +176,42 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
           ))}
         </ToggleGroup>
       </div>
-      <nav aria-label="Files and diagrams">
-        {loading && <p className="tree-hint" role="status">Reading project files…</p>}
-        {failed && <p className="tree-hint" role="alert">File list unavailable. Reconnect to refresh.</p>}
-        <ul>
+      <p className="directory-scope">Filters apply to loaded files. Folders stay visible.</p>
+      <nav aria-label="Files and diagrams" aria-busy={loading}>
+        {loading && <p className="tree-hint" role="status">Loading directory…</p>}
+        {failed && (
+          <p className="tree-hint" role="alert">
+            {errorMessage(error)}
+            {' '}
+            Restart, or use Up / Root.
+          </p>
+        )}
+        {listing.retryAt > 0 && <p className="tree-hint" role="status">Too many requests. Restart will be available shortly.</p>}
+        {listing.notice && <p className="tree-hint" role="status">{listing.notice}</p>}
+        {listing.stale && <p className="tree-hint" role="status">Listing is not current.</p>}
+        {listing.depth && <p className="tree-hint" role="status">Directory depth limit reached. Use Up / Root.</p>}
+        <ul data-stale={listing.stale || undefined}>
           {visible.map((entry) => {
             const parts = entry.path.split('/')
-            if (!filter && parts.slice(0, -1).some((_, index) => collapsed.has(parts.slice(0, index + 1).join('/'))))
-              return null
-            const depth = Math.min(parts.length - 1, 6)
+            const depth = 0
             // Indentation and its guides come from the depth, so every row at one level shares a column.
             const indent = { '--depth': depth } as React.CSSProperties
             const name = parts.at(-1)!
             const menuState = rowMenu(entry.path)
             if (entry.kind === 'directory') {
-              const expanded = !collapsed.has(entry.path)
               const rename: MenuItem = { label: 'Rename or move…', disabled: !canChange, separated: true, onSelect: () => onAction({ type: 'move', kind: 'directory', path: entry.path }) }
-              const remove: MenuItem = { label: 'Delete…', destructive: true, disabled: !canChange || entries.some(item => item.path.startsWith(`${entry.path}/`)), onSelect: () => onAction({ type: 'delete', kind: 'directory', path: entry.path }) }
+              const remove: MenuItem = { label: 'Delete…', destructive: true, disabled: !canChange, onSelect: () => onAction({ type: 'delete', kind: 'directory', path: entry.path }) }
               return (
                 <li key={entry.path} className="tree-entry" style={indent}>
                   <div className="tree-item" onContextMenu={menuState.onContextMenu}>
                     <Button
                       variant="ghost"
                       className="tree-row"
-                      aria-expanded={expanded}
                       onKeyDown={shortcuts(rename, remove)}
-                      onClick={() => setCollapsed((previous) => {
-                        const next = new Set(previous)
-
-                        if (next.has(entry.path))
-                          next.delete(entry.path); else
-                          next.add(entry.path)
-
-                        return next
-                      })}
+                      onClick={() => openDirectory(entry.path)}
                     >
-                      <span className="tree-twistie">{expanded ? <ChevronDown /> : <ChevronRight />}</span>
-                      {expanded ? <FolderOpen className="folder-icon" /> : <Folder className="folder-icon" />}
+                      <span className="tree-twistie"><ChevronRight /></span>
+                      <Folder className="folder-icon" />
                       <span className="truncate">{name}</span>
                     </Button>
                     <RowMenu
@@ -190,8 +219,8 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
                       open={menuState.open}
                       onOpenChange={menuState.onOpenChange}
                       items={[
-                        { label: 'New file here…', disabled: !canChange, onSelect: () => onAction({ type: 'create', kind: 'file', parent: entry.path }) },
-                        { label: 'New folder here…', disabled: !canChange, onSelect: () => onAction({ type: 'create', kind: 'directory', parent: entry.path }) },
+                        { label: 'New file here…', disabled: !canChange || parts.length >= listing.maxPathDepth, onSelect: () => onAction({ type: 'create', kind: 'file', parent: entry.path }) },
+                        { label: 'New folder here…', disabled: !canChange || parts.length >= listing.maxPathDepth, onSelect: () => onAction({ type: 'create', kind: 'directory', parent: entry.path }) },
                         rename,
                         remove,
                       ]}
@@ -201,12 +230,12 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
               )
             }
             const draft = drafts[entry.path]
-            const blocks = draft && (dirty(draft) || draft.locked || draft.saving) ? draft.baseline.blocks : entry.blocks
+            const blocks = draft?.baseline.blocks ?? []
             const open = path === entry.path
             // Only the selected file or diagram is current; an open Markdown file with diagrams is marked as open instead.
             const diagrams = entry.fileKind === 'markdown' && blocks.length > 0
-            const version = draft?.baseline.version ?? (entry.state === 'available' ? entry.version : undefined)
-            const changeable = canChange && !!version && !draft?.saving
+            const version = draft?.baseline.version
+            const changeable = canChange && !draft?.saving
             const rename: MenuItem = { label: 'Rename or move…', disabled: !changeable, onSelect: () => onAction({ type: 'move', kind: 'file', path: entry.path, ...(version ? { version } : {}) }) }
             const remove: MenuItem = { label: 'Delete…', destructive: true, disabled: !changeable, onSelect: () => onAction({ type: 'delete', kind: 'file', path: entry.path, unsaved: !!draft && (dirty(draft) || draft.locked), ...(version ? { version } : {}) }) }
             return (
@@ -218,16 +247,17 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
                     {entry.fileKind === 'markdown' ? <FileText /> : <FileCode2 />}
                     <span className="truncate">{name}</span>
                     {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
-                    {entry.state !== 'available' && <span className="file-count">{entry.state.replace('_', ' ')}</span>}
+                    {!draft && <span className="file-count" aria-hidden="true">Unopened</span>}
                   </Button>
                   <RowMenu name={name} open={menuState.open} onOpenChange={menuState.onOpenChange} items={[rename, remove]} />
                 </div>
+                {draft && entry.fileKind === 'markdown' && !blocks.length && <p className="tree-hint">No Mermaid blocks</p>}
                 {diagrams && <DiagramList file={entry.path} blocks={blocks} draft={draft} open={open} block={block} select={select} />}
               </li>
             )
           })}
         </ul>
-        {!loading && !failed && !visible.length && <p className="tree-hint">{filter ? 'No matching files' : kinds === 'all' ? 'No supported files in this project' : `No ${fileExtensions[kinds].join(' or ')} files in this project`}</p>}
+        {!loading && !failed && !listing.depth && !shown.length && (filter || !visible.length) && <p className="tree-hint">{filter ? 'No matching files in the loaded window' : kinds === 'all' ? 'No supported entries in this page window' : `No ${fileExtensions[kinds].join(' or ')} files in this page window`}</p>}
         {retained.length > 0 && (
           <>
             <div className="tree-heading">RETAINED DRAFTS</div>
@@ -255,10 +285,13 @@ export function FileTree({ tree, drafts, path, block, select, refresh, loading, 
         <span className="muted">
           {listed.length}
           {' '}
-          {listed.length === 1 ? 'file' : 'files'}
+          {listed.length === 1 ? 'loaded file' : 'loaded files'}
           {` · ${fileExtensions[kinds].join(' · ')}`}
         </span>
-        {tree?.truncated && <span role="status">Partial file list. Select known files directly.</span>}
+        <span>{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
+        {listing.firstPage > 1 && <span role="status">Earlier pages are no longer shown. Restart to see them.</span>}
+        <Button variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>
+        <span>{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
       </div>
     </aside>
   )

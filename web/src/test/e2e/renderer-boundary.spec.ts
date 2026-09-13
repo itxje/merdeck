@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { expect, live, login, test } from './support'
+import { browse, expect, live, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -24,6 +24,7 @@ test('ordinary syntax outside the boundary renders in every family, with class f
   try {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await login(page, true)
+    await browse(page, folder)
     const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
     for (const [name, { text }] of Object.entries(diagrams)) {
       await explorer.locator(`button[title="${folder}/${name}"]`).click()

@@ -185,7 +185,7 @@ button:disabled { cursor: default; }
 .file-tree .tree-entry { display: flow-root; padding-left: calc(var(--depth) * 16px); background: repeating-linear-gradient(to right, transparent 0 15px, var(--border) 15px 16px) 0 0 / calc(var(--depth) * 16px) 100% no-repeat; }
 .file-tree .tree-twistie { display: inline-flex; flex: none; width: 14px; }
 .file-tree .tree-row .folder-icon { color: var(--foreground); fill: color-mix(in oklch, var(--foreground) 14%, transparent); }
-.file-tree .tree-row[aria-expanded] .truncate { font-weight: 500; }
+.file-tree .tree-row:has(.folder-icon) .truncate { font-weight: 500; }
 /* Row actions stay out of the way until the row is hovered or focused, or its menu is open. */
 .tree-item { position: relative; }
 .tree-item > .tree-row { padding-right: 30px; }
@@ -196,7 +196,7 @@ button:disabled { cursor: default; }
 .file-tree .tree-row[aria-current="true"] { background: color-mix(in oklch, var(--foreground) 12%, var(--sidebar)); color: var(--foreground); font-weight: 600; }
 .file-tree .tree-row[aria-current="true"] svg, .file-tree .tree-row[aria-current="true"] .block-number { color: var(--foreground); }
 .file-tree .tree-row[data-open] { color: var(--foreground); font-weight: 600; }
-.file-tree .tree-row[aria-expanded]:not(:hover) { background: transparent; }
+.file-tree .tree-row:has(.folder-icon):not(:hover) { background: transparent; }
 .tree-row .block-number { font: 10px var(--font-mono); color: var(--muted-foreground); }
 .file-count { margin-left: auto; font-size: 10px; color: var(--muted-foreground); }
 .tree-bottom { padding: 16px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; font-size: 11px; }
@@ -276,8 +276,9 @@ button:disabled { cursor: default; }
   .mobile-panes [data-slot="tabs-list"] { width: 100%; height: 44px; }
   /* Narrow screens keep one full-width pane behind the tabs, whatever the desktop split. */
   .panes > [data-separator], .source-rail, .pane-collapse { display: none !important; }
-  .panes > [data-panel] { flex: 1 1 100% !important; }
-  .panes[data-pane="preview"] > #source-panel, .panes[data-pane="source"] > #preview-panel { display: none !important; }
+  .panes { display: grid !important; grid-template-columns: minmax(0, 1fr); }
+  .panes > [data-panel] { grid-area: 1 / 1; min-width: 0; }
+  .panes[data-pane="preview"] > #source-panel, .panes[data-pane="source"] > #preview-panel { visibility: hidden; pointer-events: none; }
   .source-pane[data-collapsed] { display: flex; }
   .source-input[data-slot="textarea"] { font-size: 12px; }
   [data-slot="button"], [data-slot="tooltip-trigger"], .file-tree .tree-row, [data-slot="tabs-trigger"] { min-height: 44px; }
@@ -320,3 +321,13 @@ button:disabled { cursor: default; }
   .save-status { display: none; }
   .status-bar { font-size: 10px; }
 }
+
+/* Directory controls follow the standalone navigation prototype's existing tokens. */
+.file-tree .directory-crumbs { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 0 10px; overflow: visible; }
+.directory-crumbs > svg { width: 12px; height: 12px; color: var(--muted-foreground); }
+.directory-crumbs button { min-width: 0; max-width: 100%; height: auto; min-height: 32px; white-space: normal; overflow-wrap: anywhere; }
+.directory-crumbs [aria-current="location"] { font-weight: 650; }
+.directory-tools { display: flex; gap: 4px; padding: 8px 12px; }
+.directory-scope { margin: 0; padding: 0 14px 8px; font-size: 11px; color: var(--muted-foreground); }
+.file-tree ul[data-stale] { opacity: .55; }
+.tree-bottom { gap: 8px; }

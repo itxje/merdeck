@@ -16,7 +16,7 @@ function measure(row: Locator) {
   })
 }
 
-test('the explorer nests every level right of its folder and draws folders apart from files', async ({ page }) => {
+test('directory navigation preserves folder styling and aligned immediate rows', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'hierarchy-'))
   const top = basename(owned)
   await mkdir(join(owned, 'inner'))
@@ -30,26 +30,22 @@ test('the explorer nests every level right of its folder and draws folders apart
     const inner = explorer.getByRole('button', { name: 'inner', exact: true })
     const sibling = explorer.locator(`button[title="${top}/sibling.mmd"]`)
     const leaf = explorer.locator(`button[title="${top}/inner/leaf.mmd"]`)
-    await expect(leaf).toBeVisible()
+    await expect(folder).toBeVisible()
+    await expect(folder.locator('svg.lucide-folder')).toHaveCount(1)
+    await folder.click()
+    await expect(inner).toBeVisible()
     await page.mouse.move(900, 600)
-    const outer = await measure(folder)
     const middle = await measure(inner)
     const file = await measure(sibling)
-    const deepest = await measure(leaf)
-    // A child starts to the right of its folder's icon and name at every depth.
-    expect(middle.icon).toBeGreaterThan(outer.icon)
-    expect(middle.name).toBeGreaterThan(outer.name)
-    expect(deepest.icon).toBeGreaterThan(middle.icon)
-    expect(deepest.name).toBeGreaterThan(middle.name)
-    // A folder and a file at the same depth share the icon and name columns.
     expect(file.icon).toBe(middle.icon)
     expect(file.name).toBe(middle.name)
-    expect(outer.weight).toBeGreaterThan(file.weight)
-    await expect(folder.locator('svg.lucide-folder-open')).toHaveCount(1)
-    await folder.click()
-    await expect(folder).toHaveAttribute('aria-expanded', 'false')
-    await expect(folder.locator('svg.lucide-folder')).toHaveCount(1)
-    await expect(leaf).toBeHidden()
+    expect(middle.weight).toBeGreaterThan(file.weight)
+    await expect(leaf).toHaveCount(0)
+    await inner.click()
+    await expect(leaf).toBeVisible()
+    await explorer.getByRole('button', { name: 'Up', exact: true }).click()
+    await expect(sibling).toBeVisible()
+    await expect(leaf).toHaveCount(0)
   }
   finally { await rm(owned, { recursive: true, force: true }) }
 })

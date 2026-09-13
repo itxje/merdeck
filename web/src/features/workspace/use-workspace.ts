@@ -5,8 +5,10 @@ import { onlineManager, useMutation, useQuery, useQueryClient } from '@tanstack/
 import * as React from 'react'
 import { protectedWork } from '@/features/update/reload-guard'
 import { HttpError } from '@/shared/lib/http'
-import { api, errorMessage, sessionCsrf } from './api'
+import { api, errorMessage, parentDirectory, sessionCsrf } from './api'
 import { dirty, draftsReducer } from './drafts'
+import { affectsDirectory } from './entries'
+import { useDirectory } from './use-directory'
 
 export type EntryOperation
   = | { type: 'create', request: CreateEntryRequest }
@@ -17,7 +19,7 @@ function subscribeOnline(listener: () => void) {
   return onlineManager.subscribe(listener)
 }
 
-export function useWorkspace(path: string, block: number) {
+export function useWorkspace(path: string, block: number, directory = '') {
   const online = React.useSyncExternalStore(subscribeOnline, () => onlineManager.isOnline())
   const client = useQueryClient()
   const [drafts, applyDraftAction] = React.useReducer(draftsReducer, {})
@@ -94,7 +96,8 @@ export function useWorkspace(path: string, block: number) {
     }
   }, [sessionQuery.data, drafts, expire])
   const interval = session?.pollIntervalMs ?? 3000
-  const tree = useQuery({ queryKey: ['tree', epoch], queryFn: ({ signal }) => api.tree(signal), enabled: !!session, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : interval, retry: false })
+  const listing = useDirectory(directory, epoch, !!session, session ? sessionCsrf(session) : undefined, interval)
+  const restartDirectory = listing.restart
   const revisionKey = ['revision', epoch, path] as const
   const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : interval, retry: false })
   const observed = revision.data?.state === 'present' ? revision.data.version : ''
@@ -193,7 +196,8 @@ export function useWorkspace(path: string, block: number) {
       if (!latest || (latest.state === 'present' && (latest.version === file.baseline.version || latest.version === document.version)))
         client.setQueryData(['revision', epoch, path], { path, state: 'present', version: document.version })
       client.setQueryData(['document', epoch, path, document.version], document)
-      void client.invalidateQueries({ queryKey: ['tree', epoch] })
+      if (parentDirectory(path) === directory)
+        restartDirectory()
     }
     catch (error) {
       if (currentGeneration !== generationRef.current)
@@ -207,7 +211,7 @@ export function useWorkspace(path: string, block: number) {
       if (currentGeneration === generationRef.current)
         busyRef.current = false
     }
-  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch])
+  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch, directory, restartDirectory])
   const review = useMutation({
     networkMode: 'always',
     mutationFn: async (filePath: string) => {
@@ -221,24 +225,38 @@ export function useWorkspace(path: string, block: number) {
   })
   const entries = useMutation({
     networkMode: 'always',
+    onMutate: () => ({ generation: generationRef.current }),
     mutationFn: async (operation: EntryOperation) => {
       if (!session)
         throw new HttpError(401, 'unauthorized', 'Sign in to continue.')
       await client.cancelQueries({ predicate: query => query.queryKey[0] === 'document' || query.queryKey[0] === 'revision' })
       if (operation.type === 'create')
         return api.createEntry(operation.request, sessionCsrf(session))
+      const generation = generationRef.current
+      if (operation.request.kind === 'file' && !operation.request.expectedVersion) {
+        const filePath = operation.type === 'move' ? operation.request.from : operation.request.path
+        const document = await api.document(filePath, new AbortController().signal)
+        if (generation !== generationRef.current || document.path !== filePath)
+          throw new HttpError(409, 'conflict', 'The file state changed. Try again.')
+        if (operation.type === 'move')
+          return api.moveEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
+        return api.deleteEntry({ ...operation.request, expectedVersion: document.version }, sessionCsrf(session))
+      }
       if (operation.type === 'move')
         return api.moveEntry(operation.request, sessionCsrf(session))
       return api.deleteEntry(operation.request, sessionCsrf(session))
     },
-    onSuccess: (_change, operation) => {
+    onSuccess: (_change, operation, context) => {
+      if (context.generation !== generationRef.current)
+        return
       // Drafts follow a moved file or folder; a confirmed file deletion discards that file's drafts.
       if (operation.type === 'move')
         dispatch({ type: 'move', kind: operation.request.kind, from: operation.request.from, to: operation.request.to })
       if (operation.type === 'delete' && operation.request.kind === 'file')
         dispatch({ type: 'remove', path: operation.request.path })
-      // Only the tree refreshes; refetching the old path's document would observe the change as a deletion.
-      void client.invalidateQueries({ queryKey: ['tree'] })
+      // Restart namespace traversal; old document paths must not be replayed after a move.
+      if (affectsDirectory(operation, directory))
+        restartDirectory()
     },
     onError: (error) => {
       if (error instanceof HttpError && error.status === 401)
@@ -253,8 +271,20 @@ export function useWorkspace(path: string, block: number) {
     client.setQueryData(['revision', epoch, path], { path, state: 'present', version: document.version })
     client.setQueryData(['document', epoch, path, document.version], document)
   }
+  const readTarget = React.useCallback(async (target: string, signal: AbortSignal) => {
+    try {
+      return await api.document(target, signal)
+    }
+    catch (error) {
+      if (error instanceof HttpError && error.status === 401)
+        expire()
+      throw error
+    }
+  }, [expire])
   const refresh = () => {
-    void client.invalidateQueries({ predicate: query => query.queryKey[0] !== 'review' })
+    restartDirectory()
+    void client.invalidateQueries({ queryKey: ['revision', epoch, path] })
+    void client.invalidateQueries({ queryKey: ['session'] })
   }
   const hasUnsaved = Object.values(drafts).some(item => dirty(item) || item.saving)
   const reloadBlocked = !online || protectedWork(drafts) || saveMutation.isPending || entries.isPending || review.isPending || login.isPending || logout.isPending
@@ -277,5 +307,5 @@ export function useWorkspace(path: string, block: number) {
     window.addEventListener('beforeunload', beforeUnload)
     return () => window.removeEventListener('beforeunload', beforeUnload)
   }, [hasUnsaved])
-  return { online, drafts, dispatch, session, sessionQuery, login, logout, file, tree, revision, documentQuery, save, savePending: saveMutation.isPending, review, entries, reload, refresh, hasUnsaved, expired, reloadBlocked, reloadApplication }
+  return { online, drafts, dispatch, session, sessionQuery, login, logout, file, listing, revision, documentQuery, save, savePending: saveMutation.isPending, review, entries, reload, refresh, readTarget, hasUnsaved, expired, reloadBlocked, reloadApplication }
 }

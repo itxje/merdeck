@@ -1,6 +1,6 @@
 # 20260913-1637-directory-backend Implement bounded directory browsing backend
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: backend-maintainer/20260913
 - **createdAt**: 2026-09-13 16:37
@@ -98,3 +98,5 @@ Inspection confirms readPage increments visited for every consumed record, incre
 Focused retry checks passed with exit 0: root lint/typecheck, 44 directory/native/HTTP tests with 436 assertions, git diff --check and an empty production-source diff excluding test files against `16425b2a8ed00762bc7f429a16bb25808aa670dd`. Evidence: `tmp/native-retry-checks.log` and `.exit`. The first-page invariant is visited = entries + excluded + one pending entry; subsequent pages conserve visited + incoming pending = entries + excluded + outgoing pending. Actual stream observations independently check the counters and exact pending name, followed through EOF with all eight expected file names exactly once in both fixtures. The original exact two-fd lifecycle test is unchanged and passed.
 
 PMA self-review found no remaining actionable issue in this bounded test correction. Only the failed test and tracking documentation changed; no production primitive, pagination, cancellation, storage policy or exporter behavior changed. Ready for hosted retry, not native acceptance. No redundant full local/browser suite was run; the complete normal hosted --native gate on the new clean candidate remains required. Existing task ownership/status and overall implementing plan remain unchanged.
+
+- complete: Owner confirmed normal Linux x64/ext4 native run 34772642752 passed at c3fb12bcde038eaa4de599d4ecce967293688160, tree-identical to reviewed integration 9642799f0def47b685c57fa7e5558ed6bfc6f1d4. Backend scope complete; whole-feature frontend and integrated native acceptance remain pending.

@@ -106,7 +106,7 @@ export async function smokeBundle(directory: string, tag: string) {
         throw new Error(`Bundle asset HTTP mismatch: ${file.path}`)
       checkedFiles++
     }
-    for (const path of ['/api/diagrams/tree', '/api/diagrams/document?path=welcome.mmd']) {
+    for (const path of ['/api/diagrams/tree', '/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/document?path=welcome.mmd']) {
       if ((await fetch(`${origin}${path}`)).status !== 401)
         throw new Error('Bundle authentication boundary failed')
     }

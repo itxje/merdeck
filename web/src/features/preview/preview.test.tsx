@@ -178,3 +178,22 @@ it('only activates node targets after the matching source settles', async () => 
   fireEvent.click(link)
   expect(onOpenFile).toHaveBeenCalledTimes(2)
 })
+
+it('handles asynchronous link refusal and ignores notes from an abandoned source', async () => {
+  const source = 'flowchart LR\nA[One]\nclick A "one.mmd"'
+  vi.mocked(renderDiagram).mockResolvedValue('<svg><g class="node" id="diagram-1-flowchart-A-0"><text>One</text></g></svg>')
+  let finish!: (message: string) => void
+  const onOpenFile = vi.fn(() => new Promise<string>((resolve) => {
+    finish = resolve
+  }))
+  const onError = vi.fn()
+  const { rerender } = render(<Preview source={source} title="Index" onError={onError} onOpenFile={onOpenFile} />)
+  await waitFor(() => expect(screen.getByText('Live preview')).toBeVisible())
+  fireEvent.click(screen.getByText('One'))
+  await act(async () => finish('The file is unavailable.'))
+  expect(screen.getByText('The file is unavailable.')).toBeVisible()
+  fireEvent.click(screen.getByText('One'))
+  rerender(<Preview source={`${source}\n%% Changed`} title="Index" onError={onError} onOpenFile={onOpenFile} />)
+  await act(async () => finish('Late refusal'))
+  expect(screen.queryByText('Late refusal')).toBeNull()
+})
