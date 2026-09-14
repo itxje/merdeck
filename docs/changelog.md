@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-14 11:50 [release]
+
+Published [v0.11.0](https://github.com/itxje/merdeck/releases/tag/v0.11.0), which lists a chosen file type from subfolders. Exact commit `1f41a22ef26267877e13271b27875bc95e6659f7` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34837535372). The first attempt of the [release run](https://github.com/itxje/merdeck/actions/runs/34838379897) failed one browser case because a directory revision poll met the page's own save and its HTTP 409 reached the browser audit; that job was rerun on the same tag and commit, passed, and published the release. The downloaded archive matched `SHA256SUMS` and reports version 0.11.0. The race is recorded in [20260914-1150-directory-poll-save-race](task/20260914-1150-directory-poll-save-race.md). v0.10.0, which added name search below a folder, was published on 2026-09-13 without its own entry.
+
 ## 2026-09-14 11:20 [fix]
 
 Choosing **.mmd** or **.md** in the explorer lists the files of that type in the browsed folder and every subfolder, with or without search text, instead of filtering only the loaded page. `GET /diagrams/search` accepts a `kind` that the service applies before its 200-match budget, and unsaved drafts stay reachable beside search results. See [20260914-1105-search-file-types](task/20260914-1105-search-file-types.md).
