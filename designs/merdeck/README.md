@@ -80,7 +80,7 @@ Asset versions must be maintained with the installed asset-recording helper, ret
 
 ## Local HTTP preview
 
-The installed nsl 0.1.7 does not implement `serve`; its CLI treats that word as an executable and fails. Use its supported `run` command to wrap the included fixed-route design server. That server serves only the design index and exact HTML path, never arbitrary files or project directories. Production application startup does not use this server or nsl.
+The installed nsl 0.1.7 does not implement `serve`; its CLI treats that word as an executable and fails. Use its supported `run` command to wrap the included fixed-route design server. That server serves only the design index and known exact HTML paths, never arbitrary files or project directories. Production application startup does not use this server or nsl.
 
 ```bash
 export PATH="$PWD/.cache/runtime/node_modules/.bin:$PATH"
@@ -159,3 +159,28 @@ git diff --check
 Evidence goes to ignored `tmp/directory-design/`: `check-results.json`,
 `browser-diagnostics.json`, desktop/narrow screenshots and build resource metadata.
 These focused checks do not establish production or native release acceptance.
+
+## Mobile file drawer repair prototype
+
+`Mobile-file-drawer.html` is a separate, self-contained phone-scale prototype for
+the Project files repair. It remains **needs-review**. It uses the application’s
+neutral palette, a full-width bottom sheet, dynamic-viewport sizing, safe-area
+padding and 44 px controls as implementation assumptions, not an owner-approved
+visual decision. The initial state is a settled empty folder with no reserved list
+space; **Show populated state** demonstrates the bounded scrolling list and filter.
+
+Use the same `design-preview` tmux/nsl server above; its fixed allowlist also serves
+this exact prototype path. Verify it over HTTP, not through a filesystem URL:
+
+```bash
+export MERDECK_MOBILE_DRAWER_DESIGN_URL="$(node_modules/.bin/nsl get "$design_name")/merdeck/Mobile-file-drawer.html"
+curl -fsS "$MERDECK_MOBILE_DRAWER_DESIGN_URL" -o tmp/mobile-drawer-design/served.html
+cmp designs/merdeck/Mobile-file-drawer.html tmp/mobile-drawer-design/served.html
+bun designs/merdeck/mobile-drawer-check.ts
+git diff --check
+```
+
+The check saves only ignored evidence under `tmp/mobile-drawer-design/`: empty and
+populated screenshots, a result summary and browser diagnostics. It verifies the
+HTTP response, self-contained/no-external-resource behavior, empty-sheet geometry,
+populated filtering, close/reopen focus restoration and no narrow horizontal overflow.

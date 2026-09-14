@@ -33,8 +33,22 @@
           }
         }
       ]
+    },
+    "Mobile file drawer": {
+      "versions": [
+        {
+          "path": "Mobile-file-drawer.html",
+          "createdAt": "2026-09-14T15:22:05.538Z",
+          "status": "needs-review",
+          "subtitle": "Compact mobile Project files bottom sheet",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          }
+        }
+      ]
     }
   },
   "createdAt": "2026-09-07T18:22:42.004Z",
-  "updatedAt": "2026-09-13T17:47:23.140Z"
+  "updatedAt": "2026-09-14T15:22:05.538Z"
 }

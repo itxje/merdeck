@@ -7,7 +7,7 @@ async function measureDrawer(dialog: Locator) {
   return dialog.evaluate((popup) => {
     const box = (element: Element) => {
       const bounds = element.getBoundingClientRect()
-      return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom, width: bounds.width, clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }
+      return { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom, width: bounds.width, height: bounds.height, clientWidth: element.clientWidth, scrollWidth: element.scrollWidth }
     }
     const bounds = box(popup)
     const style = getComputedStyle(popup)
@@ -20,6 +20,7 @@ async function measureDrawer(dialog: Locator) {
     return {
       viewport: { width: innerWidth, height: innerHeight },
       popup: bounds,
+      fileTree: box(popup.querySelector('.file-tree')!),
       content,
       columns: style.gridTemplateColumns,
       containers: measure(':scope > h2, :scope > p, .file-tree, .tree-heading, .tree-search, .tree-bottom, nav'),
@@ -63,6 +64,39 @@ function assertContained(measurement: Awaited<ReturnType<typeof measureDrawer>>)
   }
 }
 
+test('file drawer anchors a compact empty folder at narrow widths', async ({ page }, info) => {
+  const root = process.env.MERDECK_SMOKE_ROOT
+  if (!root)
+    throw new Error('An explicit disposable sample root is required')
+  const owned = await mkdtemp(join(root, 'drawer-empty-'))
+  try {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await login(page, true)
+    const opener = page.getByRole('button', { name: 'Open project files', exact: true })
+    for (const width of [390, 360]) {
+      await page.setViewportSize({ width, height: 844 })
+      await opener.click()
+      await settledDialog(page)
+      const dialog = page.getByRole('dialog', { name: 'Project files', exact: true })
+      await browse(page, relative(root, owned))
+      await expect(dialog.getByText('No supported entries in this page window', { exact: true })).toBeVisible()
+      const measurement = await measureDrawer(dialog)
+      await writeFile(info.outputPath(`drawer-empty-${width}.json`), JSON.stringify(measurement, null, 2))
+      await page.screenshot({ path: info.outputPath(`drawer-empty-${width}.png`), fullPage: true, animations: 'disabled' })
+      assertContained(measurement)
+      // Empty folders do not reserve the populated-list height and the sheet meets the viewport edge.
+      expect(measurement.fileTree.height).toBeLessThan(measurement.viewport.height * 0.58)
+      expect(measurement.popup.bottom).toBeGreaterThanOrEqual(measurement.viewport.height - 1)
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      await expect(opener).toBeFocused()
+    }
+  }
+  finally {
+    await rm(owned, { recursive: true, force: true })
+  }
+})
+
 test('file drawer contains long nested labels, wrapped help and usable controls at narrow widths', async ({ page }, info) => {
   const root = process.env.MERDECK_SMOKE_ROOT
   if (!root)
@@ -76,7 +110,10 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
   const source = 'flowchart LR\n  Project --> Diagram\n'
   const draft = 'flowchart LR\n  Project --> Retained\n'
   await mkdir(folder, { recursive: true })
-  await writeFile(path, source)
+  await Promise.all([
+    writeFile(path, source),
+    ...Array.from({ length: 18 }, (_, index) => writeFile(join(folder, `drawer-extra-${String(index + 1).padStart(2, '0')}.mmd`), source)),
+  ])
   try {
     await page.setViewportSize({ width: 390, height: 844 })
     await login(page, true)
@@ -104,6 +141,8 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
       await opener.click()
       await settledDialog(page)
       await browse(page, relative(root, folder))
+      const listing = dialog.getByRole('navigation', { name: 'Files and diagrams', exact: true })
+      await expect.poll(() => listing.evaluate(node => node.scrollHeight > node.clientHeight), { message: 'Populated mobile listing does not scroll' }).toBe(true)
       await search.fill('drawer-target')
       await expect(dialog.getByRole('button', { name: 'welcome.mmd', exact: true })).toHaveCount(0)
       const target = dialog.locator('button').filter({ has: dialog.page().locator(`span:text-is("${filename}")`) })

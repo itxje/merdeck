@@ -259,6 +259,16 @@ button:disabled { cursor: default; }
   .tree-toggle { display: inline-flex !important; }
 }
 @media (max-width: 700px) {
+  /* The project-files dialog is a sheet only on phones; other dialogs retain the shared popup layout. */
+  .file-drawer { top: auto !important; bottom: 0; width: 100% !important; max-width: 100% !important; max-height: 100dvh; min-height: 0; gap: 8px; overflow: hidden; border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 12px 12px max(12px, env(safe-area-inset-bottom)) !important; transform-origin: bottom center; translate: -50% 0 !important; }
+  .file-drawer > [data-slot="dialog-title"] { padding-right: 36px; }
+  .file-drawer > [data-slot="dialog-description"] { padding-right: 28px; }
+  .file-drawer .file-tree { height: min(64dvh, 36rem); min-height: 0; }
+  .file-drawer .file-tree nav { min-height: 0; }
+  .file-drawer .tree-bottom { flex: 0 0 auto; }
+  /* A settled empty folder has no scrolling list, so it should not consume the populated drawer's height. */
+  .file-drawer .file-tree[data-compact] { height: auto; }
+  .file-drawer .file-tree[data-compact] > nav[aria-label="Files and diagrams"] { flex: 0 0 auto; overflow: visible; }
   .workspace { min-height: 400px; }
   .app-header { padding: 0 12px; height: 58px; gap: 8px; }
   .brand { gap: 8px; }

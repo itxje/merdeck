@@ -140,6 +140,8 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
   // Drafts whose files have no row on screen stay reachable below the listing or the search results alike.
   const rows = searching ? results ?? [] : shown
   const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !rows.some(entry => entry.path === name))
+  // An empty settled folder can size its mobile drawer to its controls and status instead of reserving list space.
+  const compact = !searching && !loading && !failed && !listing.depth && !visible.length && !retained.length
   const retainedDrafts = retained.length > 0 && (
     <>
       <div className="tree-heading">RETAINED DRAFTS</div>
@@ -172,7 +174,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
     },
   })
   return (
-    <aside className="file-tree" aria-label="Project files">
+    <aside className="file-tree" data-compact={compact || undefined} aria-label="Project files">
       <div className="tree-heading">
         <span>EXPLORER</span>
         <span className="tree-heading-actions">

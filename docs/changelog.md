@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-14 16:00 [fix]
+
+The mobile Project files drawer is now a safe-area-aware bottom sheet instead of a vertically centred fixed-height popup. A settled empty folder uses only the space needed for its controls and status, while populated folders retain a bounded scrollable listing. Browser coverage verifies 360 px and 390 px sheet placement, containment, focus restoration, and populated-list scrolling. The accompanying self-contained prototype remains **needs-review**. Focused checks passed; the full clean-candidate aggregate still exposes an unrelated existing source-pane browser-sequencing failure, recorded separately in [20260914-1559-source-pane-e2e-ordering](task/20260914-1559-source-pane-e2e-ordering.md). See [20260914-1517-mobile-file-drawer](task/20260914-1517-mobile-file-drawer.md).
+
 ## 2026-09-14 11:50 [release]
 
 Published [v0.11.0](https://github.com/itxje/merdeck/releases/tag/v0.11.0), which lists a chosen file type from subfolders. Exact commit `1f41a22ef26267877e13271b27875bc95e6659f7` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34837535372). The first attempt of the [release run](https://github.com/itxje/merdeck/actions/runs/34838379897) failed one browser case because a directory revision poll met the page's own save and its HTTP 409 reached the browser audit; that job was rerun on the same tag and commit, passed, and published the release. The downloaded archive matched `SHA256SUMS` and reports version 0.11.0. The race is recorded in [20260914-1150-directory-poll-save-race](task/20260914-1150-directory-poll-save-race.md). v0.10.0, which added name search below a folder, was published on 2026-09-13 without its own entry.
