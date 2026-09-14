@@ -43,4 +43,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [ ] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `2026-09-13`
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `2026-09-14`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `2026-09-14`
-- [-] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `2026-09-14`
+- [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `2026-09-14`

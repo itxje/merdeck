@@ -1,6 +1,6 @@
 # 20260914-2308-release-mobile-drawer Release the mobile file drawer fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-14 23:08
 - **approvedAt**: 2026-09-14 23:08 (the owner explicitly asked to commit, push and release the directly authorized mobile drawer repair)
 - **relatedTask**: 20260914-2308-release-mobile-drawer
@@ -34,3 +34,7 @@ Included: the existing mobile drawer repair and its test/design/task artifacts; 
 - `v0.11.1` is an annotated tag resolving to that commit.
 - The tag workflow verifies and publishes a non-draft, non-prerelease release with `merdeck.tar.gz` and `SHA256SUMS`.
 - Downloaded assets pass `sha256sum --check`, and the completed records are committed and pushed.
+
+## Outcome
+
+The mobile drawer candidate `9eab6c37605d2e2f7acc59d3b1aab04b970af1a6` passed [main verification](https://github.com/itxje/merdeck/actions/runs/34907616557). Annotated tag `v0.11.1` resolves to that commit, and [its tag workflow](https://github.com/itxje/merdeck/actions/runs/34908456433) published the matching non-draft, non-prerelease release. Downloaded `merdeck.tar.gz` and `SHA256SUMS` passed checksum verification; the extracted bundle reports version 0.11.1 and the tagged commit.

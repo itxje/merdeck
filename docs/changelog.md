@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-14 23:30 [release]
+
+Published [v0.11.1](https://github.com/itxje/merdeck/releases/tag/v0.11.1), which fixes the mobile Project files drawer. Exact commit `9eab6c37605d2e2f7acc59d3b1aab04b970af1a6` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34907616557), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34908456433) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.1 and the tagged commit. See [20260914-2308-release-mobile-drawer](task/20260914-2308-release-mobile-drawer.md).
+
 ## 2026-09-14 16:00 [fix]
 
 The mobile Project files drawer is now a safe-area-aware bottom sheet instead of a vertically centred fixed-height popup. A settled empty folder uses only the space needed for its controls and status, while populated folders retain a bounded scrollable listing. Browser coverage verifies 360 px and 390 px sheet placement, containment, focus restoration, and populated-list scrolling. The accompanying self-contained prototype remains **needs-review**. Focused checks passed; the full clean-candidate aggregate still exposes an unrelated existing source-pane browser-sequencing failure, recorded separately in [20260914-1559-source-pane-e2e-ordering](task/20260914-1559-source-pane-e2e-ordering.md). See [20260914-1517-mobile-file-drawer](task/20260914-1517-mobile-file-drawer.md).
