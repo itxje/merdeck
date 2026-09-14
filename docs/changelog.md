@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-14 23:42 [fix]
+
+Fixed nested folder browsing after a recursive file-type search. Entering a folder now exits the recursive type search and restores the established immediate-child explorer view, so each folder level remains reachable and a nested supported file can be selected. The bounded server-side directory contract, project-root containment, depth limits, pagination, cursor recovery, drafts, and mobile drawer layout are unchanged. The focused browser regression, affected 10-case browser suite, frontend checks, full `bun run check`, and whitespace check passed. See [20260914-2342-fix-nested-folder-browsing](task/20260914-2342-fix-nested-folder-browsing.md).
+
 ## 2026-09-14 23:30 [release]
 
 Published [v0.11.1](https://github.com/itxje/merdeck/releases/tag/v0.11.1), which fixes the mobile Project files drawer. Exact commit `9eab6c37605d2e2f7acc59d3b1aab04b970af1a6` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34907616557), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34908456433) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.1 and the tagged commit. See [20260914-2308-release-mobile-drawer](task/20260914-2308-release-mobile-drawer.md).

@@ -49,3 +49,27 @@ test('directory navigation preserves folder styling and aligned immediate rows',
   }
   finally { await rm(owned, { recursive: true, force: true }) }
 })
+
+test('folder navigation exits a recursive type search at every nested level', async ({ page }) => {
+  const owned = await mkdtemp(join(root, 'nested-browse-'))
+  const parent = basename(owned)
+  const child = 'child'
+  const grandchild = 'grandchild'
+  const filename = 'example.mmd'
+  await mkdir(join(owned, child, grandchild), { recursive: true })
+  await writeFile(join(owned, child, grandchild, filename), 'flowchart LR\n  A --> B\n')
+  try {
+    await login(page, true)
+    const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
+    await explorer.getByLabel('Filter files', { exact: true }).fill(parent)
+    await explorer.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await explorer.getByRole('navigation', { name: 'Search results', exact: true }).getByRole('button', { name: parent, exact: true }).click()
+    await expect(explorer.getByRole('button', { name: child, exact: true })).toBeVisible()
+    await explorer.getByRole('button', { name: child, exact: true }).click()
+    await expect(explorer.getByRole('button', { name: grandchild, exact: true })).toBeVisible()
+    await explorer.getByRole('button', { name: grandchild, exact: true }).click()
+    await explorer.getByRole('button', { name: filename, exact: true }).click()
+    await expect(page.getByLabel('Mermaid source', { exact: true })).toHaveValue('flowchart LR\n  A --> B\n')
+  }
+  finally { await rm(owned, { recursive: true, force: true }) }
+})
