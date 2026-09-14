@@ -2,7 +2,7 @@
 
 - **status**: completed
 - **priority**: P1
-- **owner**: bkd/26koje8d
+- **owner**: Frontend maintainer
 - **createdAt**: 2026-09-14 23:42
 
 ## Description
