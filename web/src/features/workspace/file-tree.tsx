@@ -29,7 +29,7 @@ interface Props {
   kinds: FileFilter
   chooseKinds: (next: FileFilter) => void
   filterRef?: React.Ref<HTMLInputElement>
-  // With a search source the filter box searches this folder and its subfolders instead of the loaded window.
+  // With a search source the filter box and a chosen file type search this folder and its subfolders instead of the loaded window.
   search?: SearchView | undefined
   onQueryChange?: ((query: string) => void) | undefined
 }
@@ -132,12 +132,36 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
   // native directory order, so the loaded window is sorted here: folders first, then names with numbers
   // compared by value, so `2-a` precedes `10-a`.
   const visible = entries.filter(item => item.kind === 'directory' || shown.includes(item)).sort(byName)
-  const searching = !!search && filter.trim().length > 0
-  // A result only belongs to the text it was searched for; the file type choice still applies to files.
-  const results = search?.result && search.result.query === filter.trim() && search.result.path === directory
-    ? search.result.entries.filter(item => item.kind === 'directory' || kinds === 'all' || item.fileKind === kinds).sort((a, b) => names.compare(a.path, b.path))
-    : undefined
-  const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !shown.some(entry => entry.path === name))
+  const typed = filter.trim()
+  const searching = !!search && (typed.length > 0 || kinds !== 'all')
+  // A result only belongs to the folder, text and file type it was searched for.
+  const found = search?.result && search.result.path === directory && search.result.query === typed && (search.result.kind ?? 'all') === kinds ? search.result : undefined
+  const results = found && [...found.entries].sort((a, b) => names.compare(a.path, b.path))
+  // Drafts whose files have no row on screen stay reachable below the listing or the search results alike.
+  const rows = searching ? results ?? [] : shown
+  const retained = Object.entries(drafts).filter(([name, file]) => (dirty(file) || file.locked) && !rows.some(entry => entry.path === name))
+  const retainedDrafts = retained.length > 0 && (
+    <>
+      <div className="tree-heading">RETAINED DRAFTS</div>
+      <ul>
+        {retained.map(([name, draft]) => {
+          const open = path === name
+          const diagrams = draft.baseline.kind === 'markdown' && draft.baseline.blocks.length > 0
+          return (
+            <li key={name}>
+              <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} onClick={() => select(name)}>
+                <span className="tree-twistie" />
+                <FileText />
+                <span className="truncate">{name}</span>
+                <span className="dirty-dot" />
+              </Button>
+              {diagrams && <DiagramList file={name} blocks={draft.baseline.blocks} draft={draft} open={open} block={block} select={select} />}
+            </li>
+          )
+        })}
+      </ul>
+    </>
+  )
   const folder = directory
   const rowMenu = (target: string) => ({
     open: menu === target,
@@ -203,15 +227,15 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
           ))}
         </ToggleGroup>
       </div>
-      <p className="directory-scope">{search ? 'Search looks in this folder and its subfolders.' : 'Filters apply to loaded files. Folders stay visible.'}</p>
+      <p className="directory-scope">{search ? 'Search and file types look in this folder and its subfolders.' : 'Filters apply to loaded files. Folders stay visible.'}</p>
       {searching && search && (
         <nav aria-label="Search results" aria-busy={search.pending}>
           {search.pending && <p className="tree-hint" role="status">Searching…</p>}
           {!search.pending && !!search.error && <p className="tree-hint" role="alert">{errorMessage(search.error)}</p>}
-          {!search.pending && results && !results.length && <p className="tree-hint" role="status">No matches in this folder or below</p>}
-          {!search.pending && search.result && !search.result.complete && (
+          {!search.pending && results && !results.length && <p className="tree-hint" role="status">{typed ? 'No matches in this folder or below' : `No ${fileExtensions[kinds].join(' or ')} files in this folder or below`}</p>}
+          {!search.pending && found && !found.complete && (
             <p className="tree-hint" role="status">
-              {search.result.stoppedBy === 'matches' ? 'Showing the first 200 matches. Refine the search to see the rest.' : 'The search stopped before every subfolder was read. Refine it or open a subfolder.'}
+              {found.stoppedBy !== 'matches' ? 'The search stopped before every subfolder was read. Refine it or open a subfolder.' : typed ? 'Showing the first 200 matches. Refine the search to see the rest.' : 'Showing the first 200 files. Type a name or open a subfolder to see the rest.'}
             </p>
           )}
           {results && results.length > 0 && (
@@ -249,6 +273,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
               })}
             </ul>
           )}
+          {retainedDrafts}
         </nav>
       )}
       {/* The folder listing steps aside while a search is active, so its rows never duplicate a result. */}
@@ -334,28 +359,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             })}
           </ul>
           {!loading && !failed && !listing.depth && !shown.length && (filter || !visible.length) && <p className="tree-hint">{filter ? 'No matching files in the loaded window' : kinds === 'all' ? 'No supported entries in this page window' : `No ${fileExtensions[kinds].join(' or ')} files in this page window`}</p>}
-          {retained.length > 0 && (
-            <>
-              <div className="tree-heading">RETAINED DRAFTS</div>
-              <ul>
-                {retained.map(([name, draft]) => {
-                  const open = path === name
-                  const diagrams = draft.baseline.kind === 'markdown' && draft.baseline.blocks.length > 0
-                  return (
-                    <li key={name}>
-                      <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} onClick={() => select(name)}>
-                        <span className="tree-twistie" />
-                        <FileText />
-                        <span className="truncate">{name}</span>
-                        <span className="dirty-dot" />
-                      </Button>
-                      {diagrams && <DiagramList file={name} blocks={draft.baseline.blocks} draft={draft} open={open} block={block} select={select} />}
-                    </li>
-                  )
-                })}
-              </ul>
-            </>
-          )}
+          {retainedDrafts}
         </nav>
       )}
       <div className="tree-bottom">

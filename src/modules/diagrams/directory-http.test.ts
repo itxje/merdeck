@@ -135,11 +135,19 @@ test('search answers over HTTP, closes every stream it opened and refuses other 
   const f = await fixture('prefixed')
   const response = await f.request('/diagrams/search?path=folder&query=A.md')
   expect(response.status).toBe(200)
-  const body = await response.json() as { success: boolean, data: { entries: { path: string }[], complete: boolean } }
+  const body = await response.json() as { success: boolean, data: { kind: string | null, entries: { path: string }[], complete: boolean } }
   expect(body.success).toBe(true)
   expect(body.data.entries.map(entry => entry.path)).toEqual(['folder/a.md'])
   expect(body.data.complete).toBe(true)
+  expect(body.data.kind).toBeNull()
   expect(f.handles()).toBe(0)
+  // A file kind alone is a search too.
+  const typed = await (await f.request('/diagrams/search?path=folder&kind=markdown')).json() as { data: { query: string, kind: string | null, entries: { path: string }[] } }
+  expect(typed.data).toMatchObject({ query: '', kind: 'markdown' })
+  expect(typed.data.entries.map(entry => entry.path).sort()).toEqual(['folder/a.md', 'folder/b.md'])
+  expect(f.handles()).toBe(0)
+  for (const query of ['kind=all', 'kind=', 'kind=Markdown', 'kind=markdown&kind=mermaid', 'query=%20%20'])
+    expect((await f.request(`/diagrams/search?path=folder&${query}`)).status).toBe(400)
   expect((await f.request('/diagrams/search?path=folder&query=a', { method: 'POST', headers: { Origin: origin } })).status).toBe(405)
   expect((await f.request('/diagrams/search?path=folder&query=a&limit=5')).status).toBe(400)
   expect((await f.request('/diagrams/search?path=folder')).status).toBe(400)

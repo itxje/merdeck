@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-14 11:20 [fix]
+
+Choosing **.mmd** or **.md** in the explorer lists the files of that type in the browsed folder and every subfolder, with or without search text, instead of filtering only the loaded page. `GET /diagrams/search` accepts a `kind` that the service applies before its 200-match budget, and unsaved drafts stay reachable beside search results. See [20260914-1105-search-file-types](task/20260914-1105-search-file-types.md).
+
 ## 2026-09-13 21:30 [progress]
 
 The explorer searches below the browsed folder again, now through the service: typing looks through every subfolder by name, without reading file contents, and lists up to 200 matches with paths below the folder. The walk applies the same exclusions and path checks as a directory page, stops at 20,000 names or before the request deadline, and says so when it stops. See [20260913-2045-directory-search](task/20260913-2045-directory-search.md).

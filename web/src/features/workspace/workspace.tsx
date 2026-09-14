@@ -27,7 +27,8 @@ const introduction = 'Browse, edit and preview diagrams in your project files.'
 
 export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
   const state = useWorkspace(path, block, directory)
-  const search = useDirectorySearch(directory, !!state.session)
+  const [kinds, chooseKinds] = useFileFilter()
+  const search = useDirectorySearch(directory, kinds, !!state.session)
   const [token, setToken] = React.useState('')
   const [loginError, setLoginError] = React.useState('')
   const [treeOpen, setTreeOpen] = React.useState(false)
@@ -179,7 +180,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }
 
   const canChange = !!state.session?.storage.writable && state.online && !state.listing.stale && !state.listing.error && !state.entries.isPending && !state.savePending
-  const [kinds, chooseKinds] = useFileFilter()
   const treeProps = { listing: state.listing, directory, browse, drafts: state.drafts, path, block, select, refresh: state.refresh, canChange, onAction: openEntry, kinds, chooseKinds, search: search.view, onQueryChange: search.onQueryChange }
   const openReview = () => {
     state.review.reset()

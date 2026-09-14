@@ -269,12 +269,12 @@ export class DirectoryPager {
     const parsed = directorySearchRequestSchema.safeParse(request)
     if (!parsed.success)
       throw new AppError('invalid_request')
-    const { path, query } = parsed.data
+    const { path, query, kind } = parsed.data
     this.repository.checkDirectoryPath(path)
     const operation = this.begin(path, context)
     const check = () => this.check(operation, context)
     const needle = query.toLocaleLowerCase()
-    const result: DirectorySearch = { path, query, entries: [], complete: true, stoppedBy: null, visited: 0, skipped: 0 }
+    const result: DirectorySearch = { path, query, kind: kind ?? null, entries: [], complete: true, stoppedBy: null, visited: 0, skipped: 0 }
     // Stop cleanly before the operation deadline would refuse the whole request.
     const soft = operation.started + Math.floor(this.deadlineMs * 0.6)
     try {
@@ -311,7 +311,9 @@ export class DirectoryPager {
                 if (entry.kind === 'directory')
                   queue.push(entry.path)
                 const below = path ? entry.path.slice(path.length + 1) : entry.path
-                if (!below.toLocaleLowerCase().includes(needle))
+                // A chosen kind admits only files of that kind; folders match by text alone, never by kind.
+                const admitted = entry.kind === 'file' ? !kind || entry.fileKind === kind : !!needle
+                if (!admitted || !below.toLocaleLowerCase().includes(needle))
                   continue
                 if (result.entries.length >= searchMatches) {
                   result.stoppedBy = 'matches'

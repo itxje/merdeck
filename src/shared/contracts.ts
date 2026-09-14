@@ -121,11 +121,13 @@ export const directoryQuerySchema = z.strictObject({
   cursor: directoryCursorSchema.optional(),
 })
 export const directoryRevisionRequestSchema = z.strictObject({ path: directoryPathSchema.default('') })
-// A name search below one folder; the query is plain text matched against paths under that folder.
+// A name search below one folder: the query is plain text matched against paths under that folder, and a
+// kind admits only files of that kind. A search names at least one of the two.
 export const directorySearchRequestSchema = z.strictObject({
   path: directoryPathSchema.default(''),
-  query: z.string().trim().min(1).max(200).refine(value => ![...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)),
-})
+  query: z.string().trim().max(200).refine(value => ![...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)).default(''),
+  kind: z.enum(['mermaid', 'markdown']).optional(),
+}).refine(request => request.query.length > 0 || request.kind !== undefined)
 export const closeDirectoryRequestSchema = z.strictObject({ path: directoryPathSchema, cursor: directoryCursorSchema })
 export type DirectoryPath = z.infer<typeof directoryPathSchema>
 export type DirectoryRequest = z.infer<typeof directoryRequestSchema>
@@ -139,6 +141,7 @@ export type DirectoryPageEntry
 export interface DirectorySearch {
   path: DirectoryPath
   query: string
+  kind: FileKind | null
   entries: DirectoryPageEntry[]
   complete: boolean
   stoppedBy: 'matches' | 'visits' | 'time' | null

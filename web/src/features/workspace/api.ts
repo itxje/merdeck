@@ -1,4 +1,4 @@
-import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DirectorySearch, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DirectorySearch, DocumentRevision, EntryChange, FileKind, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
 import { HttpError, requestApi } from '@/shared/lib/http'
 
 export type Session = Extract<SessionStatus, { authenticated: true }>
@@ -174,12 +174,15 @@ export function decodeDirectoryPage(value: unknown): DirectoryPage {
   return { path: relative, parent, revision: version(item.revision), entries, nextCursor, complete, stoppedBy: stoppedBy as DirectoryPage['stoppedBy'], visited, excluded, limit, maxPathDepth, pollIntervalMs: integer(item.pollIntervalMs, 1000, 30000), expiresAt }
 }
 // A search result names entries anywhere below its folder, so each entry is checked on its own path rather
-// than as a direct child, with the same exclusions a page applies.
+// than as a direct child, with the same exclusions a page applies. A searched kind admits only its files.
 export function decodeDirectorySearch(value: unknown): DirectorySearch {
   const item = object(value)
-  exact(item, ['path', 'query', 'entries', 'complete', 'stoppedBy', 'visited', 'skipped'])
+  exact(item, ['path', 'query', 'kind', 'entries', 'complete', 'stoppedBy', 'visited', 'skipped'])
   const relative = directoryPath(item.path)
   const query = string(item.query)
+  const searched = item.kind === null ? null : kind(item.kind)
+  if (!query && !searched)
+    return invalid()
   const names = new Set<string>()
   const rawEntries = array(item.entries)
   if (rawEntries.length > 200)
@@ -200,7 +203,7 @@ export function decodeDirectorySearch(value: unknown): DirectorySearch {
     if (entry.kind !== 'file' || entry.state !== 'deferred' || !/\.(?:mmd|mermaid|md)$/.test(name))
       return invalid()
     const fileKind = kind(entry.fileKind)
-    if ((fileKind === 'markdown') !== name.endsWith('.md'))
+    if ((fileKind === 'markdown') !== name.endsWith('.md') || (searched && fileKind !== searched))
       return invalid()
     return { kind: 'file', path: name, fileKind, state: 'deferred' }
   })
@@ -210,7 +213,7 @@ export function decodeDirectorySearch(value: unknown): DirectorySearch {
   const complete = boolean(item.complete)
   if (complete && stoppedBy !== null)
     return invalid()
-  return { path: relative, query, entries, complete, stoppedBy, visited: integer(item.visited, 0, 1000000), skipped: integer(item.skipped, 0, 1000000) }
+  return { path: relative, query, kind: searched, entries, complete, stoppedBy, visited: integer(item.visited, 0, 1000000), skipped: integer(item.skipped, 0, 1000000) }
 }
 
 export const api = {
@@ -223,7 +226,14 @@ export const api = {
       query.set('cursor', request.cursor)
     return requestApi(`/diagrams/directory?${query}`, decodeDirectoryPage, { signal })
   },
-  search: (directory: string, query: string, signal: AbortSignal) => requestApi(`/diagrams/search?${new URLSearchParams({ path: directory, query })}`, decodeDirectorySearch, { signal }),
+  search: (directory: string, query: string, fileKind: FileKind | null, signal: AbortSignal) => {
+    const search = new URLSearchParams({ path: directory })
+    if (query)
+      search.set('query', query)
+    if (fileKind)
+      search.set('kind', fileKind)
+    return requestApi(`/diagrams/search?${search}`, decodeDirectorySearch, { signal })
+  },
   directoryRevision: (directory: string, signal: AbortSignal) => requestApi(`/diagrams/directory/revision?path=${encodeURIComponent(directory)}`, decodeDirectoryRevision, { signal }),
   closeDirectory: (body: CloseDirectoryRequest, csrfToken?: string) => requestApi('/diagrams/directory/close', (value) => {
     const item = object(value)

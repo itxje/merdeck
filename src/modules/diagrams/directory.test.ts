@@ -684,16 +684,47 @@ test('search finds diagrams in every subfolder below the chosen folder, by name 
   expect(fromRoot.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/03-relay-state.mmd', 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mmd', 'nsiod/other/relay.mmd'])
 })
 
+test('search by file kind lists only that kind below the folder, with or without text', async () => {
+  const root = await fixture()
+  await mkdir(join(root, 'nsiod/mermaid/mesh-v1/deep'), { recursive: true })
+  await mkdir(join(root, 'nsiod/mermaid/.hidden'), { recursive: true })
+  await mkdir(join(root, 'nsiod/relay-notes'), { recursive: true })
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/03-relay-state.mmd'), 'graph TD')
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mermaid'), 'gantt')
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/relay.md'), '# Relay')
+  await writeFile(join(root, 'nsiod/mermaid/.hidden/hidden.md'), '# Hidden')
+  await writeFile(join(root, 'nsiod/relay-notes/relay.txt'), 'relay')
+  await writeFile(join(root, 'nsiod/overview.md'), '# Overview')
+  const diagrams = await service(root)
+
+  // Without text a kind lists every visible file of that kind below the folder, and no folder.
+  const markdown = await diagrams.searchDirectory({ path: 'nsiod', query: '', kind: 'markdown' }, context)
+  expect(markdown).toMatchObject({ path: 'nsiod', query: '', kind: 'markdown', complete: true, stoppedBy: null })
+  expect(markdown.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/deep/relay.md', 'nsiod/overview.md'])
+  const mermaid = await diagrams.searchDirectory({ path: 'nsiod', query: '', kind: 'mermaid' }, context)
+  expect(mermaid.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/03-relay-state.mmd', 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mermaid'])
+
+  // With text, files must have the kind and match the text, while folders still match by text alone.
+  const both = await diagrams.searchDirectory({ path: 'nsiod', query: 'relay', kind: 'markdown' }, context)
+  expect(both.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/deep/relay.md', 'nsiod/relay-notes'])
+  expect((await diagrams.searchDirectory({ path: 'nsiod', query: 'relay' }, context)).kind).toBeNull()
+})
+
 test('search stops at its match budget and reports a partial result', async () => {
   const root = await fixture()
   await mkdir(join(root, 'many'))
   for (let i = 0; i < 205; i++)
     await writeFile(join(root, `many/diagram-${i}.mmd`), 'graph TD')
+  await writeFile(join(root, 'many/diagram-notes.md'), '# Notes')
   const diagrams = await service(root)
   const found = await diagrams.searchDirectory({ path: '', query: 'diagram' }, context)
   expect(found.entries).toHaveLength(200)
   expect(found.stoppedBy).toBe('matches')
   expect(found.complete).toBe(false)
+  // The kind applies before the budget, so files of another kind never crowd out the chosen one.
+  const typed = await diagrams.searchDirectory({ path: '', query: 'diagram', kind: 'markdown' }, context)
+  expect(typed.entries.map(entry => entry.path)).toEqual(['many/diagram-notes.md'])
+  expect(typed.complete).toBe(true)
 })
 
 test('search refuses malformed queries and paths before reading the project', async () => {

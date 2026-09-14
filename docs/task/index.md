@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-13
+> Updated: 2026-09-14
 
 ## Usage
 
@@ -78,3 +78,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260913-2030-explorer-order Sort the loaded explorer window**](20260913-2030-explorer-order.md) `P2`
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `P1`
 - [ ] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
+- [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `P1`

@@ -118,7 +118,7 @@ test('directory pages advance past the old root budget with a five-page window a
   }
 })
 
-test('excluded-only continuations and filtered folders remain navigable, with deferred Markdown states', async ({ page, audit }) => {
+test('excluded-only continuations remain navigable, file types list below a folder, with deferred Markdown states', async ({ page, audit }) => {
   audit.allowHttp(415, '/api/diagrams/revision')
   const owned = await mkdtemp(join(root, 'excluded-'))
   const top = basename(owned)
@@ -134,14 +134,20 @@ test('excluded-only continuations and filtered folders remain navigable, with de
     await browse(page, top)
     const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
     await expect(explorer.getByRole('list', { name: 'Diagrams in blocks.md' })).toHaveCount(0)
+    // A file type lists the matching files below the folder by name only, whatever their contents, and names the type when none match.
+    const results = explorer.getByRole('navigation', { name: 'Search results', exact: true })
+    await explorer.getByRole('button', { name: '.md files', exact: true }).click()
+    for (const name of ['binary.md', 'blocks.md', 'prose.md'])
+      await expect(results.getByRole('button', { name, exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await expect(results.getByText('No .mmd or .mermaid files in this folder or below', { exact: true })).toBeVisible()
+    await explorer.getByRole('button', { name: 'All files', exact: true }).click()
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: 'only-hidden', exact: true }).click()
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
     await explorer.getByRole('button', { name: 'Next page', exact: true }).click()
     await expect(explorer.getByText('End of this listing.', { exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: 'Up', exact: true }).click()
-    await explorer.getByRole('button', { name: 'All files', exact: true }).click()
     await explorer.getByRole('button', { name: 'prose.md', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'No Mermaid blocks', exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: 'binary.md', exact: true }).click()

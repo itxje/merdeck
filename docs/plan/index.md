@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-13
+> Updated: 2026-09-14
 
 ## Usage
 
@@ -41,3 +41,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260913-1657-streaming-directory-correction Bounded directory primitive correction**](20260913-1657-streaming-directory-correction.md) `2026-09-13`
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `2026-09-13`
 - [ ] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `2026-09-13`
+- [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `2026-09-14`

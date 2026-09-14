@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest'
 import { requestApi } from '@/shared/lib/http'
-import { decodeDirectoryPage, decodeDirectoryRevision } from './api'
+import { decodeDirectoryPage, decodeDirectoryRevision, decodeDirectorySearch } from './api'
 
 export const directoryPage = (overrides = {}) => ({ path: '', parent: null, revision: 'a'.repeat(64), entries: [], nextCursor: null, complete: true, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 3000, expiresAt: null, ...overrides })
 it('decodes exact directory shapes including empty continuations and depth boundaries', () => {
@@ -50,4 +50,29 @@ it('refuses a success that hides the depth boundary or exceeds the emitted-entry
   expect(() => decodeDirectoryPage(directoryPage({ path: 'docs', parent: '', maxPathDepth: 1 }))).toThrow()
   expect(() => decodeDirectoryPage(directoryPage({ limit: 1, entries: [{ kind: 'directory', path: 'one', children: 'unloaded' }, { kind: 'directory', path: 'two', children: 'unloaded' }] }))).toThrow()
   expect(() => decodeDirectoryRevision({ path: 'docs/deep', revision: 'a'.repeat(64), maxPathDepth: 1, pollIntervalMs: 1000 })).toThrow()
+})
+
+const directorySearch = (overrides = {}) => ({ path: 'docs', query: '', kind: 'markdown', entries: [{ kind: 'file', path: 'docs/deep/guide.md', fileKind: 'markdown', state: 'deferred' }], complete: true, stoppedBy: null, visited: 3, skipped: 0, ...overrides })
+it('decodes a search by file type or text and keeps the searched type with the result', () => {
+  expect(decodeDirectorySearch(directorySearch())).toEqual(directorySearch())
+  expect(decodeDirectorySearch(directorySearch({ query: 'guide', kind: null })).kind).toBeNull()
+})
+it.each([
+  { kind: null },
+  { kind: 'all' },
+  { entries: [{ kind: 'file', path: 'docs/flow.mmd', fileKind: 'mermaid', state: 'deferred' }] },
+  { entries: [{ kind: 'file', path: 'other/guide.md', fileKind: 'markdown', state: 'deferred' }] },
+])('refuses a search result that does not belong to its request: %j', (change) => {
+  expect(() => decodeDirectorySearch(directorySearch(change))).toThrow()
+})
+
+it('sends a search by file type without empty text', async () => {
+  const fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ success: true, data: directorySearch() })))
+  vi.stubGlobal('fetch', fetch)
+  const { api } = await import('./api')
+  const signal = new AbortController().signal
+  expect((await api.search('docs', '', 'markdown', signal)).kind).toBe('markdown')
+  await api.search('', 'guide', null, signal)
+  expect(fetch.mock.calls[0]?.[0]).toBe('/api/diagrams/search?path=docs&kind=markdown')
+  expect(fetch.mock.calls[1]?.[0]).toBe('/api/diagrams/search?path=&query=guide')
 })
