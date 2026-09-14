@@ -257,6 +257,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                           if (entry.kind === 'directory') {
                             setFilter('')
                             onQueryChange?.('')
+                            chooseKinds('all')
                             openDirectory(entry.path)
                           }
                           else {
