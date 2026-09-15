@@ -366,16 +366,16 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
         </nav>
       )}
       <div className="tree-bottom">
-        <span className="muted">
+        <span className="tree-summary muted">
           {listed.length}
           {' '}
           {listed.length === 1 ? 'loaded file' : 'loaded files'}
           {` · ${fileExtensions[kinds].join(' · ')}`}
         </span>
-        <span>{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
-        {listing.firstPage > 1 && <span role="status">Earlier pages are no longer shown. Restart to see them.</span>}
-        <Button variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>
-        <span>{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
+        <span className="tree-pages">{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
+        {listing.firstPage > 1 && <span className="tree-pagination-notice" role="status">Earlier pages are no longer shown. Restart to see them.</span>}
+        <Button className="tree-next-page" variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>
+        <span className="tree-listing-status">{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
       </div>
     </aside>
   )

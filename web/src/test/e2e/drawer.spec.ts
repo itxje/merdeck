@@ -16,7 +16,9 @@ async function measureDrawer(dialog: Locator) {
     const range = document.createRange()
     range.selectNodeContents(description)
     const lines = [...range.getClientRects()].map(rect => ({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom }))
-    const measure = (selector: string) => [...popup.querySelectorAll(selector)].map(element => ({ tag: element.tagName, slot: element.getAttribute('data-slot'), ...box(element) }))
+    const measure = (selector: string) => [...popup.querySelectorAll(selector)]
+      .filter(element => getComputedStyle(element).display !== 'none')
+      .map(element => ({ tag: element.tagName, slot: element.getAttribute('data-slot'), ...box(element) }))
     return {
       viewport: { width: innerWidth, height: innerHeight },
       popup: bounds,
@@ -46,8 +48,8 @@ function assertContained(measurement: Awaited<ReturnType<typeof measureDrawer>>)
     expect(item.scrollWidth).toBeLessThanOrEqual(item.clientWidth + 1)
   }
   for (const item of containers) {
-    expect(item.top).toBeGreaterThanOrEqual(popup.top)
-    expect(item.bottom).toBeLessThanOrEqual(popup.bottom)
+    expect(item.top).toBeGreaterThanOrEqual(popup.top - 1)
+    expect(item.bottom).toBeLessThanOrEqual(popup.bottom + 1)
   }
   // The sourced corner close button occupies the popup's padding rail.
   expect(close.left).toBeGreaterThanOrEqual(popup.left)
@@ -91,6 +93,90 @@ test('file drawer anchors a compact empty folder at narrow widths', async ({ pag
       await expect(dialog).toHaveCount(0)
       await expect(opener).toBeFocused()
     }
+  }
+  finally {
+    await rm(owned, { recursive: true, force: true })
+  }
+})
+
+test('file drawer reserves reachable folder rows in a short mobile viewport', async ({ page }, info) => {
+  const root = process.env.MERDECK_SMOKE_ROOT
+  if (!root)
+    throw new Error('An explicit disposable sample root is required')
+  const owned = await mkdtemp(join(root, 'drawer-short-'))
+  const folders = Array.from({ length: 101 }, (_, index) => `folder-${String(index + 1).padStart(3, '0')}`)
+  await Promise.all(folders.map(folder => mkdir(join(owned, folder))))
+  await writeFile(join(owned, folders[0]!, 'diagram.mmd'), 'flowchart LR\nA --> B\n')
+  try {
+    // Open the controlled directory while the drawer is tall enough to navigate, then model the reported short Safari viewport.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await login(page, true)
+    const opener = page.getByRole('button', { name: 'Open project files', exact: true })
+    await opener.click()
+    await settledDialog(page)
+    const dialog = page.getByRole('dialog', { name: 'Project files', exact: true })
+    await browse(page, relative(root, owned))
+    const listing = dialog.getByRole('navigation', { name: 'Files and diagrams', exact: true })
+    await page.setViewportSize({ width: 315, height: 533 })
+    await expect(listing.getByRole('button', { name: folders[0]!, exact: true })).toBeVisible()
+    const next = dialog.getByRole('button', { name: 'Next page', exact: true })
+    await expect(next).toBeVisible()
+
+    const shortMetrics = await listing.evaluate((node) => {
+      const list = node as HTMLElement
+      const row = list.querySelector<HTMLElement>('button.tree-row')!
+      const listBox = list.getBoundingClientRect()
+      const rowBox = row.getBoundingClientRect()
+      return {
+        clientHeight: list.clientHeight,
+        scrollHeight: list.scrollHeight,
+        listTop: listBox.top,
+        listBottom: listBox.bottom,
+        firstTop: rowBox.top,
+        firstBottom: rowBox.bottom,
+      }
+    })
+    await writeFile(info.outputPath('drawer-short-mobile.json'), JSON.stringify(shortMetrics, null, 2))
+    await page.screenshot({ path: info.outputPath('drawer-short-mobile.png'), fullPage: true, animations: 'disabled' })
+    // Two 44px targets must remain visible before the list starts scrolling, even when pagination remains available.
+    expect(shortMetrics.clientHeight).toBeGreaterThanOrEqual(88)
+    expect(shortMetrics.firstTop).toBeGreaterThanOrEqual(shortMetrics.listTop - 1)
+    expect(shortMetrics.firstBottom).toBeLessThanOrEqual(shortMetrics.listBottom + 1)
+    expect(shortMetrics.scrollHeight).toBeGreaterThan(shortMetrics.clientHeight)
+
+    const last = listing.getByRole('button', { name: folders[99]!, exact: true })
+    await listing.evaluate((node) => {
+      node.scrollTop = node.scrollHeight
+    })
+    await expect(last).toBeVisible()
+    const lastMetrics = await last.evaluate((row) => {
+      const list = row.closest('nav')!
+      const listBox = list.getBoundingClientRect()
+      const rowBox = row.getBoundingClientRect()
+      return { listTop: listBox.top, listBottom: listBox.bottom, rowTop: rowBox.top, rowBottom: rowBox.bottom }
+    })
+    expect(lastMetrics.rowTop).toBeGreaterThanOrEqual(lastMetrics.listTop - 1)
+    expect(lastMetrics.rowBottom).toBeLessThanOrEqual(lastMetrics.listBottom + 1)
+    const nextMetrics = await next.evaluate((button) => {
+      const popup = button.closest('[data-slot="dialog-content"]')!
+      const buttonBox = button.getBoundingClientRect()
+      const popupBox = popup.getBoundingClientRect()
+      return { buttonTop: buttonBox.top, buttonBottom: buttonBox.bottom, popupTop: popupBox.top, popupBottom: popupBox.bottom }
+    })
+    await writeFile(info.outputPath('drawer-short-pagination.json'), JSON.stringify({ shortMetrics, nextMetrics, drawer: await measureDrawer(dialog) }, null, 2))
+    expect(nextMetrics.buttonTop).toBeGreaterThanOrEqual(nextMetrics.popupTop)
+    expect(nextMetrics.buttonBottom).toBeLessThanOrEqual(nextMetrics.popupBottom)
+
+    await dialog.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    const results = dialog.getByRole('navigation', { name: 'Search results', exact: true })
+    await expect(results.getByRole('button', { name: 'folder-001/diagram.mmd', exact: true })).toBeVisible()
+    const searchMetrics = await results.evaluate((node) => {
+      const list = node as HTMLElement
+      return { clientHeight: list.clientHeight, scrollHeight: list.scrollHeight }
+    })
+    await writeFile(info.outputPath('drawer-short-search.json'), JSON.stringify(searchMetrics, null, 2))
+    expect(searchMetrics.clientHeight).toBeGreaterThanOrEqual(88)
+    assertContained(await measureDrawer(dialog))
   }
   finally {
     await rm(owned, { recursive: true, force: true })

@@ -59,6 +59,38 @@ async function main() {
     await page.screenshot({ path: resolve(scratch, 'populated-filtered.png'), fullPage: true, animations: 'disabled' })
     checks.push('Populated state exposes file rows and the local filter narrows them without external resources')
 
+    await filter.fill('')
+    await expect(page.locator('.file-list > li:visible')).toHaveCount(7)
+    await page.setViewportSize({ width: 315, height: 533 })
+    const listing = page.getByRole('navigation', { name: 'Files and diagrams', exact: true })
+    const shortMetrics = await listing.evaluate((node) => {
+      const list = node as HTMLElement
+      const first = list.querySelector<HTMLElement>('.file-row')!
+      const listBox = list.getBoundingClientRect()
+      const firstBox = first.getBoundingClientRect()
+      return { clientHeight: list.clientHeight, scrollHeight: list.scrollHeight, listTop: listBox.top, listBottom: listBox.bottom, firstTop: firstBox.top, firstBottom: firstBox.bottom }
+    })
+    assert.ok(shortMetrics.clientHeight >= 88, 'Short drawer reserves fewer than two touch-target rows')
+    assert.ok(shortMetrics.scrollHeight > shortMetrics.clientHeight, 'Short populated drawer does not scroll')
+    assert.ok(shortMetrics.firstTop >= shortMetrics.listTop - 1 && shortMetrics.firstBottom <= shortMetrics.listBottom + 1, 'First short-screen row is clipped')
+    await listing.evaluate((node) => {
+      node.scrollTop = node.scrollHeight
+    })
+    const last = page.locator('.file-list > li').last()
+    await expect(last).toBeVisible()
+    const lastMetrics = await last.evaluate((row) => {
+      const list = row.closest('.listing')!
+      const listBox = list.getBoundingClientRect()
+      const rowBox = row.getBoundingClientRect()
+      return { listTop: listBox.top, listBottom: listBox.bottom, rowTop: rowBox.top, rowBottom: rowBox.bottom }
+    })
+    await writeFile(resolve(scratch, 'short-metrics.json'), `${JSON.stringify({ shortMetrics, lastMetrics }, null, 2)}\n`)
+    await page.screenshot({ path: resolve(scratch, 'populated-short.png'), fullPage: true, animations: 'disabled' })
+    assert.ok(lastMetrics.rowTop >= lastMetrics.listTop - 1 && lastMetrics.rowBottom <= lastMetrics.listBottom + 1, 'Later short-screen row is not reachable')
+    await expect(page.getByRole('button', { name: 'Next page', exact: true })).toBeHidden()
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true)
+    checks.push('315x533 populated sheet reserves two rows, reaches later rows and removes a disabled pagination control')
+
     await page.getByRole('button', { name: 'Close project files', exact: true }).click()
     await expect(page.locator('#file-drawer')).toBeHidden()
     const opener = page.getByRole('button', { name: 'Open project files', exact: true })
@@ -69,7 +101,7 @@ async function main() {
     checks.push('Close and reopen preserve a reachable sheet trigger and narrow viewport containment')
     assert.deepEqual(errors, [])
     assert.deepEqual(requests, [])
-    await writeFile(resolve(scratch, 'check-results.json'), `${JSON.stringify({ target, checks, errors, requests, viewport: '390x844' }, null, 2)}\n`)
+    await writeFile(resolve(scratch, 'check-results.json'), `${JSON.stringify({ target, checks, errors, requests, viewports: ['390x844', '315x533'] }, null, 2)}\n`)
     process.stdout.write(`PASS ${checks.length} mobile drawer prototype groups at ${target}\n`)
   }
   finally {

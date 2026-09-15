@@ -1,0 +1,212 @@
+<!doctype html>
+<!--
+  Short-screen mobile file drawer prototype
+  Assumptions: the existing neutral workspace palette, 44px touch targets, a
+  bottom-aligned drawer, and a compact settled-pagination footer are
+  implementation defaults. This asset is needs-review and does not represent
+  approved product design.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Short-screen mobile file drawer · Merdeck</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.145 0 0);
+      --sidebar: oklch(0.985 0 0);
+      --muted: oklch(0.97 0 0);
+      --muted-foreground: oklch(0.556 0 0);
+      --border: oklch(0.922 0 0);
+      --ring: oklch(0.708 0 0);
+      --primary: oklch(0.205 0 0);
+      --primary-foreground: oklch(0.985 0 0);
+      --radius: 10px;
+      --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; background: oklch(0.93 0 0); color: var(--foreground); font: 13px/1.45 var(--sans); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+    .canvas { position: relative; width: min(100%, 390px); min-height: 100dvh; margin: auto; overflow: hidden; background: var(--background); box-shadow: 0 0 0 1px oklch(0 0 0 / 6%), 0 20px 52px oklch(0 0 0 / 16%); }
+    .app-header { height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border-bottom: 1px solid var(--border); }
+    .brand { display: flex; align-items: center; min-width: 0; gap: 8px; font-weight: 650; letter-spacing: -.3px; }
+    .mark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); }
+    .mark svg { width: 18px; height: 18px; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .icon-button, .control { min-width: 44px; min-height: 44px; border: 0; border-radius: 8px; color: var(--foreground); background: transparent; }
+    .icon-button:hover, .control:hover { background: var(--muted); }
+    .icon-button svg { width: 18px; height: 18px; vertical-align: middle; }
+    .workspace { display: grid; min-height: calc(100dvh - 58px); grid-template-rows: 46px minmax(0, 1fr); }
+    .file-bar { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--border); color: var(--muted-foreground); font-size: 12px; }
+    .file-bar strong { color: var(--foreground); font-weight: 600; }
+    .preview { display: grid; place-items: center; padding: 24px; background: linear-gradient(135deg, var(--background), var(--sidebar)); }
+    .diagram { width: 100%; max-width: 280px; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--muted-foreground); box-shadow: 0 10px 28px oklch(0 0 0 / 4%); text-align: center; }
+    .diagram svg { display: block; width: 54px; height: 54px; margin: 0 auto 12px; color: var(--foreground); }
+    .drawer-backdrop { position: fixed; inset: 0; z-index: 4; background: oklch(0 0 0 / 18%); }
+    .drawer { position: fixed; z-index: 5; right: 50%; bottom: 0; width: min(100%, 390px); max-height: min(78dvh, 44rem); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-bottom: 0; border-radius: 20px 20px 0 0; background: var(--sidebar); box-shadow: 0 -12px 36px oklch(0 0 0 / 14%); translate: 50% 0; }
+    .drawer[hidden], .drawer[hidden] + .drawer-backdrop { display: none; }
+    .drawer-grip { width: 34px; height: 4px; margin: 8px auto 0; flex: 0 0 auto; border-radius: 999px; background: var(--border); }
+    .drawer-heading { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; align-items: start; padding: 8px 12px 4px; }
+    .drawer-heading h1 { margin: 0; font-size: 16px; line-height: 1.35; letter-spacing: -.35px; }
+    .drawer-heading p { margin: 2px 0 0; color: var(--muted-foreground); font-size: 12px; }
+    .drawer-heading .icon-button { justify-self: end; }
+    .explorer { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; padding: 0 12px 0; }
+    .explorer-top { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 4px 4px 0 6px; color: var(--muted-foreground); font-size: 10px; font-weight: 650; letter-spacing: .1em; }
+    .quick-actions { display: flex; gap: 2px; }
+    .quick-actions button { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 7px; color: var(--muted-foreground); background: transparent; }
+    .quick-actions button:hover { color: var(--foreground); background: var(--muted); }
+    .quick-actions svg { width: 17px; height: 17px; }
+    .crumbs, .tools { display: flex; align-items: center; gap: 4px; }
+    .crumbs { min-height: 36px; padding: 0 4px; color: var(--muted-foreground); overflow: hidden; white-space: nowrap; }
+    .crumbs button { min-height: 32px; padding: 0 8px; border: 0; border-radius: 6px; color: inherit; background: transparent; }
+    .crumbs button[aria-current="location"] { color: var(--foreground); font-weight: 650; }
+    .tools { padding: 7px 0; }
+    .tools button { min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 7px; color: var(--foreground); background: var(--background); }
+    .tools button + button { border-color: transparent; background: transparent; color: var(--muted-foreground); }
+    .search { position: relative; display: flex; align-items: center; }
+    .search svg { position: absolute; left: 11px; width: 16px; height: 16px; color: var(--muted-foreground); pointer-events: none; }
+    .search input { width: 100%; min-height: 44px; padding: 0 12px 0 36px; border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); background: var(--background); }
+    .kinds { display: flex; gap: 3px; margin: 8px 0 0; padding: 3px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); }
+    .kinds button { min-height: 36px; flex: 1; border: 0; border-radius: 6px; color: var(--muted-foreground); background: transparent; font-size: 11px; }
+    .kinds button[aria-pressed="true"] { color: var(--foreground); background: var(--background); box-shadow: 0 1px 2px oklch(0 0 0 / 6%); }
+    .scope { margin: 8px 2px; color: var(--muted-foreground); font-size: 11px; }
+    .listing { min-height: 0; flex: 1 1 auto; overflow: auto; overscroll-behavior: contain; border-top: 1px solid transparent; }
+    .empty-note { display: grid; min-height: 82px; place-items: center; padding: 12px; border: 1px dashed var(--border); border-radius: 9px; color: var(--muted-foreground); text-align: center; font-size: 12px; }
+    .empty-note strong { display: block; color: var(--foreground); font-weight: 600; }
+    .file-list { display: none; margin: 0; padding: 0; list-style: none; }
+    .file-list li { position: relative; }
+    .file-row { display: grid; width: 100%; min-height: 44px; grid-template-columns: 20px minmax(0, 1fr) 28px; align-items: center; gap: 8px; padding: 0 8px; border: 0; border-radius: 7px; color: var(--foreground); background: transparent; text-align: left; }
+    .file-row:hover { background: var(--muted); }
+    .file-row svg { width: 16px; height: 16px; color: var(--muted-foreground); }
+    .file-row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-row .tag { color: var(--muted-foreground); font: 10px var(--mono); }
+    .tree-bottom { flex: 0 0 auto; margin-top: 8px; padding: 12px 6px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; }
+    .tree-bottom p { margin: 0 0 3px; }
+    .tree-bottom p:last-child { margin-bottom: 0; }
+    .tree-bottom .pager { width: 100%; min-height: 44px; margin: 5px 0; border: 1px solid var(--border); border-radius: 8px; color: var(--muted-foreground); background: var(--background); }
+    .tree-bottom .pager:disabled { cursor: not-allowed; opacity: .7; }
+    .mode-switch { position: fixed; z-index: 6; right: calc(50% - 183px); bottom: calc(100% - 70px); min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--foreground); background: var(--background); box-shadow: 0 4px 12px oklch(0 0 0 / 10%); font-size: 11px; }
+    .mode-switch:hover { background: var(--muted); }
+    .mode-switch[hidden] { display: none; }
+    .review-note { position: fixed; z-index: 6; right: calc(50% - 183px); top: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted-foreground); background: oklch(1 0 0 / 88%); pointer-events: none; font-size: 10px; letter-spacing: .04em; }
+    .canvas[data-view="files"] .empty-note { display: none; }
+    .canvas[data-view="files"] .file-list { display: block; }
+    .canvas[data-view="files"] .listing { min-height: 180px; }
+    @media (max-width: 700px) {
+      body { background: var(--background); }
+      .canvas { width: 100%; box-shadow: none; }
+      .drawer { width: 100%; }
+      .mode-switch, .review-note { right: 12px; }
+      .mode-switch { bottom: calc(100% - 70px); }
+    }
+    @media (max-width: 700px) and (max-height: 700px) {
+      .drawer { max-height: calc(100dvh - 8px); }
+      .canvas[data-view="files"] .listing { min-height: 88px; }
+      .scope { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+      .tree-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; margin-top: 4px; padding: 8px 6px max(8px, env(safe-area-inset-bottom)); }
+      .tree-bottom p { margin: 0; }
+      .tree-bottom .tree-summary { grid-column: 1 / -1; }
+      .tree-bottom .tree-pages { grid-column: 1; }
+      .tree-bottom .tree-status { grid-column: 2; text-align: right; }
+      .tree-bottom .pager:disabled { display: none; }
+      .tree-bottom .pager:not(:disabled) { grid-column: 1 / -1; margin: 2px 0 0; }
+      .mode-switch { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="canvas" id="prototype" data-screen-label="Short mobile drawer" data-view="empty">
+    <span class="review-note">ASSUMED · NEEDS REVIEW</span>
+    <header class="app-header" aria-label="Workspace header">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 5h6v6H5zM13 13h6v6h-6zM8 11v2m3-5h2m-5 8v3"/><path d="M11 8h5v5"/></svg></span>
+        <span>Merdeck</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-button" id="open-drawer" type="button" aria-label="Open project files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6.75A1.75 1.75 0 0 1 4.75 5h4.5L11 6.75h8.25A1.75 1.75 0 0 1 21 8.5v9.75A1.75 1.75 0 0 1 19.25 20H4.75A1.75 1.75 0 0 1 3 18.25z"/></svg></button>
+        <button class="icon-button" type="button" aria-label="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+      </div>
+    </header>
+    <main class="workspace" aria-hidden="true">
+      <div class="file-bar"><strong>welcome.mmd</strong><span>Live preview</span></div>
+      <div class="preview">
+        <div class="diagram"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="7" width="20" height="15" rx="3"/><rect x="39" y="42" width="20" height="15" rx="3"/><path d="M25 15h14m-7 0v27"/><path d="m35 38 4 4-4 4"/></svg><strong>Diagram preview</strong><br><span>Choose a file to update the workspace.</span></div>
+      </div>
+    </main>
+    <button class="mode-switch" id="mode-switch" type="button" aria-pressed="false">Show populated state</button>
+    <section class="drawer" id="file-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-description">
+      <div class="drawer-grip" aria-hidden="true"></div>
+      <header class="drawer-heading">
+        <div><h1 id="drawer-title">Project files</h1><p id="drawer-description">Select a file or a diagram block. Your drafts stay in this tab.</p></div>
+        <button class="icon-button" id="close-drawer" type="button" aria-label="Close project files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+      </header>
+      <div class="explorer">
+        <div class="explorer-top"><span>EXPLORER</span><span class="quick-actions"><button type="button" aria-label="New file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h9l5 5v13H5zM14 3v6h6M12 11v6m-3-3h6"/></svg></button><button type="button" aria-label="New folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l1.5 2h9.5A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5zM12 11v5m-2.5-2.5h5"/></svg></button><button type="button" aria-label="Refresh files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 1 0 2 5.3M20 4v7h-7"/></svg></button></span></div>
+        <nav class="crumbs" aria-label="Directory breadcrumbs"><button type="button" aria-current="location">Root</button></nav>
+        <div class="tools"><button type="button" disabled>↑&nbsp; Up</button><button type="button">Restart</button></div>
+        <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><input id="filter" type="search" placeholder="Search this folder and below…" aria-label="Filter files"></label>
+        <div class="kinds" role="group" aria-label="File types"><button type="button" aria-pressed="true">All</button><button type="button" aria-pressed="false">.mmd</button><button type="button" aria-pressed="false">.md</button></div>
+        <p class="scope">Search and file types look in this folder and its subfolders.</p>
+        <nav class="listing" aria-label="Files and diagrams">
+          <div class="empty-note" id="empty-note"><span><strong>No supported entries</strong>This folder has no files to show.</span></div>
+          <ul class="file-list" id="file-list">
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.75A1.75 1.75 0 0 1 5.75 4h4.5L12 5.75h6.25A1.75 1.75 0 0 1 20 7.5v10.75A1.75 1.75 0 0 1 18.25 20H5.75A1.75 1.75 0 0 1 4 18.25z"/></svg><span class="name">docs</span><span class="tag">dir</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">welcome.mmd</span><span class="tag">mmd</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">sequence.mermaid</span><span class="tag">mmd</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">readme.md</span><span class="tag">md</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">architecture-overview.mmd</span><span class="tag">mmd</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">deployment-notes.md</span><span class="tag">md</span></button></li>
+            <li><button class="file-row" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h8l4 4v14H6zM14 3v5h4"/></svg><span class="name">database-free-flow.mmd</span><span class="tag">mmd</span></button></li>
+          </ul>
+        </nav>
+      </div>
+      <footer class="tree-bottom"><p class="tree-summary" id="count">0 loaded files · .mmd · .mermaid · .md</p><p class="tree-pages">Pages 1–1</p><button class="pager" type="button" disabled>Next page</button><p class="tree-status">End of this listing.</p></footer>
+    </section>
+    <div class="drawer-backdrop" aria-hidden="true"></div>
+  </div>
+  <script>
+    const prototype = document.querySelector('#prototype')
+    const drawer = document.querySelector('#file-drawer')
+    const mode = document.querySelector('#mode-switch')
+    const open = document.querySelector('#open-drawer')
+    const close = document.querySelector('#close-drawer')
+    const count = document.querySelector('#count')
+    const filter = document.querySelector('#filter')
+    const rows = [...document.querySelectorAll('.file-row')]
+    const kinds = [...document.querySelectorAll('.kinds button')]
+
+    function setOpen(isOpen) {
+      drawer.hidden = !isOpen
+      mode.hidden = !isOpen
+      if (isOpen) filter.focus()
+      else open.focus()
+    }
+    function setView(view) {
+      prototype.dataset.view = view
+      const populated = view === 'files'
+      mode.setAttribute('aria-pressed', String(populated))
+      mode.textContent = populated ? 'Show empty state' : 'Show populated state'
+      count.textContent = populated ? '7 loaded files · .mmd · .mermaid · .md' : '0 loaded files · .mmd · .mermaid · .md'
+      filter.value = ''
+      for (const row of rows) row.closest('li').hidden = false
+    }
+    mode.addEventListener('click', () => setView(prototype.dataset.view === 'files' ? 'empty' : 'files'))
+    open.addEventListener('click', () => setOpen(true))
+    close.addEventListener('click', () => setOpen(false))
+    filter.addEventListener('input', () => {
+      const query = filter.value.trim().toLowerCase()
+      for (const row of rows) row.closest('li').hidden = !!query && !row.textContent.toLowerCase().includes(query)
+    })
+    for (const kind of kinds) kind.addEventListener('click', () => {
+      for (const button of kinds) button.setAttribute('aria-pressed', String(button === kind))
+    })
+  </script>
+</body>
+</html>

@@ -46,3 +46,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `2026-09-14`
 - [x] [**20260914-2342-fix-nested-folder-browsing Fix nested folder browsing**](20260914-2342-fix-nested-folder-browsing.md) `2026-09-14`
 - [x] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `2026-09-15`
+- [x] [**20260915-0119-investigate-mobile-project-files-listing Investigate the mobile Project files listing**](20260915-0119-investigate-mobile-project-files-listing.md) `2026-09-15`

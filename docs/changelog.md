@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 01:53 [fix]
+
+Short mobile Project files sheets now reserve a scrollable two-row region at 315 by 533 CSS pixels. The compact footer hides only an unavailable `Next page` control; enabled pagination remains reachable. Immediate directory rows and recursive file-type search results use the same minimum listing space. Browser coverage exercises 101 folders, later-row scrolling, pagination containment, and a nested Mermaid search result. The accompanying self-contained prototype remains `needs-review`. See [20260915-0119-investigate-mobile-project-files-listing](task/20260915-0119-investigate-mobile-project-files-listing.md).
+
 ## 2026-09-15 01:08 [release]
 
 Published [v0.11.2](https://github.com/itxje/merdeck/releases/tag/v0.11.2), which fixes nested project-folder browsing after a recursive file-type search. Exact commit `55a2f0ba7ba6283b3a6d6f34d0772ebefbef9067` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34914655846), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34915373178) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.2 and the tagged commit. See [20260915-0046-release-nested-folder-browsing](task/20260915-0046-release-nested-folder-browsing.md).

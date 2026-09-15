@@ -45,10 +45,20 @@
             "width": 390,
             "height": 844
           }
+        },
+        {
+          "path": "Mobile-file-drawer-short-screen.html",
+          "createdAt": "2026-09-15T01:35:25.789Z",
+          "status": "needs-review",
+          "subtitle": "Short-screen mobile Project files drawer",
+          "viewport": {
+            "width": 315,
+            "height": 533
+          }
         }
       ]
     }
   },
   "createdAt": "2026-09-07T18:22:42.004Z",
-  "updatedAt": "2026-09-14T15:22:05.538Z"
+  "updatedAt": "2026-09-15T01:46:40.368Z"
 }

@@ -296,6 +296,21 @@ button:disabled { cursor: default; }
   .preview-controls { bottom: 42px; }
   .notice { padding: 10px 12px; flex-wrap: wrap; font-size: 11px; }
 }
+@media (max-width: 700px) and (max-height: 700px) {
+  /* Keep the folder/file list usable when browser chrome leaves a short visual viewport. */
+  .file-drawer { gap: 4px; padding: 8px 12px max(8px, env(safe-area-inset-bottom)) !important; }
+  .file-drawer .file-tree { height: min(78dvh, calc(100dvh - 104px), 36rem); }
+  .file-drawer .file-tree > nav[aria-label="Files and diagrams"], .file-drawer .file-tree > nav[aria-label="Search results"] { min-height: 88px; }
+  /* The filter controls already state the active scope; retain this hint for assistive technology without consuming a third row. */
+  .file-drawer .directory-scope { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .file-drawer .tree-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 6px 14px; }
+  .file-drawer .tree-bottom .tree-summary { grid-column: 1 / -1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-drawer .tree-bottom .tree-pages { grid-column: 1; }
+  .file-drawer .tree-bottom .tree-listing-status { grid-column: 2; text-align: right; white-space: nowrap; }
+  .file-drawer .tree-bottom .tree-pagination-notice { grid-column: 1 / -1; }
+  .file-drawer .tree-bottom .tree-next-page:disabled { display: none; }
+  .file-drawer .tree-bottom .tree-next-page:not(:disabled) { grid-column: 1 / -1; width: 100%; margin-top: 2px; }
+}
 
 /* Workspace compositions retain the prototype's semantic palette and density. */
 .workspace { overflow: hidden; }
