@@ -29,3 +29,5 @@ The preview source policy and focused unit/browser regressions; PMA task/plan/ch
 ## Implementation record
 
 The exact supplied source now renders through a private Mermaid marker and text-node-only SVG restoration. The original entity remains untouched outside the render projection. Focused policy, renderer and browser regressions cover the exact source, rejected neighbors, visible text, sanitized output, no outbound requests or event execution, and exact save/reload bytes. Pinned Bun frontend coverage, lint, typecheck and build passed; root `bun run check` passed on explicit supported/refused local fixtures. Incremental shared and TypeScript frontend review found no actionable findings.
+
+Hosted Linux x64/native executable smoke later found that Mermaid can split a private marker across generated SVG text nodes, defeating the original per-node replacement. The correction is tracked under 20260915-0924-split-angle-marker; this record remains the completed original narrow-admission repair.

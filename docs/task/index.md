@@ -91,3 +91,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `P1`
 - [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `P1`
 - [-] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `P1`
+- [x] [**20260915-0924-split-angle-marker Restore split encoded-angle markers safely**](20260915-0924-split-angle-marker.md) `P0`

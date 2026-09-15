@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 09:32 [fix]
+
+Restored narrowly admitted encoded angle placeholders when Mermaid splits their private marker across adjacent or nested SVG text nodes, as exposed by the Linux x64/native executable smoke. Restoration is confined to generated label `Text.data`, grouped per label and applied without creating markup or attributes; source-specific private markers also avoid collisions with marker-like source text. The original strict admission grammar, validation, sanitizer, persistence and mounting boundaries remain unchanged. Focused policy/renderer tests, frontend coverage, root checks and three production-browser repetitions passed locally; hosted Linux x64/native acceptance remains required. See [20260915-0924-split-angle-marker](task/20260915-0924-split-angle-marker.md).
+
 ## 2026-09-15 04:32 [release]
 
 Published [v0.11.4](https://github.com/itxje/merdeck/releases/tag/v0.11.4), which compacts the mobile drawer header. Exact commit `ebebccdb384e8ddc04df720ba8a37d67a79c2354` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34927937221), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34928586559) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.4 and the tagged commit. The release does not deploy or restart separately hosted services. See [20260915-0403-release-compact-mobile-drawer-header](task/20260915-0403-release-compact-mobile-drawer-header.md).

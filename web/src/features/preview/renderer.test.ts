@@ -11,12 +11,28 @@ describe('untrusted render boundary', () => {
   it('accepts the unchanged original Unicode topology', () => {
     expect(() => validateSource(originalFlowSource)).not.toThrow()
   })
-  it('restores an accepted encoded angle placeholder only as inert SVG text', () => {
-    const marker = renderSource(encodedAnglePlaceholderSource).match(/\uE000merdeck-angle-[a-z0-9]+\uE001/)![0]
-    const document = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><text>mica-board-${marker}</text></svg>`, 'image/svg+xml')
-    restoreEncodedAnglePlaceholderText(document.documentElement, encodedAnglePlaceholderSource)
-    expect(document.querySelector('text')?.textContent).toBe('mica-board-<board>')
+  it('restores accepted markers split across nested SVG text nodes without changing SVG structure', () => {
+    const source = 'flowchart LR\nA["&lt;board&gt; + &lt;part&gt;"]'
+    const markers = [...renderSource(source).matchAll(/\uE000merdeck-angle-[a-z0-9]+-[a-z0-9]+\uE001/g)].map(match => match[0])
+    expect(markers).toHaveLength(2)
+    const [board, slot] = markers
+    const document = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><text>before ${board!.slice(0, 9)}<tspan>${board!.slice(9)} + ${slot!.slice(0, 7)}</tspan><tspan><tspan>${slot!.slice(7)}</tspan> after</tspan></text></svg>`, 'image/svg+xml')
+    const textNodes = [...document.querySelectorAll('text,tspan')]
+    restoreEncodedAnglePlaceholderText(document.documentElement, source)
+    expect(document.querySelector('text')?.textContent).toBe('before <board> + <part> after')
+    expect([...document.querySelectorAll('text,tspan')]).toEqual(textNodes)
     expect(document.querySelector('script,[onload],image')).toBeNull()
+  })
+  it('does not silently collide with marker-like source text', () => {
+    const initial = encodedAnglePlaceholderSource
+    const existing = renderSource(initial).match(/\uE000merdeck-angle-[a-z0-9]+-[a-z0-9]+\uE001/)![0]
+    const source = `${initial}%% ${existing}`
+    const projected = renderSource(source)
+    const marker = [...projected.matchAll(/\uE000merdeck-angle-[a-z0-9]+-[a-z0-9]+\uE001/g)].map(match => match[0]).find(value => value !== existing)!
+    expect(marker).not.toBe(existing)
+    const document = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><text>${existing} ${marker}</text></svg>`, 'image/svg+xml')
+    restoreEncodedAnglePlaceholderText(document.documentElement, source)
+    expect(document.querySelector('text')?.textContent).toBe(`${existing} <board>`)
   })
   it.each([
     '<br onclick="alert(1)">',
