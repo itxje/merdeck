@@ -158,10 +158,6 @@ function InlineDiagram({ index, source, selected, themeRevision, onSelect, onOpe
         onMount(element)
       }}
       className={`document-diagram${selected ? ' selected' : ''}`}
-      role="button"
-      tabIndex={0}
-      aria-label={`Diagram ${index + 1}`}
-      aria-pressed={selected}
       onClick={(event) => {
         if (!followLink(event.target))
           onSelect()
@@ -169,14 +165,22 @@ function InlineDiagram({ index, source, selected, themeRevision, onSelect, onOpe
       onKeyDown={(event) => {
         if (event.key !== 'Enter' && event.key !== ' ')
           return
-        if (followLink(event.target)) {
+        if (followLink(event.target))
           event.preventDefault()
-          return
-        }
-        event.preventDefault()
-        onSelect()
       }}
     >
+      <button
+        type="button"
+        className="document-diagram-select"
+        aria-pressed={selected}
+        aria-label={`Select Diagram ${index + 1}`}
+        onClick={(event) => {
+          event.stopPropagation()
+          onSelect()
+        }}
+      >
+        {selected ? 'Selected' : 'Select'}
+      </button>
       {svg ? <div ref={graphicRef} className="diagram-graphic" dangerouslySetInnerHTML={{ __html: svg }} /> : null}
       {currentFailure && <figcaption role="alert">{stale ? `Showing the last valid diagram. ${currentFailure}` : currentFailure}</figcaption>}
       {!svg && !currentFailure && <figcaption>{wantsRender ? 'Rendering diagram…' : 'Diagram renders when nearby.'}</figcaption>}
@@ -188,8 +192,9 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const parsed = useDocumentTree(text)
   const [linkError, setLinkError] = React.useState('')
   const [themeRevision, setThemeRevision] = React.useState(0)
+  const articleRef = React.useRef<HTMLElement>(null)
   const diagramMapRef = React.useRef(new Map<number, HTMLElement>())
-  const selectedRef = React.useRef({ path, selected })
+  const revealedRef = React.useRef<{ path: string, selected: number } | null>(null)
   const documentLinkRequestRef = React.useRef(0)
   React.useEffect(() => {
     const observer = new MutationObserver(() => setThemeRevision(value => value + 1))
@@ -197,12 +202,30 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     return () => observer.disconnect()
   }, [])
   React.useEffect(() => {
-    const previous = selectedRef.current
+    if (!parsed.tree)
+      return
+    const previous = revealedRef.current
+    if (previous?.path === path && previous.selected === selected)
+      return
+    const newPath = !previous || previous.path !== path
     const diagram = diagramMapRef.current.get(selected)
-    if (previous.path === path && previous.selected !== selected && diagram && 'scrollIntoView' in diagram)
+    if (newPath && selected <= 0) {
+      const article = articleRef.current
+      if (article) {
+        if (typeof article.scrollTo === 'function')
+          article.scrollTo({ top: 0 })
+        else
+          article.scrollTop = 0
+      }
+    }
+    else if (diagram && 'scrollIntoView' in diagram) {
       diagram.scrollIntoView({ block: 'nearest' })
-    selectedRef.current = { path, selected }
-  }, [path, selected])
+    }
+    else {
+      return
+    }
+    revealedRef.current = { path, selected }
+  }, [path, parsed.tree, selected])
   const followDocumentLink = React.useCallback((target: string) => {
     const request = ++documentLinkRequestRef.current
     const show = (message: string | undefined) => {
@@ -322,7 +345,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   if (!parsed.tree)
     return <article className="document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
   return (
-    <article className="document-view" aria-label="Markdown document">
+    <article ref={articleRef} className="document-view" aria-label="Markdown document">
       {linkError && <p role="alert">{linkError}</p>}
       {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
       {tree.children.map((node, index) => render(node, `root-${index}`))}

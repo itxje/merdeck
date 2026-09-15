@@ -1,5 +1,6 @@
 import type { DiagramBlock } from '../../../../src/shared/contracts'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 import { renderDiagram } from '@/features/preview/renderer'
 import { resolveProjectLink } from './document-links'
@@ -154,7 +155,8 @@ it('renders offscreen inline diagrams only after intersection while selected dia
   vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver)
   const document = markdownDocument(['first', 'second'])
   const view = render(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={-1} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
-  const figures = await screen.findAllByRole('button', { name: /Diagram/ })
+  await screen.findAllByRole('button', { name: /Select Diagram/ })
+  const figures = [...view.container.querySelectorAll<HTMLElement>('figure.document-diagram')]
   expect(renderDiagram).not.toHaveBeenCalled()
   expect(intersections).toHaveLength(2)
   await act(async () => intersections[0]?.trigger(figures[0]!))
@@ -189,7 +191,7 @@ it('keeps a selected last valid inline diagram through a draft failure and drops
   view.rerender(<DocumentView path="docs/guide.md" {...first} sources={['second']} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
   await waitFor(() => expect(pending).toHaveLength(3))
   await act(async () => pending[2]?.resolve('<svg><text>second</text></svg>'))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Diagram 1' }).querySelector('svg text')).toHaveTextContent('second'))
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Select Diagram 1' }).closest('figure')?.querySelector('svg text')).toHaveTextContent('second'))
   expect(screen.queryByText('first')).toBeNull()
 })
 
@@ -215,7 +217,7 @@ it('reveals only a newly selected inline diagram without moving focus', async ()
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scroll })
   const document = markdownDocument(['first', 'second'])
   const view = render(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
-  await screen.findAllByRole('button', { name: /Diagram/ })
+  await screen.findAllByRole('button', { name: /Select Diagram/ })
   expect(scroll).not.toHaveBeenCalled()
   view.rerender(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={1} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
   await waitFor(() => expect(scroll).toHaveBeenCalledTimes(1))
@@ -223,6 +225,34 @@ it('reveals only a newly selected inline diagram without moving focus', async ()
   expect(globalThis.document.activeElement).toBe(focus)
   focus.remove()
   delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView
+})
+
+it('reveals an initial non-zero block and resets a newly opened document to its top once', async () => {
+  const reveal = vi.fn()
+  const top = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: reveal })
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    value: function scrollTo(this: HTMLElement, options: ScrollToOptions) {
+      this.scrollTop = options.top ?? this.scrollTop
+      top(options)
+    },
+  })
+  const document = markdownDocument(['first', 'second'])
+  const view = render(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={1} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  await screen.findAllByRole('button', { name: /Select Diagram/ })
+  await waitFor(() => expect(reveal).toHaveBeenCalledWith({ block: 'nearest' }))
+  view.rerender(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={1} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(reveal).toHaveBeenCalledTimes(1)
+  const article = screen.getByRole('article', { name: 'Markdown document' })
+  article.scrollTop = 240
+  view.rerender(<DocumentView path="docs/new.md" {...document} sources={document.blocks.map(block => block.source)} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  await waitFor(() => expect(top).toHaveBeenCalledWith({ top: 0 }))
+  expect(article.scrollTop).toBe(0)
+  view.rerender(<DocumentView path="docs/new.md" {...document} sources={document.blocks.map(block => block.source)} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(top).toHaveBeenCalledTimes(1)
+  delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView
+  delete (HTMLElement.prototype as { scrollTo?: () => void }).scrollTo
 })
 
 it('annotates only safe inline file links, follows them by click or keyboard, and rerenders for theme changes', async () => {
@@ -234,7 +264,12 @@ it('annotates only safe inline file links, follows them by click or keyboard, an
   const link = await screen.findByRole('link', { name: 'Open next.mmd' })
   expect(link).toHaveAttribute('data-file-link', 'next.mmd')
   expect(link.closest('a')).toBeNull()
-  fireEvent.keyDown(screen.getByRole('button', { name: 'Diagram 1' }), { key: ' ' })
+  expect(link.closest('figure')).not.toHaveAttribute('role')
+  expect(link.closest('figure')).not.toHaveAttribute('tabindex')
+  const selection = screen.getByRole('button', { name: 'Select Diagram 1' })
+  expect(selection).toHaveAttribute('aria-pressed', 'true')
+  selection.focus()
+  await userEvent.setup().keyboard(' ')
   expect(select).toHaveBeenCalledTimes(1)
   fireEvent.click(link)
   fireEvent.keyDown(link, { key: 'Enter' })
