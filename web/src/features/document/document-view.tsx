@@ -1,5 +1,7 @@
+import type { Content, Definition, FootnoteDefinition, Heading, ListItem, PhrasingContent, Root, Table, TableCell, TableRow } from 'mdast'
 import type { DiagramBlock } from '../../../../src/shared/contracts'
 import type { OpenFile } from '@/features/preview/file-links'
+import GithubSlugger from 'github-slugger'
 import { fromMarkdown } from 'mdast-util-from-markdown'
 import { frontmatterFromMarkdown } from 'mdast-util-frontmatter'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
@@ -11,14 +13,55 @@ import { renderDiagram } from '@/features/preview/renderer'
 import { fileLinks } from '@/features/preview/source-policy'
 import { resolveProjectLink } from './document-links'
 
-interface Node { type: string, value?: string, lang?: string | null, url?: string, alt?: string | null, depth?: number, checked?: boolean | null, ordered?: boolean, align?: (string | null)[], children?: Node[], position?: { start: { line: number }, end: { line: number } } }
+type RenderNode = Content | ListItem | TableRow | TableCell
+
+function phrasingText(nodes: readonly PhrasingContent[]): string {
+  return nodes.map((node) => {
+    if ('value' in node)
+      return node.value
+    if ('children' in node)
+      return phrasingText(node.children)
+    return ''
+  }).join('')
+}
+
+function collectDocumentMetadata(root: Root | null) {
+  const headings: Heading[] = []
+  const definitions: Definition[] = []
+  const footnotes: FootnoteDefinition[] = []
+  const visit = (node: Root | RenderNode) => {
+    if (node.type === 'heading')
+      headings.push(node)
+    else if (node.type === 'definition')
+      definitions.push(node)
+    else if (node.type === 'footnoteDefinition')
+      footnotes.push(node)
+    if ('children' in node)
+      node.children.forEach(child => visit(child as RenderNode))
+  }
+  if (root)
+    visit(root)
+  return { definitions, footnotes, headings }
+}
+
+function isExternalLink(value: string): boolean {
+  try {
+    const url = new URL(value)
+    const web = (url.protocol === 'http:' || url.protocol === 'https:') && /^https?:\/\/\S+$/i.test(value)
+    const mail = url.protocol === 'mailto:' && /^mailto:\S+$/i.test(value)
+    return web || mail
+  }
+  catch {
+    return false
+  }
+}
 
 function parse(text: string) {
-  return fromMarkdown(text, { extensions: [gfm(), frontmatter(['yaml'])], mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(['yaml'])] }) as unknown as { children: Node[] }
+  return fromMarkdown(text, { extensions: [gfm(), frontmatter(['yaml'])], mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(['yaml'])] })
 }
 
 function useDocumentTree(text: string) {
-  const [state, setState] = React.useState<{ text: string, tree: { children: Node[] } | null, error: string | null }>({ text, tree: null, error: null })
+  const [state, setState] = React.useState<{ text: string, tree: Root | null, error: string | null }>({ text, tree: null, error: null })
   React.useEffect(() => {
     let worker: Worker
     let current = true
@@ -44,7 +87,7 @@ function useDocumentTree(text: string) {
       if (typeof Worker === 'undefined')
         throw new Error('Worker unavailable')
       worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
-      worker.onmessage = (event: MessageEvent<{ id: number, tree?: { children: Node[] }, error?: string }>) => {
+      worker.onmessage = (event: MessageEvent<{ id: number, tree?: Root, error?: string }>) => {
         if (!current || settled || event.data.id !== id)
           return
         if (event.data.tree) {
@@ -241,19 +284,94 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
       show(result)
     }
   }, [onOpenFile])
-  const tree = parsed.tree ?? { children: [] }
+  const tree = parsed.tree
+  const metadata = React.useMemo(() => collectDocumentMetadata(tree), [tree])
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
-  const placementOk = blocks.every(block => tree.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
+  const definitions = React.useMemo(() => new Map(metadata.definitions.map(node => [node.identifier, node])), [metadata])
+  const footnotes = React.useMemo(() => new Map(metadata.footnotes.map((node, index) => [node.identifier, index + 1])), [metadata])
+  const headingSlugs = React.useMemo(() => {
+    const slugger = new GithubSlugger()
+    return new Map(metadata.headings.map(node => [node, slugger.slug(phrasingText(node.children))]))
+  }, [metadata])
+  const placementOk = blocks.every(block => tree?.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
+  const image = (alt: string | null | undefined, url: string | undefined, key: string) => (
+    <span key={key} className="document-image">
+      Image:
+      {alt || 'image'}
+      {' '}
+      (
+      {url || 'unavailable'}
+      )
+    </span>
+  )
+  const followFragment = (url: string) => {
+    if (!url.startsWith('#') || url.length === 1)
+      return null
+    try {
+      const slug = decodeURIComponent(url.slice(1))
+      return [...headingSlugs.values()].includes(slug) ? slug : null
+    }
+    catch {
+      return null
+    }
+  }
+  const headingMapRef = React.useRef(new Map<string, HTMLElement>())
+  const footnoteMapRef = React.useRef(new Map<number, HTMLElement>())
+  const footnoteReferenceMapRef = React.useRef(new Map<number, HTMLElement>())
+  const resource = (url: string, children: React.ReactNode, key: string): React.ReactNode => {
+    const fragment = followFragment(url)
+    if (fragment)
+      return <button key={key} type="button" className="document-link" onClick={() => headingMapRef.current.get(fragment)?.scrollIntoView({ block: 'nearest' })}>{children}</button>
+    const project = resolveProjectLink(path, url)
+    if (project)
+      return <button key={key} type="button" className="document-link" onClick={() => followDocumentLink(project)}>{children}</button>
+    if (isExternalLink(url))
+      return <a key={key} href={url} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{children}</a>
+    return <React.Fragment key={key}>{children}</React.Fragment>
+  }
   // eslint-disable-next-line ts/no-use-before-define -- The renderer and its child recursion are intentionally paired.
-  const renderChildren = (children: Node[] | undefined): React.ReactNode => children?.map((node, index) => render(node, `${node.type}-${index}`))
-  const render = (node: Node, key: string): React.ReactNode => {
-    const children = renderChildren(node.children)
-    if (node.type === 'text' || node.type === 'inlineCode' || node.type === 'html')
+  const renderChildren = (children: readonly RenderNode[] | readonly PhrasingContent[] | undefined): React.ReactNode => children?.map((node, index) => render(node, `${node.type}-${index}`))
+  const renderTable = (table: Table, key: string) => {
+    const row = (item: TableRow, header: boolean, rowKey: string) => (
+      <tr key={rowKey}>
+        {item.children.map((cell, index) => {
+          const cellKey = cell.position?.start.offset ?? `${rowKey}-${cell.position?.start.column ?? index}`
+          const alignment = table.align?.[index]
+          return header
+            ? <th key={cellKey} scope="col" style={alignment ? { textAlign: alignment } : undefined}>{renderChildren(cell.children)}</th>
+            : <td key={cellKey} style={alignment ? { textAlign: alignment } : undefined}>{renderChildren(cell.children)}</td>
+        })}
+      </tr>
+    )
+    const [header, ...body] = table.children
+    return (
+      <table key={key}>
+        {header && <thead>{row(header, true, 'header')}</thead>}
+        <tbody>{body.map((item, index) => row(item, false, String(item.position?.start.offset ?? `body-${index}`)))}</tbody>
+      </table>
+    )
+  }
+  const render = (node: RenderNode, key: string): React.ReactNode => {
+    const children = 'children' in node ? renderChildren(node.children as readonly RenderNode[]) : undefined
+    if (node.type === 'text')
       return node.value
+    if (node.type === 'inlineCode')
+      return <code key={key}>{node.value}</code>
+    if (node.type === 'html') {
+      const literal = node.value.replace(/<!--[\s\S]*?-->/g, '')
+      return literal || null
+    }
     if (node.type === 'paragraph')
       return <p key={key}>{children}</p>
-    if (node.type === 'heading')
-      return React.createElement(`h${Math.min(6, node.depth ?? 1)}`, { key }, children)
+    if (node.type === 'heading') {
+      return React.createElement(`h${Math.min(6, node.depth)}`, { key, ref: (element: HTMLElement | null) => {
+        const slug = headingSlugs.get(node)
+        if (slug && element)
+          headingMapRef.current.set(slug, element)
+        else if (slug)
+          headingMapRef.current.delete(slug)
+      } }, children)
+    }
     if (node.type === 'emphasis')
       return <em key={key}>{children}</em>
     if (node.type === 'strong')
@@ -267,44 +385,43 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     if (node.type === 'break')
       return <br key={key} />
     if (node.type === 'list')
-      return node.ordered ? <ol key={key}>{children}</ol> : <ul key={key}>{children}</ul>
+      return node.ordered ? <ol key={key} start={node.start ?? undefined}>{children}</ol> : <ul key={key}>{children}</ul>
     if (node.type === 'listItem') {
       return (
         <li key={key}>
-          {node.checked !== null && node.checked !== undefined && <input type="checkbox" checked={node.checked} readOnly tabIndex={-1} />}
+          {node.checked !== null && node.checked !== undefined && <input type="checkbox" checked={node.checked} readOnly tabIndex={-1} aria-label={node.checked ? 'Completed task' : 'Incomplete task'} />}
           {children}
         </li>
       )
     }
-    if (node.type === 'image') {
-      return (
-        <span key={key} className="document-image">
-          Image:
-          {node.alt || 'image'}
-          {' '}
-          (
-          {node.url}
-          )
-        </span>
-      )
-    }
+    if (node.type === 'image')
+      return image(node.alt, node.url, key)
+    if (node.type === 'imageReference')
+      return image(node.alt, definitions.get(node.identifier)?.url, key)
     if (node.type === 'link') {
-      const project = node.url ? resolveProjectLink(path, node.url) : null
-      if (project) {
-        return (
-          <button
-            key={key}
-            type="button"
-            className="document-link"
-            onClick={() => followDocumentLink(project)}
-          >
-            {children}
-          </button>
-        )
-      }
-      if (node.url && /^(?:https?:|mailto:)/i.test(node.url))
-        return <a key={key} href={node.url} target="_blank" rel="noopener noreferrer">{children}</a>
-      return <React.Fragment key={key}>{children}</React.Fragment>
+      return resource(node.url, children, key)
+    }
+    if (node.type === 'linkReference')
+      return definitions.has(node.identifier) ? resource(definitions.get(node.identifier)!.url, children, key) : <React.Fragment key={key}>{children}</React.Fragment>
+    if (node.type === 'footnoteReference') {
+      const number = footnotes.get(node.identifier)
+      return number
+        ? (
+            <sup key={key}>
+              <button
+                type="button"
+                aria-label={`Footnote ${number}`}
+                ref={(element) => {
+                  if (element)
+                    footnoteReferenceMapRef.current.set(number, element)
+                }}
+                onClick={() => footnoteMapRef.current.get(number)?.scrollIntoView({ block: 'nearest' })}
+              >
+                {number}
+              </button>
+            </sup>
+          )
+        : null
     }
     if (node.type === 'code') {
       const found = node.position ? matched.get(`${node.position.start.line}:${node.position.end.line}`) : undefined
@@ -331,13 +448,28 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
       return <pre key={key}><code>{node.value}</code></pre>
     }
     if (node.type === 'table')
-      return <table key={key}><tbody>{children}</tbody></table>
-    if (node.type === 'tableRow')
-      return <tr key={key}>{children}</tr>
-    if (node.type === 'tableCell')
-      return <td key={key}>{children}</td>
-    if (node.type === 'footnoteDefinition')
-      return <aside key={key}>{children}</aside>
+      return renderTable(node, key)
+    if (node.type === 'definition')
+      return null
+    if (node.type === 'footnoteDefinition') {
+      const number = footnotes.get(node.identifier)
+      return number
+        ? (
+            <aside
+              key={key}
+              aria-label={`Footnote ${number}`}
+              ref={(element) => {
+                if (element)
+                  footnoteMapRef.current.set(number, element)
+              }}
+            >
+              <sup>{number}</sup>
+              {children}
+              <button type="button" aria-label={`Back to footnote ${number}`} onClick={() => footnoteReferenceMapRef.current.get(number)?.scrollIntoView({ block: 'nearest' })}>Back</button>
+            </aside>
+          )
+        : null
+    }
     return <React.Fragment key={key}>{children}</React.Fragment>
   }
   if (parsed.error)
@@ -348,7 +480,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     <article ref={articleRef} className="document-view" aria-label="Markdown document">
       {linkError && <p role="alert">{linkError}</p>}
       {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
-      {tree.children.map((node, index) => render(node, `root-${index}`))}
+      {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
     </article>
   )
 }

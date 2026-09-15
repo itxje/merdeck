@@ -279,3 +279,113 @@ it('annotates only safe inline file links, follows them by click or keyboard, an
   await waitFor(() => expect(renderDiagram).toHaveBeenCalledTimes(2))
   globalThis.document.documentElement.classList.remove('dark')
 })
+
+it('renders approved Markdown semantics, definitions, images, footnotes, and literal raw HTML', async () => {
+  const scroll = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scroll })
+  const text = '# Same\n\n> ## Nested\n\n# Same\n\n`inline` *em* **strong** ~~gone~~  \nnext\n\n3. third\n\n- [x] done\n\n> quote\n\n---\n\n| Left | Right |\n| :--- | ---: |\n| a | b |\n\n[ref][safe] [project][project] [bad](javascript:alert(1)) [fragment](#same%2D1) [nested](#nested)\n\n![inline](https://bad.example/a.png) ![reference][image]\n\n[^note]\n\n[safe]: https://example.test/path\n[project]: next.md\n[image]: https://bad.example/b.png\n\n[^note]: footnote text\n\n<!-- hidden --> <script>bad()</script> <img src=x onerror=bad()> </img> <iframe src=x></iframe> <span>inline html</span>'
+  const open = vi.fn()
+  const view = render(<DocumentView path="docs/guide.md" text={text} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={open} />)
+  expect(await screen.findAllByRole('heading', { name: 'Same' })).toHaveLength(2)
+  expect(screen.getByRole('code')).toHaveTextContent('inline')
+  expect(screen.getByText('em').tagName).toBe('EM')
+  expect(screen.getByText('strong').tagName).toBe('STRONG')
+  expect(screen.getByText('gone').tagName).toBe('DEL')
+  expect(screen.getByRole('article').querySelector('br')).not.toBeNull()
+  expect(screen.getAllByRole('list')[0]).toHaveAttribute('start', '3')
+  expect(screen.getByRole('checkbox', { name: 'Completed task' })).toBeChecked()
+  expect(screen.getByRole('table').querySelector('thead th')).toHaveStyle({ textAlign: 'left' })
+  expect(screen.getByRole('table').querySelector('tbody td:last-child')).toHaveStyle({ textAlign: 'right' })
+  const external = screen.getByRole('link', { name: 'ref' })
+  expect(external).toHaveAttribute('href', 'https://example.test/path')
+  expect(external).toHaveAttribute('referrerpolicy', 'no-referrer')
+  fireEvent.click(screen.getByRole('button', { name: 'project' }))
+  expect(open).toHaveBeenCalledWith('docs/next.md')
+  expect(screen.queryByRole('link', { name: 'bad' })).toBeNull()
+  expect(screen.queryByRole('img')).toBeNull()
+  expect(screen.getAllByText(/Image:/)).toHaveLength(2)
+  expect(screen.queryByText('hidden')).toBeNull()
+  expect(screen.queryByRole('script')).toBeNull()
+  expect(screen.queryByRole('iframe')).toBeNull()
+  expect(view.container.querySelector('script, img, iframe')).toBeNull()
+  expect(screen.queryByTitle('')).toBeNull()
+  expect(screen.getByText('<script>bad()</script>', { exact: false })).toBeVisible()
+  expect(screen.getByRole('article')).toHaveTextContent('<span>inline html</span>')
+  expect(screen.getByRole('button', { name: 'Footnote 1' })).toBeVisible()
+  expect(screen.getByRole('complementary', { name: 'Footnote 1' })).toHaveTextContent('footnote text')
+  fireEvent.click(screen.getByRole('button', { name: 'fragment' }))
+  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  fireEvent.click(screen.getByRole('button', { name: 'nested' }))
+  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  fireEvent.click(screen.getByRole('button', { name: 'Footnote 1' }))
+  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  expect(screen.getAllByRole('heading', { name: 'Same' }).every(heading => !heading.hasAttribute('id'))).toBe(true)
+  delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView
+})
+
+it.each([
+  ['https://example.test/path', 'anchor'],
+  ['http://example.test/path', 'anchor'],
+  ['mailto:hello@example.test', 'anchor'],
+  ['next.md', 'project'],
+  ['javascript:alert(1)', 'inert'],
+  ['data:text/plain,hello', 'inert'],
+  ['file:///secret.md', 'inert'],
+  ['//example.test/path', 'inert'],
+  ['/secret.md', 'inert'],
+  ['#missing', 'inert'],
+  ['#%GG', 'inert'],
+])('applies the target policy to %s', async (target, expected) => {
+  const open = vi.fn()
+  render(<DocumentView path="docs/guide.md" text={`# Heading\n\n[target](${target})`} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={open} />)
+  const label = await screen.findByText('target')
+  if (expected === 'anchor') {
+    expect(label).toHaveRole('link')
+    expect(label).toHaveAttribute('target', '_blank')
+    expect(label).toHaveAttribute('rel', 'noopener noreferrer')
+    expect(label).toHaveAttribute('referrerpolicy', 'no-referrer')
+  }
+  else if (expected === 'project') {
+    expect(label).toHaveRole('button')
+    fireEvent.click(label)
+    expect(open).toHaveBeenCalledWith('docs/next.md')
+  }
+  else {
+    expect(label.tagName).not.toBe('A')
+    expect(label.tagName).not.toBe('BUTTON')
+    expect(open).not.toHaveBeenCalled()
+  }
+})
+
+it('keeps malformed and missing fragments inert without taking focus', async () => {
+  const focus = globalThis.document.createElement('button')
+  globalThis.document.body.append(focus)
+  focus.focus()
+  render(<DocumentView path="docs/guide.md" text={'# Heading\n\n[good](#heading) [missing](#missing) [bad](#%GG)'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(await screen.findByRole('button', { name: 'good' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'missing' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'bad' })).toBeNull()
+  expect(globalThis.document.activeElement).toBe(focus)
+  focus.remove()
+})
+
+it('places only exact top-level Mermaid fences and falls back to code on mismatch', async () => {
+  const text = '\uFEFF```mermaid\r\nA\r\n```\r\n```mermaid\r\nB\r\n```\r\n\r\n| A |\r\n| - |\r\n| b |\r\n```mermaid\r\nC\r\n```\r\n\r\n[^n]: note\r\n```mermaid\r\nD\r\n```\r\n\r\n- ```mermaid\r\n  nested\r\n  ```\r\n\r\n> ```mermaid\r\n> quote\r\n> ```\r\n\r\n\t```mermaid\r\n\ttab\r\n\t```\r\n\r\n```mermaid\r\nunclosed'
+  const selected: DiagramBlock[] = [
+    { selector: { kind: 'markdown', id: 'md:0:1:2' }, label: 'Diagram 1', lineStart: 2, lineEnd: 2, source: 'A\r\n' },
+    { selector: { kind: 'markdown', id: 'md:1:4:5' }, label: 'Diagram 2', lineStart: 5, lineEnd: 5, source: 'B\r\n' },
+    { selector: { kind: 'markdown', id: 'md:2:10:11' }, label: 'Diagram 3', lineStart: 12, lineEnd: 12, source: 'C\r\n' },
+    { selector: { kind: 'markdown', id: 'md:3:15:16' }, label: 'Diagram 4', lineStart: 17, lineEnd: 17, source: 'D\r\n' },
+  ]
+  const view = render(<DocumentView path="docs/fences.md" text={text} blocks={selected} sources={selected.map(block => block.source)} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect((await screen.findAllByRole('button', { name: /Select Diagram/ })).length).toBe(4)
+  expect(screen.getByText(/nested/)).toBeVisible()
+  expect(screen.getByText(/quote/)).toBeVisible()
+  expect(screen.getByText(/tab/)).toBeVisible()
+  expect(screen.getByText(/unclosed/)).toBeVisible()
+  view.rerender(<DocumentView path="docs/fences.md" text={text} blocks={[selected[0]!, { ...selected[1]!, lineStart: 99 }]} sources={['A\r\n', 'B\r\n']} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Diagram placement could not be verified')
+  expect(screen.queryByRole('button', { name: /Select Diagram/ })).toBeNull()
+  for (const source of ['A', 'B', 'C', 'D'])
+    expect(screen.getAllByRole('code').some(code => code.textContent === source)).toBe(true)
+})
