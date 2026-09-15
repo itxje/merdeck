@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { encodedAnglePlaceholderSource } from '../encoded-angle-placeholder'
 import { originalSolarSha256, originalSolarSource } from '../original-solar'
 import { choose, chooseBlock, expect, live, login, test } from './support'
 
@@ -109,6 +110,38 @@ async function save(page: Page) {
   expect((await response).status()).toBe(200)
   await expect(page.getByRole('button', { name: /^Save/ })).toBeDisabled()
 }
+
+test('encoded angle placeholder renders as visible inert text and preserves exact standalone bytes', async ({ page }) => {
+  test.setTimeout(90000)
+  const name = `encoded-angle-placeholder-${randomUUID()}.mmd`
+  const path = join(root, name)
+  const initial = 'flowchart LR\nEmpty --> Fixture\n'
+  await writeFile(path, initial, { flag: 'wx' })
+  const { writes, unexpected } = auditRequests(page)
+  try {
+    await login(page, true)
+    await choose(page, name)
+    const editor = page.getByLabel('Mermaid source', { exact: true })
+    await expect(editor).toHaveValue(initial)
+    await editor.fill(encodedAnglePlaceholderSource)
+    await live(page)
+    const svg = page.locator('.diagram-graphic svg')
+    await expect.poll(async () => compact((await svg.textContent()) ?? '')).toContain('mica-board-<board>')
+    await expect(svg.locator('foreignObject,script,image,a,use,style,animate,animateMotion,animateTransform,set,filter,[href],[src],[style],[onload],[onerror]')).toHaveCount(0)
+    expect(await page.evaluate(() => Reflect.has(window, 'pwned') || Reflect.has(window, 'encodedAngleExecuted'))).toBe(false)
+    expect(writes).toEqual([])
+    expect(await readFile(path, 'utf8')).toBe(initial)
+    await save(page)
+    expect(JSON.parse(writes[0]!)).toMatchObject({ path: name, source: encodedAnglePlaceholderSource })
+    expect(await readFile(path, 'utf8')).toBe(encodedAnglePlaceholderSource)
+    await page.reload()
+    await expect(editor).toHaveValue(encodedAnglePlaceholderSource)
+    await live(page)
+    await expect.poll(async () => compact((await svg.textContent()) ?? '')).toContain('mica-board-<board>')
+    expect(unexpected).toEqual([])
+  }
+  finally { await rm(path) }
+})
 
 test('original 24-node flowchart retains labels, groups, class presentation and standalone bytes', async ({ page }, info) => {
   test.setTimeout(90000)
