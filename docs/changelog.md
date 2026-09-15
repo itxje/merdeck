@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 02:18 [release]
+
+Published [v0.11.3](https://github.com/itxje/merdeck/releases/tag/v0.11.3), which keeps the mobile Project files listing reachable on short screens. Exact commit `204271baa1471bb46da0358664e0dcc2ca28c035` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34919340741), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34920053087) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.3 and the tagged commit. The release does not deploy or restart separately hosted services. See [20260915-0156-release-short-mobile-file-listing](task/20260915-0156-release-short-mobile-file-listing.md).
+
 ## 2026-09-15 01:53 [fix]
 
 Short mobile Project files sheets now reserve a scrollable two-row region at 315 by 533 CSS pixels. The compact footer hides only an unavailable `Next page` control; enabled pagination remains reachable. Immediate directory rows and recursive file-type search results use the same minimum listing space. Browser coverage exercises 101 folders, later-row scrolling, pagination containment, and a nested Mermaid search result. The accompanying self-contained prototype remains `needs-review`. See [20260915-0119-investigate-mobile-project-files-listing](task/20260915-0119-investigate-mobile-project-files-listing.md).

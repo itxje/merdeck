@@ -1,6 +1,6 @@
 # 20260915-0156-release-short-mobile-file-listing Release the short mobile file-listing fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-15 01:56
 - **approvedAt**: 2026-09-15 01:56 UTC
 - **relatedTask**: 20260915-0156-release-short-mobile-file-listing
@@ -37,3 +37,7 @@ Do not publish: this would leave the completed repair unavailable to release con
 
 - The owner explicitly authorized the commit, push, and release on 2026-09-15. This approval applies after the investigation and proposal recorded above.
 - Approval recorded 2026-09-15 01:56 UTC; release execution may proceed within the proposal scope.
+
+## Outcome
+
+The candidate `204271baa1471bb46da0358664e0dcc2ca28c035` passed [main verification](https://github.com/itxje/merdeck/actions/runs/34919340741). Annotated tag `v0.11.3` resolves to that commit, and [its tag workflow](https://github.com/itxje/merdeck/actions/runs/34920053087) published the matching non-draft, non-prerelease release. Downloaded `merdeck.tar.gz` and `SHA256SUMS` passed checksum verification; the extracted 95-entry bundle reports version 0.11.3 and the tagged commit. The release does not deploy or restart a separately hosted service.
