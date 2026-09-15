@@ -81,7 +81,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `P1`
 - [ ] [**20260914-1150-directory-poll-save-race Keep directory polls out of a save's change window**](20260914-1150-directory-poll-save-race.md) `P2`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `P1`
-- [ ] [**20260914-1559-source-pane-e2e-ordering Investigate source-pane end-to-end ordering instability**](20260914-1559-source-pane-e2e-ordering.md) `P2`
+- [x] [**20260914-1559-source-pane-e2e-ordering Investigate source-pane end-to-end ordering instability**](20260914-1559-source-pane-e2e-ordering.md) `P2`
 - [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `P1`
 - [x] [**20260914-2342-fix-nested-folder-browsing Fix nested folder browsing**](20260914-2342-fix-nested-folder-browsing.md) `P1`
 - [x] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `P1`
