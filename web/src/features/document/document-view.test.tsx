@@ -370,16 +370,28 @@ it('keeps malformed and missing fragments inert without taking focus', async () 
 })
 
 it('uses the first reference definition and numbers repeated footnotes by first reference', async () => {
-  const scroll = vi.fn()
-  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scroll })
-  render(<DocumentView path="docs/guide.md" text={'[first][same]\n\n[^second] then [^first] then [^second]\n\n[same]: https://first.example.test\n[same]: https://second.example.test\n\n[^first]: first definition\n[^second]: second definition'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  const targets: HTMLElement[] = []
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: function scrollIntoView(this: HTMLElement) {
+      targets.push(this)
+    },
+  })
+  const view = render(<DocumentView path="docs/guide.md" text={'[first][same]\n\n[^second] then [^first] then [^second]\n\n[same]: https://first.example.test\n[same]: https://second.example.test\n\n[^first]: first definition\n[^second]: second definition'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
   expect(await screen.findByRole('link', { name: 'first' })).toHaveAttribute('href', 'https://first.example.test')
   const secondReferences = screen.getAllByRole('button', { name: 'Footnote 1' })
   expect(secondReferences).toHaveLength(2)
   expect(secondReferences[0]).toHaveTextContent('1')
   expect(screen.getByRole('button', { name: 'Footnote 2' })).toHaveTextContent('2')
-  fireEvent.click(screen.getByRole('button', { name: 'Back to footnote 1' }))
-  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  const back = screen.getByRole('button', { name: 'Back to footnote 1' })
+  fireEvent.click(back)
+  expect(targets.at(-1)).toBe(secondReferences[0])
+  view.rerender(<DocumentView path="docs/replaced.md" text={'# Replacement\n\n[^missing]'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  await screen.findByRole('heading', { name: 'Replacement' })
+  expect(screen.queryByRole('button', { name: /Footnote/ })).toBeNull()
+  const calls = targets.length
+  fireEvent.click(back)
+  expect(targets).toHaveLength(calls)
   delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView
 })
 

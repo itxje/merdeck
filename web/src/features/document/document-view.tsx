@@ -66,6 +66,27 @@ function FootnoteReferenceControl({ number, referenceMapRef, onNavigate }: { num
   return <button ref={referenceRef} type="button" aria-label={`Footnote ${number}`} onClick={onNavigate}>{number}</button>
 }
 
+function FootnoteDefinitionView({ number, definitionMapRef, children }: { number: number, definitionMapRef: React.RefObject<Map<number, HTMLElement>>, children: React.ReactNode }) {
+  const definitionRef = React.useRef<HTMLElement>(null)
+  React.useLayoutEffect(() => {
+    const element = definitionRef.current
+    if (!element)
+      return
+    const definitionMap = definitionMapRef.current
+    definitionMap.set(number, element)
+    return () => {
+      if (definitionMap.get(number) === element)
+        definitionMap.delete(number)
+    }
+  }, [definitionMapRef, number])
+  return (
+    <aside ref={definitionRef} aria-label={`Footnote ${number}`}>
+      <sup>{number}</sup>
+      {children}
+    </aside>
+  )
+}
+
 function isExternalLink(value: string): boolean {
   try {
     const url = new URL(value)
@@ -317,14 +338,22 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     }
     return entries
   }, [metadata])
-  const footnotes = React.useMemo(() => {
-    const entries = new Map<string, number>()
-    for (const reference of metadata.footnoteReferences) {
-      if (!entries.has(reference.identifier))
-        entries.set(reference.identifier, entries.size + 1)
+  const footnoteDefinitions = React.useMemo(() => {
+    const entries = new Map<string, FootnoteDefinition>()
+    for (const definition of metadata.footnotes) {
+      if (!entries.has(definition.identifier))
+        entries.set(definition.identifier, definition)
     }
     return entries
   }, [metadata])
+  const footnotes = React.useMemo(() => {
+    const entries = new Map<string, number>()
+    for (const reference of metadata.footnoteReferences) {
+      if (footnoteDefinitions.has(reference.identifier) && !entries.has(reference.identifier))
+        entries.set(reference.identifier, entries.size + 1)
+    }
+    return entries
+  }, [footnoteDefinitions, metadata])
   const headingSlugs = React.useMemo(() => {
     const slugger = new GithubSlugger()
     return new Map(metadata.headings.map(node => [node, slugger.slug(phrasingText(node.children))]))
@@ -481,18 +510,10 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
       const number = footnotes.get(node.identifier)
       return number
         ? (
-            <aside
-              key={key}
-              aria-label={`Footnote ${number}`}
-              ref={(element) => {
-                if (element)
-                  footnoteMapRef.current.set(number, element)
-              }}
-            >
-              <sup>{number}</sup>
+            <FootnoteDefinitionView key={key} number={number} definitionMapRef={footnoteMapRef}>
               {children}
               <button type="button" aria-label={`Back to footnote ${number}`} onClick={() => [...(footnoteReferenceMapRef.current.get(number) ?? [])].find(element => element.isConnected)?.scrollIntoView({ block: 'nearest' })}>Back</button>
-            </aside>
+            </FootnoteDefinitionView>
           )
         : null
     }

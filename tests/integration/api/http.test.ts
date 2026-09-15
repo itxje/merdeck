@@ -320,10 +320,12 @@ describe('HTTP file contracts', () => {
     expect(await readFile(`${f.root}/notes.md`, 'utf8')).toBe(markdown.replace('A-->B', 'First-->Second').replace('Alice->>Bob: Hello', 'Bob->>Alice: Goodbye'))
   })
 
-  test('never emits Markdown text for standalone Mermaid documents or saves', async () => {
+  test.each(['flow.mmd', 'sequence.mermaid'])('never emits Markdown text for standalone %s documents or saves', async (path) => {
     const f = await fixture()
     const auth = await login(f)
-    const original = await data<DiagramDocument>(await f.request('/api/diagrams/document?path=flow.mmd', { headers: auth.headers }))
+    if (path === 'sequence.mermaid')
+      await writeFile(`${f.root}/${path}`, 'sequenceDiagram\nAlice->>Bob: Hello\n')
+    const original = await data<DiagramDocument>(await f.request(`/api/diagrams/document?path=${path}`, { headers: auth.headers }))
     expect(original.kind).toBe('mermaid')
     expect(original).not.toHaveProperty('text')
     const saved = await data<DiagramDocument>(await f.request('/api/diagrams/source', { method: 'PUT', headers: auth.headers, body: JSON.stringify(save(original)) }))
