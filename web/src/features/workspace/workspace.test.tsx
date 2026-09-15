@@ -144,3 +144,33 @@ it('ignores a document-link read that resolves after navigation scope changes', 
   view.unmount()
   client.clear()
 })
+
+it('silently supersedes an aborted document-link read with the later target', async () => {
+  const current = markdownDocument('docs/guide.md', '# Guide\n\n[One](one.md) [Two](two.md)')
+  const document = mockMarkdownWorkspace(current)
+  let firstAborted = false
+  document.mockImplementation((target, signal) => {
+    if (target === current.path)
+      return Promise.resolve(current)
+    if (target === 'docs/one.md') {
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => {
+          firstAborted = true
+          reject(new DOMException('Aborted', 'AbortError'))
+        }, { once: true })
+      })
+    }
+    return Promise.resolve(markdownDocument('docs/two.md', '# Two'))
+  })
+  const client = createQueryClient()
+  const navigate = vi.fn()
+  const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={current.path} block={0} navigate={navigate} /></ThemeProvider></QueryClientProvider>)
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'One' }))
+  await user.click(screen.getByRole('button', { name: 'Two' }))
+  await waitFor(() => expect(navigate).toHaveBeenCalledWith('docs/two.md', 0))
+  expect(firstAborted).toBe(true)
+  expect(screen.queryByText('Aborted')).toBeNull()
+  unmount()
+  client.clear()
+})

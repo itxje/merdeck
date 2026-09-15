@@ -1,9 +1,11 @@
 /* eslint-disable react/dom-no-dangerously-set-innerhtml -- Only renderer.ts sanitized SVG enters this preview boundary. */
+import type { OpenFile } from './file-links'
 import type { LabelSite } from './flowchart-labels'
 import { Maximize, Minus, Plus } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
+import { annotateFileLinks, linkedFile } from './file-links'
 import { sourceOnlyLabelMessage } from './flowchart-labels'
 import { editFlowchartLabel, inspectFlowchart, renderDiagram } from './renderer'
 import { bareLabelBreak, fileLinks, flowchartHeader } from './source-policy'
@@ -21,7 +23,7 @@ interface PreviewProps {
   onSourceChange?: (source: string) => void
   onLocate?: (range: { start: number, end: number }) => void
   // Returns a message when the named file cannot be opened, so the preview can say so.
-  onOpenFile?: (target: string) => string | undefined | Promise<string | undefined>
+  onOpenFile?: OpenFile
 }
 
 export function Preview({ source, title, onError, onSourceChange, onLocate, onOpenFile }: PreviewProps) {
@@ -100,22 +102,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
     if (!node)
       return
     // A pending or rejected draft must not activate targets on the last valid diagram.
-    for (const linked of node.querySelectorAll('[data-file-link]')) {
-      for (const attribute of ['data-file-link', 'role', 'tabindex', 'aria-label'])
-        linked.removeAttribute(attribute)
-    }
-    if (!settled)
-      return
-    // A node the source links to becomes an ordinary target: reachable, announced and pointer-marked.
-    for (const [id, target] of links) {
-      const linked = [...node.querySelectorAll('g.node')].find(item => new RegExp(`-flowchart-${id}-\\d+$`).test(item.id))
-      if (!linked)
-        continue
-      linked.setAttribute('data-file-link', target)
-      linked.setAttribute('role', 'link')
-      linked.setAttribute('tabindex', '0')
-      linked.setAttribute('aria-label', `Open ${target}`)
-    }
+    annotateFileLinks(node, links, settled)
   }, [svg, links, settled])
 
   React.useLayoutEffect(() => {
@@ -234,8 +221,7 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
   const followLink = (target: EventTarget) => {
     if (!settled)
       return false
-    const linked = target instanceof Element ? target.closest('[data-file-link]') : null
-    const file = onOpenFile && linked && graphicRef.current?.contains(linked) ? linked.getAttribute('data-file-link') : null
+    const file = linkedFile(target, graphicRef.current, onOpenFile)
     if (!file)
       return false
     const request = ++linkRequestRef.current
