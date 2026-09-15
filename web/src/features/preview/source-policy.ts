@@ -31,6 +31,7 @@ const frontMatterEntry = /^([ \t]*)([a-z][\w-]*):(.*)$/i
 const configSections = new Set(['flowchart', 'sequence', 'gantt', 'state', 'er', 'class', 'journey', 'pie', 'timeline', 'mindmap'])
 const configNumber = /^\d{1,4}$/
 const namedPlaceholder = /^(?:net|label|product-domain)$/i
+const encodedAnglePlaceholder = /&lt;([a-z][a-z0-9_]{0,63})&gt;/g
 const markupElements = new Set('a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins kbd legend li link main map mark math menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr animate animatemotion animatetransform feimage filter foreignobject image set use'.split(' '))
 // The preview's security boundary: configuration directives, entities and Mermaid escape codes,
 // resource references, script schemes, shape metadata and math. A numeric character reference is
@@ -54,6 +55,39 @@ function inertPlaceholder(body: string) {
     return true
   const name = body.split(/[ ,().]/)[0]!
   return !markupElements.has(name.toLowerCase()) && !name.includes('-')
+}
+
+function anglePlaceholderMarker(offset: number) {
+  return `\uE000merdeck-angle-${offset.toString(36)}\uE001`
+}
+
+// This is a render-only escape hatch for a literal placeholder, not general entity decoding.
+// The exact lowercase token grammar cannot carry whitespace, attributes, nesting or a custom
+// element name, and the decoded form must still be an inert placeholder under the raw-markup rule.
+function projectEncodedAnglePlaceholders(source: string, forMermaid = false) {
+  return source.replace(encodedAnglePlaceholder, (token, body: string, offset: number) => {
+    if (!inertPlaceholder(body))
+      return token
+    // Mermaid receives a private inert text marker, never a tag-shaped token. The renderer only
+    // restores it in generated SVG text nodes after Mermaid has finished parsing.
+    return forMermaid ? anglePlaceholderMarker(offset) : `<${body}>`
+  })
+}
+
+// Restore only markers derived from accepted tokens in this exact source; text nodes cannot create
+// SVG elements, attributes, resource loads or event handlers when their data changes.
+export function restoreEncodedAnglePlaceholderText(svg: Element, source: string) {
+  const replacements = [...source.matchAll(encodedAnglePlaceholder)].flatMap((match) => {
+    const body = match[1]!
+    return inertPlaceholder(body) && match.index !== undefined ? [[anglePlaceholderMarker(match.index), `<${body}>`] as const] : []
+  })
+  if (!replacements.length)
+    return
+  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT)
+  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+    for (const [marker, value] of replacements)
+      text.textContent = text.textContent?.replaceAll(marker, value) ?? ''
+  }
 }
 
 // HTML opens a tag only where `<` is immediately followed by an ASCII letter, `/`, `!` or `?`;
@@ -105,12 +139,13 @@ export function fileLinks(source: string): Map<string, string> {
 // Render ordinary nodes instead; the original draft still supplies application-owned targets.
 export function renderSource(source: string): string {
   validateSource(source)
-  const plain = source.replace(frontMatter, '')
+  const projected = projectEncodedAnglePlaceholders(source, true)
+  const plain = projected.replace(frontMatter, '')
   if (classHeader.test(plain))
-    return source.slice(0, source.length - plain.length) + mapClassNotes(plain, note => note.replace(/\\n/g, '<br/>'))
+    return projected.slice(0, projected.length - plain.length) + mapClassNotes(plain, note => note.replace(/\\n/g, '<br/>'))
   if (!flowchartHeader.test(plain))
-    return source
-  return source.slice(0, source.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
+    return projected
+  return projected.slice(0, projected.length - plain.length) + mapFlowchart(plain, statement => fileLink(statement.trim()) ? statement.replace(/[^\r\n]/g, ' ') : statement)
 }
 
 function declaration(property: string, value: string) {
@@ -288,7 +323,7 @@ function frontMatterTitle(body: string) {
 export function validateSource(source: string) {
   if (source.length > previewLimit)
     throw new Error('Live preview is limited to 100,000 characters. You can still edit and save this file.')
-  const full = source.replace(bareLabelBreak, ' ')
+  const full = projectEncodedAnglePlaceholders(source.replace(bareLabelBreak, ' '))
   const block = frontMatter.exec(full)
   const plain = block ? full.slice(block[0].length) : full
   if (block) {

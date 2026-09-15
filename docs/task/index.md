@@ -79,9 +79,9 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `P1`
 - [-] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `P1`
-- [ ] [**20260914-1150-directory-poll-save-race Keep directory polls out of a save's change window**](20260914-1150-directory-poll-save-race.md) `P2`
+- [x] [**20260914-1150-directory-poll-save-race Keep directory polls out of a save's change window**](20260914-1150-directory-poll-save-race.md) `P2`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `P1`
-- [ ] [**20260914-1559-source-pane-e2e-ordering Investigate source-pane end-to-end ordering instability**](20260914-1559-source-pane-e2e-ordering.md) `P2`
+- [x] [**20260914-1559-source-pane-e2e-ordering Investigate source-pane end-to-end ordering instability**](20260914-1559-source-pane-e2e-ordering.md) `P2`
 - [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `P1`
 - [x] [**20260914-2342-fix-nested-folder-browsing Fix nested folder browsing**](20260914-2342-fix-nested-folder-browsing.md) `P1`
 - [x] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `P1`
@@ -89,3 +89,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260915-0156-release-short-mobile-file-listing Release the short mobile file-listing fix**](20260915-0156-release-short-mobile-file-listing.md) `P1`
 - [x] [**20260915-0230-compact-mobile-drawer-header Compact the mobile drawer header**](20260915-0230-compact-mobile-drawer-header.md) `P1`
 - [-] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `P1`
+- [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `P1`

@@ -1,10 +1,32 @@
 import { expect, it } from 'vitest'
+import { encodedAnglePlaceholderSource } from '../../test/encoded-angle-placeholder'
 import { originalSolarSource } from '../../test/original-solar'
 import { validateSource } from './renderer'
 import { fileLinks, renderSource } from './source-policy'
 
 it('accepts the unchanged original 24-node four-group flowchart', () => {
   expect(() => validateSource(originalSolarSource)).not.toThrow()
+})
+
+it('accepts and projects the exact encoded angle placeholder source without changing its bytes', () => {
+  expect(() => validateSource(encodedAnglePlaceholderSource)).not.toThrow()
+  expect(renderSource(encodedAnglePlaceholderSource)).toContain('\uE000merdeck-angle-')
+  expect(encodedAnglePlaceholderSource).toContain('mica-board-&lt;board&gt;')
+})
+
+it.each([
+  '&LT;board&gt;',
+  '&lt;Board&gt;',
+  '&lt;script&gt;',
+  '&lt;my-widget&gt;',
+  '&lt;board onload=alert(1)&gt;',
+  '&lt;&lt;board&gt;&gt;',
+  '&amp;lt;board&gt;',
+  '&#60;board&#62;',
+  '#60;board#62;',
+  '&lt;board&gt',
+])('refuses every non-allowlisted encoded angle neighbor: %s', (token) => {
+  expect(() => validateSource(`flowchart LR\nA["mica-board-${token}"]`)).toThrow('plain Mermaid')
 })
 
 it.each([

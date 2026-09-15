@@ -1,7 +1,19 @@
 import type { Locator } from '@playwright/test'
-import { expect, live, login, test } from './support'
+import { choose, expect, live, login, test } from './support'
 
 const width = async (locator: Locator) => (await locator.boundingBox())!.width
+
+test('choose opens a newly selected file from a collapsed source pane', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await login(page, true)
+  await page.getByRole('button', { name: 'welcome.mmd', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Show source', exact: true })).toBeVisible()
+
+  await choose(page, 'sequence.mermaid')
+
+  await expect(page.getByLabel('Mermaid source', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Hide source', exact: true })).toBeVisible()
+})
 
 test('source and preview panes resize, collapse and keep their layout', async ({ page }) => {
   test.setTimeout(90000)

@@ -50,3 +50,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260915-0156-release-short-mobile-file-listing Release the short mobile file-listing fix**](20260915-0156-release-short-mobile-file-listing.md) `2026-09-15`
 - [x] [**20260915-0230-compact-mobile-drawer-header Compact the mobile drawer header**](20260915-0230-compact-mobile-drawer-header.md) `2026-09-15`
 - [-] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `2026-09-15`
+- [x] [**20260915-0503-source-pane-e2e-ordering Stabilize source-pane browser ordering**](20260915-0503-source-pane-e2e-ordering.md) `2026-09-15`
+- [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `2026-09-15`
