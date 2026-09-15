@@ -1,6 +1,7 @@
 import type { DiagramBlock } from '../../../../src/shared/contracts'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { resolveProjectLink } from './document-links'
 import { DocumentView } from './document-view'
 
 vi.mock('@/features/preview/renderer', () => ({ renderDiagram: vi.fn().mockResolvedValue('<svg><text>diagram</text></svg>') }))
@@ -23,6 +24,20 @@ class FakeWorker {
 afterEach(() => {
   vi.unstubAllGlobals()
   workers.length = 0
+})
+it('resolves only contained, valid project-document links', () => {
+  expect(resolveProjectLink('docs/guide.md', './next.md')).toBe('docs/next.md')
+  expect(resolveProjectLink('docs/guide.md', '../index.mmd')).toBe('index.mmd')
+  expect(resolveProjectLink('docs/guide.md', '../../secret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', '%2e%2e/secret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', 'next%2fsecret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', '%GG.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', '/secret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', '//host/secret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', 'javascript:alert(1)')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', 'data:text/plain,hello')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', 'file:///secret.md')).toBeNull()
+  expect(resolveProjectLink('docs/guide.md', 'nested/diagram.mermaid#section')).toBe('docs/nested/diagram.mermaid')
 })
 it('renders safe Markdown as React elements and places matching diagrams', async () => {
   const open = vi.fn()

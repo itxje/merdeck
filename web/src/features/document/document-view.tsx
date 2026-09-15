@@ -6,7 +6,7 @@ import { frontmatter } from 'micromark-extension-frontmatter'
 import { gfm } from 'micromark-extension-gfm'
 import * as React from 'react'
 import { renderDiagram } from '@/features/preview/renderer'
-import { parentDirectory, validPath } from '@/features/workspace/api'
+import { resolveProjectLink } from './document-links'
 
 interface Node { type: string, value?: string, lang?: string | null, url?: string, alt?: string | null, depth?: number, checked?: boolean | null, ordered?: boolean, align?: (string | null)[], children?: Node[], position?: { start: { line: number }, end: { line: number } } }
 
@@ -90,26 +90,9 @@ function InlineDiagram({ source, selected, onSelect }: { source: string, selecte
   )
 }
 
-function resolveProjectLink(path: string, url: string): string | null {
-  if (!/^(?:[^:/?#]+\/)*[^/?#]+\.(?:md|mmd|mermaid)(?:#.*)?$/i.test(url))
-    return null
-  const target = decodeURIComponent(url.split('#', 1)[0] ?? '')
-  const parts = [...parentDirectory(path).split('/').filter(Boolean), ...target.split('/')]
-  const normalized: string[] = []
-  for (const part of parts) {
-    if (part === '.' || !part)
-      continue
-    if (part === '..')
-      normalized.pop()
-    else
-      normalized.push(part)
-  }
-  const result = normalized.join('/')
-  return validPath(result) ? result : null
-}
-
-export function DocumentView({ text, path, blocks, sources, selected, onSelect, onOpenFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onSelect: (index: number) => void, onOpenFile: (path: string) => void }) {
+export function DocumentView({ text, path, blocks, sources, selected, onSelect, onOpenFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onSelect: (index: number) => void, onOpenFile: (path: string) => string | undefined | Promise<string | undefined> }) {
   const parsed = useDocumentTree(text)
+  const [linkError, setLinkError] = React.useState('')
   const tree = parsed.tree ?? { children: [] }
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
   const placementOk = blocks.every(block => tree.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
@@ -159,8 +142,25 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     }
     if (node.type === 'link') {
       const project = node.url ? resolveProjectLink(path, node.url) : null
-      if (project)
-        return <button key={key} type="button" className="document-link" onClick={() => onOpenFile(project)}>{children}</button>
+      if (project) {
+        return (
+          <button
+            key={key}
+            type="button"
+            className="document-link"
+            onClick={() => {
+              const result = onOpenFile(project)
+              const show = (message: string | undefined) => setLinkError(message ?? '')
+              if (result instanceof Promise)
+                void result.then(show, () => show('That file cannot be opened. Try again.'))
+              else
+                show(result)
+            }}
+          >
+            {children}
+          </button>
+        )
+      }
       if (node.url && /^(?:https?:|mailto:)/i.test(node.url))
         return <a key={key} href={node.url} target="_blank" rel="noopener noreferrer">{children}</a>
       return <React.Fragment key={key}>{children}</React.Fragment>
@@ -187,6 +187,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     return <article className="document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
   return (
     <article className="document-view" aria-label="Markdown document">
+      {linkError && <p role="alert">{linkError}</p>}
       {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
       {tree.children.map((node, index) => render(node, `root-${index}`))}
     </article>

@@ -80,6 +80,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
+  const effectiveMarkdownView = file?.baseline.kind === 'markdown' && !selected ? 'document' : markdownView
   const source = file?.sources[block] ?? ''
   const changed = !!selected && source !== selected.source
   const sourceBytes = new TextEncoder().encode(source).length
@@ -119,11 +120,9 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   React.useLayoutEffect(() => {
     navigationRef.current = { path, block, directory, access: state.session?.access, csrf }
   }, [path, block, directory, state.session?.access, csrf])
-  const openLinkedFile = React.useCallback(async (target: string) => {
+  const openResolvedLinkedFile = React.useCallback(async (resolved: string) => {
     const request = ++linkedRequestRef.current
     const controller = linkScopeRef.current
-    const base = parentDirectory(path)
-    const resolved = `${base ? `${base}/` : ''}${target}`
     if (!linkSession || !controller || controller.signal.aborted || !validPath(resolved))
       return 'That file cannot be opened.'
     try {
@@ -143,7 +142,11 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
         return errorMessage(error)
       return undefined
     }
-  }, [navigate, path, linkSession, readTarget])
+  }, [navigate, linkSession, readTarget])
+  const openLinkedFile = React.useCallback((target: string) => {
+    const base = parentDirectory(path)
+    return openResolvedLinkedFile(`${base ? `${base}/` : ''}${target}`)
+  }, [openResolvedLinkedFile, path])
 
   const select = (next: string, index = 0) => {
     navigate(next, index)
@@ -338,7 +341,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     ? (
                         <>
                           {file?.baseline.kind === 'markdown' && (
-                            <Tabs value={markdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}>
+                            <Tabs value={effectiveMarkdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}>
                               <TabsList aria-label="Markdown view">
                                 <TabsTrigger value="document">Document</TabsTrigger>
                                 <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>
@@ -359,7 +362,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                             <TabsContent value="source" className="sr-only">Source editor</TabsContent>
                             <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
                           </Tabs>
-                          {file?.baseline.kind === 'markdown' && markdownView === 'document'
+                          {!selected && file?.baseline.kind === 'markdown'
                             ? (
                                 <DocumentView
                                   text={file.baseline.text!}
@@ -368,12 +371,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                   sources={file.sources}
                                   selected={block}
                                   onSelect={index => select(path, index)}
-                                  onOpenFile={(next) => {
-                                    void readTarget(next, new AbortController().signal).then((document) => {
-                                      if (document.path === next)
-                                        navigate(next, 0)
-                                    })
-                                  }}
+                                  onOpenFile={openResolvedLinkedFile}
                                 />
                               )
                             : (
@@ -434,7 +432,9 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                   </ResizablePanel>
                                   <ResizableHandle withHandle aria-label="Resize source and preview" />
                                   <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
-                                    <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />
+                                    {file?.baseline.kind === 'markdown' && effectiveMarkdownView === 'document'
+                                      ? <DocumentView text={file.baseline.text!} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={openResolvedLinkedFile} />
+                                      : <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />}
                                   </ResizablePanel>
                                 </ResizablePanelGroup>
                               )}
