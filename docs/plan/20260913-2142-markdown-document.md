@@ -1,8 +1,8 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: draft
+- **status**: implementing
 - **createdAt**: 2026-09-13 21:42
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-15
 - **relatedTask**: 20260913-2142-markdown-document
 
 ## Context
@@ -54,6 +54,10 @@ Findings from the current code:
 `src/shared/contracts.ts`, `src/modules/diagrams/parser.ts` and their service and HTTP tests; `web/src/features/workspace/api.ts`; a new document view with its Markdown parsing, link policy and inline diagram component; a render hook shared by the inline diagram and the existing preview; `workspace.tsx` for the view switch, scrolling and Markdown files without diagrams; styles for the document column from existing tokens; `web/package.json` and `web/bun.lock` for the promoted dependencies, with a decision record; their tests and the browser case; README, architecture and changelog.
 
 Out of scope: editing prose or the whole file, loading images, rendering raw HTML, math, code highlighting, drawing unselectable Mermaid fences, heading anchors in the address bar, printing and export, and prototype changes; the prototype stays needs-review.
+
+## Implementation decisions
+
+`github-slugger` **2.0.0** and `@types/mdast` **4.0.4** are promoted as exact direct dependencies from the existing lockfile. Both versions were verified against the npm registry on 2026-09-15 and match the approved renderer contract: the former owns GitHub-compatible duplicate heading slugs, and the latter replaces the renderer's ad-hoc syntax-node shape with MDAST types. No transitive dependency versions changed. Local browser, worker-performance, size and repository-gate evidence is recorded in the linked task. Native Linux x64/ext4 `check:ci --native` remains the explicit post-integration release gate; local overlayfs evidence does not claim to satisfy it.
 
 ## Alternatives
 

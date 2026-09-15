@@ -4,6 +4,7 @@ import { Check, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, Panel
 import * as React from 'react'
 import { useDefaultLayout, usePanelRef } from 'react-resizable-panels'
 import { ThemeToggle } from '@/app/theme-toggle'
+import { DocumentView } from '@/features/document/document-view'
 import { Preview } from '@/features/preview/preview'
 import { UpdateNotice } from '@/features/update/update-notice'
 import { MerdeckMark } from '@/shared/components/brand/merdeck-mark'
@@ -39,6 +40,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [entryOpen, setEntryOpen] = React.useState(false)
   const drawerFilterRef = React.useRef<HTMLInputElement>(null)
   const [pane, setPane] = React.useState('preview')
+  // View selection belongs to a Markdown document, never to the previously opened file.
+  const [markdownViews, setMarkdownViews] = React.useState<Record<string, 'document' | 'diagram'>>({})
   const [syntaxError, setSyntaxError] = React.useState('')
   const linesRef = React.useRef<HTMLPreElement>(null)
   const sourceRef = React.useRef<HTMLTextAreaElement>(null)
@@ -78,6 +81,12 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
+  const markdownView = file?.baseline.kind === 'markdown' ? markdownViews[path] ?? 'document' : 'document'
+  const effectiveMarkdownView = file?.baseline.kind === 'markdown' && !selected ? 'document' : markdownView
+  const chooseMarkdownView = React.useCallback((value: 'document' | 'diagram') => {
+    if (file?.baseline.kind === 'markdown')
+      setMarkdownViews(views => views[path] === value ? views : { ...views, [path]: value })
+  }, [file?.baseline.kind, path])
   const source = file?.sources[block] ?? ''
   const changed = !!selected && source !== selected.source
   const sourceBytes = new TextEncoder().encode(source).length
@@ -117,16 +126,15 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   React.useLayoutEffect(() => {
     navigationRef.current = { path, block, directory, access: state.session?.access, csrf }
   }, [path, block, directory, state.session?.access, csrf])
-  const openLinkedFile = React.useCallback(async (target: string) => {
+  const openResolvedLinkedFile = React.useCallback(async (resolved: string) => {
     const request = ++linkedRequestRef.current
     const controller = linkScopeRef.current
-    const base = parentDirectory(path)
-    const resolved = `${base ? `${base}/` : ''}${target}`
+    let read: AbortController | null = null
     if (!linkSession || !controller || controller.signal.aborted || !validPath(resolved))
       return 'That file cannot be opened.'
     try {
       linkReadRef.current?.abort()
-      const read = new AbortController()
+      read = new AbortController()
       linkReadRef.current = read
       const document = await readTarget(resolved, AbortSignal.any([controller.signal, read.signal]))
       if (controller.signal.aborted || linkScopeRef.current !== controller || request !== linkedRequestRef.current)
@@ -137,11 +145,15 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
       return undefined
     }
     catch (error) {
-      if (!controller.signal.aborted)
-        return errorMessage(error)
-      return undefined
+      if (controller.signal.aborted || read?.signal.aborted || request !== linkedRequestRef.current)
+        return undefined
+      return errorMessage(error)
     }
-  }, [navigate, path, linkSession, readTarget])
+  }, [navigate, linkSession, readTarget])
+  const openLinkedFile = React.useCallback((target: string) => {
+    const base = parentDirectory(path)
+    return openResolvedLinkedFile(`${base ? `${base}/` : ''}${target}`)
+  }, [openResolvedLinkedFile, path])
 
   const select = (next: string, index = 0) => {
     navigate(next, index)
@@ -332,83 +344,110 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                       <Button variant="outline" disabled={!!file?.saving} onClick={openReview}>Review current file</Button>
                     </div>
                   )}
-                  {selected && file
+                  {(selected && file) || file?.baseline.kind === 'markdown'
                     ? (
                         <>
-                          <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
-                            <TabsList aria-label="Workspace pane">
-                              <TabsTrigger value="source">
-                                <Code2 />
-                                Source
-                              </TabsTrigger>
-                              <TabsTrigger value="preview">
-                                <GitBranch />
-                                Preview
-                              </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="source" className="sr-only">Source editor</TabsContent>
-                            <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
-                          </Tabs>
-                          <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
-                            <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={collapsedSourceWidth} minSize="20%" defaultSize={collapsedSourceWidth} onResize={size => setSourceCollapsed(size.inPixels <= collapsedSourceWidth)}>
-                              {sourceCollapsed && (
-                                <div className="source-rail">
-                                  <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={showSource}><PanelLeftOpen /></Button>
-                                </div>
+                          {file?.baseline.kind === 'markdown' && (
+                            <Tabs value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
+                              <TabsList aria-label="Markdown view">
+                                <TabsTrigger value="document">Document</TabsTrigger>
+                                <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>
+                              </TabsList>
+                            </Tabs>
+                          )}
+                          {selected && (
+                            <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
+                              <TabsList aria-label="Workspace pane">
+                                <TabsTrigger value="source">
+                                  <Code2 />
+                                  Source
+                                </TabsTrigger>
+                                <TabsTrigger value="preview">
+                                  <GitBranch />
+                                  Preview
+                                </TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="source" className="sr-only">Source editor</TabsContent>
+                              <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
+                            </Tabs>
+                          )}
+                          {!selected && file?.baseline.kind === 'markdown'
+                            ? (
+                                <DocumentView
+                                  text={file.baseline.text}
+                                  path={path}
+                                  blocks={file.baseline.blocks}
+                                  sources={file.sources}
+                                  selected={block}
+                                  onSelect={index => select(path, index)}
+                                  onOpenFile={openResolvedLinkedFile}
+                                  onOpenDiagramFile={openLinkedFile}
+                                />
+                              )
+                            : (
+                                <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
+                                  <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={collapsedSourceWidth} minSize="20%" defaultSize={collapsedSourceWidth} onResize={size => setSourceCollapsed(size.inPixels <= collapsedSourceWidth)}>
+                                    {sourceCollapsed && (
+                                      <div className="source-rail">
+                                        <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={showSource}><PanelLeftOpen /></Button>
+                                      </div>
+                                    )}
+                                    {/* The collapsed editor stays mounted so its scroll position and selection survive. */}
+                                    <section className="source-pane" aria-label="Source editor" data-collapsed={sourceCollapsed || undefined}>
+                                      <div className="pane-heading">
+                                        <label htmlFor="diagram-source">Source</label>
+                                        <span className="pane-actions">
+                                          <span className="muted">Mermaid</span>
+                                          <Button className="pane-collapse" variant="ghost" size="icon-xs" aria-label="Hide source" title="Hide source" onClick={() => sourcePanel.current?.collapse()}><PanelLeftClose /></Button>
+                                        </span>
+                                      </div>
+                                      <div className="source-body">
+                                        <pre ref={linesRef} className="line-numbers" aria-hidden="true">{source.split('\n').map((_line, index) => index + 1).join('\n')}</pre>
+                                        <Textarea
+                                          ref={sourceRef}
+                                          id="diagram-source"
+                                          aria-label="Mermaid source"
+                                          aria-invalid={!!syntaxError || tooLarge}
+                                          aria-describedby={syntaxError || tooLarge ? 'source-error' : undefined}
+                                          spellCheck={false}
+                                          className="source-input"
+                                          maxLength={absoluteSourceLimit}
+                                          value={source}
+                                          onScroll={(event) => {
+                                            if (linesRef.current)
+                                              linesRef.current.scrollTop = event.currentTarget.scrollTop
+                                          }}
+                                          onChange={event => state.dispatch({ type: 'edit', path, block, source: event.target.value })}
+                                        />
+                                      </div>
+                                      {(syntaxError || tooLarge) && (
+                                        <div id="source-error" className="source-error" role="status">
+                                          <strong>{tooLarge ? 'Source exceeds the service limit' : 'Preview needs attention'}</strong>
+                                          <pre>{tooLarge ? `Limit: ${maxBytes.toLocaleString()} UTF-8 bytes. Your text is kept; shorten it before saving.` : syntaxError.slice(0, 800)}</pre>
+                                        </div>
+                                      )}
+                                      <div className="pane-footer">
+                                        <span>
+                                          {source.split('\n').length}
+                                          {' '}
+                                          lines · UTF-8 ·
+                                          {' '}
+                                          {sourceBytes.toLocaleString()}
+                                          {' '}
+                                          bytes
+                                        </span>
+                                        <span>{file.baseline.kind === 'markdown' ? `Line ${selected?.lineStart ?? 1}` : 'Entire file'}</span>
+                                      </div>
+                                    </section>
+                                  </ResizablePanel>
+                                  <ResizableHandle withHandle aria-label="Resize source and preview" />
+                                  <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
+                                    {file?.baseline.kind === 'markdown' && effectiveMarkdownView === 'document'
+                                      ? <DocumentView text={file.baseline.text} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} />
+                                      : <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />}
+                                  </ResizablePanel>
+                                </ResizablePanelGroup>
                               )}
-                              {/* The collapsed editor stays mounted so its scroll position and selection survive. */}
-                              <section className="source-pane" aria-label="Source editor" data-collapsed={sourceCollapsed || undefined}>
-                                <div className="pane-heading">
-                                  <label htmlFor="diagram-source">Source</label>
-                                  <span className="pane-actions">
-                                    <span className="muted">Mermaid</span>
-                                    <Button className="pane-collapse" variant="ghost" size="icon-xs" aria-label="Hide source" title="Hide source" onClick={() => sourcePanel.current?.collapse()}><PanelLeftClose /></Button>
-                                  </span>
-                                </div>
-                                <div className="source-body">
-                                  <pre ref={linesRef} className="line-numbers" aria-hidden="true">{source.split('\n').map((_line, index) => index + 1).join('\n')}</pre>
-                                  <Textarea
-                                    ref={sourceRef}
-                                    id="diagram-source"
-                                    aria-label="Mermaid source"
-                                    aria-invalid={!!syntaxError || tooLarge}
-                                    aria-describedby={syntaxError || tooLarge ? 'source-error' : undefined}
-                                    spellCheck={false}
-                                    className="source-input"
-                                    maxLength={absoluteSourceLimit}
-                                    value={source}
-                                    onScroll={(event) => {
-                                      if (linesRef.current)
-                                        linesRef.current.scrollTop = event.currentTarget.scrollTop
-                                    }}
-                                    onChange={event => state.dispatch({ type: 'edit', path, block, source: event.target.value })}
-                                  />
-                                </div>
-                                {(syntaxError || tooLarge) && (
-                                  <div id="source-error" className="source-error" role="status">
-                                    <strong>{tooLarge ? 'Source exceeds the service limit' : 'Preview needs attention'}</strong>
-                                    <pre>{tooLarge ? `Limit: ${maxBytes.toLocaleString()} UTF-8 bytes. Your text is kept; shorten it before saving.` : syntaxError.slice(0, 800)}</pre>
-                                  </div>
-                                )}
-                                <div className="pane-footer">
-                                  <span>
-                                    {source.split('\n').length}
-                                    {' '}
-                                    lines · UTF-8 ·
-                                    {' '}
-                                    {sourceBytes.toLocaleString()}
-                                    {' '}
-                                    bytes
-                                  </span>
-                                  <span>{file.baseline.kind === 'markdown' ? `Line ${selected.lineStart}` : 'Entire file'}</span>
-                                </div>
-                              </section>
-                            </ResizablePanel>
-                            <ResizableHandle withHandle aria-label="Resize source and preview" />
-                            <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
-                              <Preview key={`${path}:${block}`} source={source} title={selected.label} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />
-                            </ResizablePanel>
-                          </ResizablePanelGroup>
                         </>
                       )
                     : (

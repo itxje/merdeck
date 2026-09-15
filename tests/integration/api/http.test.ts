@@ -306,14 +306,31 @@ describe('HTTP file contracts', () => {
     const f = await fixture()
     const auth = await login(f)
     const original = await data<DiagramDocument>(await f.request('/api/diagrams/document?path=notes.md', { headers: auth.headers }))
+    expect(original.kind).toBe('markdown')
+    expect(original.text).toBe(markdown.slice(1))
     expect(original.blocks).toHaveLength(2)
     const updated = await data<DiagramDocument>(await f.request('/api/diagrams/source', { method: 'PUT', headers: auth.headers, body: JSON.stringify(save(original, 'graph TD\nFirst-->Second\n')) }))
     expect(updated.version).not.toBe(original.version)
+    expect(updated.kind).toBe('markdown')
+    expect(updated.text).toBe(markdown.replace('A-->B', 'First-->Second').slice(1))
     expect(updated.blocks[1]!.selector).not.toEqual(original.blocks[1]!.selector)
     expect(await readFile(`${f.root}/notes.md`, 'utf8')).toBe(markdown.replace('A-->B', 'First-->Second'))
     const second = { path: updated.path, expectedVersion: updated.version, selector: updated.blocks[1]!.selector, source: 'sequenceDiagram\nBob->>Alice: Goodbye\n' }
     expect((await f.request('/api/diagrams/source', { method: 'PUT', headers: auth.headers, body: JSON.stringify(second) })).status).toBe(200)
     expect(await readFile(`${f.root}/notes.md`, 'utf8')).toBe(markdown.replace('A-->B', 'First-->Second').replace('Alice->>Bob: Hello', 'Bob->>Alice: Goodbye'))
+  })
+
+  test.each(['flow.mmd', 'sequence.mermaid'])('never emits Markdown text for standalone %s documents or saves', async (path) => {
+    const f = await fixture()
+    const auth = await login(f)
+    if (path === 'sequence.mermaid')
+      await writeFile(`${f.root}/${path}`, 'sequenceDiagram\nAlice->>Bob: Hello\n')
+    const original = await data<DiagramDocument>(await f.request(`/api/diagrams/document?path=${path}`, { headers: auth.headers }))
+    expect(original.kind).toBe('mermaid')
+    expect(original).not.toHaveProperty('text')
+    const saved = await data<DiagramDocument>(await f.request('/api/diagrams/source', { method: 'PUT', headers: auth.headers, body: JSON.stringify(save(original)) }))
+    expect(saved.kind).toBe('mermaid')
+    expect(saved).not.toHaveProperty('text')
   })
 
   test('external edits and replacements conflict; detected deletion returns 410 and revisions report rename', async () => {

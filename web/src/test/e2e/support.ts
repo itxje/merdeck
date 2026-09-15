@@ -71,6 +71,12 @@ export async function login(page: Page, reuseSession = false) {
 }
 export async function browse(page: Page, directory: string) {
   const explorer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  // On narrow layouts the persistent tree is visually covered by the drawer. Open the
+  // drawer first so every subsequent navigation action has an interactable owner.
+  if (!await explorer.isVisible() && await page.getByRole('button', { name: 'Open project files', exact: true }).isVisible()) {
+    await page.getByRole('button', { name: 'Open project files', exact: true }).click()
+    await expect(explorer).toBeVisible()
+  }
   const scope = await explorer.isVisible() ? explorer : page.getByRole('complementary', { name: 'Project files', exact: true })
   await scope.getByRole('button', { name: 'Root', exact: true }).click()
   await expect(page).toHaveURL(url => url.searchParams.get('directory') === '""' || url.searchParams.get('directory') === '')
@@ -89,6 +95,14 @@ export async function choose(page: Page, name: string) {
   const base = file.split('/').at(-1)!
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   await page.getByRole('button', { name: new RegExp(`^${escaped}(?: Unsaved changes)?$`) }).first().click()
+  // Markdown opens in its read-only document view; existing source-editor helpers exercise the retained Diagram view.
+  const diagram = page.getByRole('tab', { name: 'Diagram', exact: true })
+  if (file.endsWith('.md')) {
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toBeVisible()
+    await expect(diagram).toBeEnabled()
+    await diagram.click()
+    await expect(diagram).toHaveAttribute('aria-selected', 'true')
+  }
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeAttached()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })
   if (await showSource.isVisible()) {

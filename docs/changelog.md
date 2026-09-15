@@ -456,3 +456,10 @@ Rebuilt the running service from the merged head that carries the project owner'
 ## 2026-09-13 17:47 [progress]
 
 Delivered a separate needs-review directory navigation prototype and [frontend integration proposal](plan/20260913-1746-directory-frontend.md): independent browsing/editor state, five-page window, honest filtering, deferred Markdown states and retained drafts. Existing prototype/approved brand bytes and production code are unchanged. Scoped build/lint/types, four fixture tests and seven HTTP browser groups passed; nine original prototype groups also passed. Narrow theme/tab SVG bounds were repaired in the variant after a failing geometry assertion. Production integration and final feature acceptance remain pending.
+## 2026-09-15 05:10 [progress]
+
+Markdown document responses now include same-revision BOM-free text and the workspace renders read-only Markdown with inline selectable Mermaid diagrams. HTML remains literal text, images are inert, and document links are constrained to validated workspace navigation or safe external schemes. Existing per-block save selectors and Mermaid sanitization remain unchanged.
+
+## 2026-09-15 08:10 [progress]
+
+Recorded complete local acceptance evidence for whole Markdown documents: production Chromium browser coverage, exact source/security/byte-preservation behavior, Worker-backed 1 MiB and 100-diagram measurements, and a reproducible integration-base size comparison. A production Worker dependency condition had caused the parser to fall back synchronously because `document` was unavailable in the Worker; resolving the parser's non-DOM entry removes that path. Worker parse wall-clock time is reported separately from the zero measured main-thread Long Tasks. Linux x64/ext4 native acceptance remains a post-integration release gate; the tracked task and plan stay in progress until that environment runs `check:ci --native`.
