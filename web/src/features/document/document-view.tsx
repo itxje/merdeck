@@ -15,26 +15,50 @@ function parse(text: string) {
 }
 
 function useDocumentTree(text: string) {
-  const [tree, setTree] = React.useState(() => parse(text))
+  const [state, setState] = React.useState<{ text: string, tree: { children: Node[] } | null, error: string | null }>(() => typeof Worker === 'undefined' ? { text, tree: parse(text), error: null } : { text, tree: null, error: null })
   React.useEffect(() => {
-    if (typeof Worker === 'undefined') {
-      setTree(parse(text))
-      return
-    }
-    const worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
+    let worker: Worker
     let current = true
     const id = 1
-    worker.onmessage = (event: MessageEvent<{ id: number, tree?: { children: Node[] } }>) => {
-      if (current && event.data.id === id && event.data.tree)
-        setTree(event.data.tree)
+    const fallback = (error: unknown) => {
+      if (!current)
+        return
+      worker?.terminate()
+      queueMicrotask(() => {
+        if (!current)
+          return
+        try {
+          setState({ text, tree: parse(text), error: null })
+        }
+        catch {
+          setState({ text, tree: null, error: error instanceof Error ? error.message : 'Markdown parsing failed.' })
+        }
+      })
     }
-    worker.postMessage({ id, text })
+    try {
+      if (typeof Worker === 'undefined')
+        throw new Error('Worker unavailable')
+      worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
+      worker.onmessage = (event: MessageEvent<{ id: number, tree?: { children: Node[] }, error?: string }>) => {
+        if (!current || event.data.id !== id)
+          return
+        if (event.data.tree)
+          setState({ text, tree: event.data.tree, error: null })
+        else
+          fallback(new Error(event.data.error ?? 'Markdown parsing failed.'))
+      }
+      worker.onerror = fallback
+      worker.postMessage({ id, text })
+    }
+    catch (error) {
+      fallback(error)
+    }
     return () => {
       current = false
-      worker.terminate()
+      worker?.terminate()
     }
   }, [text])
-  return tree
+  return state.text === text ? state : { text, tree: null, error: null }
 }
 
 function InlineDiagram({ source, selected, onSelect }: { source: string, selected: boolean, onSelect: () => void }) {
@@ -79,7 +103,8 @@ function resolveProjectLink(path: string, url: string): string | null {
 }
 
 export function DocumentView({ text, path, blocks, sources, selected, onSelect, onOpenFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onSelect: (index: number) => void, onOpenFile: (path: string) => void }) {
-  const tree = useDocumentTree(text)
+  const parsed = useDocumentTree(text)
+  const tree = parsed.tree ?? { children: [] }
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
   const placementOk = blocks.every(block => tree.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
   // eslint-disable-next-line ts/no-use-before-define -- The renderer and its child recursion are intentionally paired.
@@ -150,6 +175,10 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
       return <aside key={key}>{children}</aside>
     return <React.Fragment key={key}>{children}</React.Fragment>
   }
+  if (parsed.error)
+    return <article className="document-view" aria-label="Markdown document"><p role="alert">{parsed.error}</p></article>
+  if (!parsed.tree)
+    return <article className="document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
   return (
     <article className="document-view" aria-label="Markdown document">
       {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
