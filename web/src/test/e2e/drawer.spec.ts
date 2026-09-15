@@ -12,10 +12,6 @@ async function measureDrawer(dialog: Locator) {
     const bounds = box(popup)
     const style = getComputedStyle(popup)
     const content = { left: bounds.left + Number.parseFloat(style.paddingLeft), right: bounds.right - Number.parseFloat(style.paddingRight) }
-    const description = popup.querySelector('[data-slot="dialog-description"]')!
-    const range = document.createRange()
-    range.selectNodeContents(description)
-    const lines = [...range.getClientRects()].map(rect => ({ left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom }))
     const measure = (selector: string) => [...popup.querySelectorAll(selector)]
       .filter(element => getComputedStyle(element).display !== 'none')
       .map(element => ({ tag: element.tagName, slot: element.getAttribute('data-slot'), ...box(element) }))
@@ -25,22 +21,23 @@ async function measureDrawer(dialog: Locator) {
       fileTree: box(popup.querySelector('.file-tree')!),
       content,
       columns: style.gridTemplateColumns,
-      containers: measure(':scope > h2, :scope > p, .file-tree, .tree-heading, .tree-search, .tree-bottom, nav'),
+      containers: measure(':scope > h2:not(.sr-only), :scope > p, .file-tree, .tree-heading, .tree-search, .tree-bottom, nav'),
       descendants: measure('.file-tree ul, .file-tree li, .file-tree button, .file-tree input'),
       close: box(popup.querySelector('[data-slot="dialog-close"]')!),
-      description: { lines, height: description.clientHeight, scrollHeight: description.scrollHeight },
+      heading: box(popup.querySelector('.tree-heading')!),
+      headingActions: measure('.tree-heading-actions button'),
     }
   })
 }
 function assertContained(measurement: Awaited<ReturnType<typeof measureDrawer>>) {
-  const { popup, content, viewport, containers, descendants, description, close } = measurement
+  const { popup, content, viewport, containers, descendants, close, heading, headingActions } = measurement
   // DOM scroll dimensions round to integers; tolerate only one CSS pixel.
   expect(popup.scrollWidth).toBeLessThanOrEqual(popup.clientWidth + 1)
   expect(popup.left).toBeGreaterThanOrEqual(0)
   expect(popup.right).toBeLessThanOrEqual(viewport.width)
   expect(popup.top).toBeGreaterThanOrEqual(0)
   expect(popup.bottom).toBeLessThanOrEqual(viewport.height)
-  expect(containers.length).toBeGreaterThanOrEqual(7)
+  expect(containers.length).toBeGreaterThanOrEqual(5)
   expect(descendants.length).toBeGreaterThan(3)
   for (const item of [...containers, ...descendants]) {
     expect(item.left).toBeGreaterThanOrEqual(content.left - 1)
@@ -56,14 +53,9 @@ function assertContained(measurement: Awaited<ReturnType<typeof measureDrawer>>)
   expect(close.right).toBeLessThanOrEqual(popup.right)
   expect(close.top).toBeGreaterThanOrEqual(popup.top)
   expect(close.bottom).toBeLessThanOrEqual(popup.bottom)
-  expect(description.lines.length).toBeGreaterThanOrEqual(2)
-  expect(description.scrollHeight).toBeLessThanOrEqual(description.height + 1)
-  for (const line of description.lines) {
-    expect(line.left).toBeGreaterThanOrEqual(content.left - 1)
-    expect(line.right).toBeLessThanOrEqual(content.right + 1)
-    expect(line.top).toBeGreaterThanOrEqual(popup.top)
-    expect(line.bottom).toBeLessThanOrEqual(popup.bottom)
-  }
+  expect(heading.top).toBeLessThanOrEqual(popup.top + 32)
+  for (const action of headingActions)
+    expect(action.right).toBeLessThanOrEqual(close.left + 1)
 }
 
 test('file drawer anchors a compact empty folder at narrow widths', async ({ page }, info) => {
@@ -89,7 +81,7 @@ test('file drawer anchors a compact empty folder at narrow widths', async ({ pag
       // Empty folders do not reserve the populated-list height and the sheet meets the viewport edge.
       expect(measurement.fileTree.height).toBeLessThan(measurement.viewport.height * 0.58)
       expect(measurement.popup.bottom).toBeGreaterThanOrEqual(measurement.viewport.height - 1)
-      await page.keyboard.press('Escape')
+      await dialog.getByRole('button', { name: 'Close', exact: true }).click()
       await expect(dialog).toHaveCount(0)
       await expect(opener).toBeFocused()
     }
@@ -183,7 +175,7 @@ test('file drawer reserves reachable folder rows in a short mobile viewport', as
   }
 })
 
-test('file drawer contains long nested labels, wrapped help and usable controls at narrow widths', async ({ page }, info) => {
+test('file drawer omits its redundant header while retaining named usable controls at narrow widths', async ({ page }, info) => {
   const root = process.env.MERDECK_SMOKE_ROOT
   if (!root)
     throw new Error('An explicit disposable sample root is required')
@@ -210,7 +202,8 @@ test('file drawer contains long nested labels, wrapped help and usable controls 
       await settledDialog(page)
       const dialog = page.getByRole('dialog', { name: 'Project files', exact: true })
       const search = dialog.getByRole('textbox', { name: 'Filter files', exact: true })
-      await expect(dialog).toHaveAccessibleDescription('Select a file or a diagram block. Your drafts stay in this tab.')
+      await expect(dialog.getByText('Select a file or a diagram block. Your drafts stay in this tab.', { exact: true })).toHaveCount(0)
+      await expect(dialog.getByRole('heading', { name: 'Project files', exact: true })).toHaveClass(/sr-only/)
       await expect(search).toBeFocused()
       const measurement = await measureDrawer(dialog)
       await writeFile(info.outputPath(`drawer-${width}.json`), JSON.stringify(measurement, null, 2))

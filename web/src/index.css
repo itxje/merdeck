@@ -254,6 +254,8 @@ button:disabled { cursor: default; }
 .mobile-panes, .tree-toggle { display: none !important; }
 .file-drawer { width: 300px !important; max-width: calc(100% - 32px) !important; grid-template-columns: minmax(0, 1fr); }
 .file-drawer .file-tree { width: 100%; border: none; height: 64dvh; }
+/* The dialog close control shares the explorer's top rail without covering create or refresh actions. */
+.file-drawer .tree-heading { padding-right: 52px; }
 @media (max-width: 1100px) {
   .workspace-body > .file-tree, .explorer-resizer { display: none; }
   .tree-toggle { display: inline-flex !important; }
@@ -261,8 +263,6 @@ button:disabled { cursor: default; }
 @media (max-width: 700px) {
   /* The project-files dialog is a sheet only on phones; other dialogs retain the shared popup layout. */
   .file-drawer { top: auto !important; bottom: 0; width: 100% !important; max-width: 100% !important; max-height: 100dvh; min-height: 0; gap: 8px; overflow: hidden; border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 12px 12px max(12px, env(safe-area-inset-bottom)) !important; transform-origin: bottom center; translate: -50% 0 !important; }
-  .file-drawer > [data-slot="dialog-title"] { padding-right: 36px; }
-  .file-drawer > [data-slot="dialog-description"] { padding-right: 28px; }
   .file-drawer .file-tree { height: min(64dvh, 36rem); min-height: 0; }
   .file-drawer .file-tree nav { min-height: 0; }
   .file-drawer .tree-bottom { flex: 0 0 auto; }

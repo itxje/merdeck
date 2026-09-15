@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 02:52 [fix]
+
+The mobile file drawer no longer spends a visible row on `Project files` or its explanatory description. It opens directly into the explorer while retaining an assistive dialog name and the shared close control; the explorer action row reserves space so its file, folder, and refresh actions do not overlap that close target. Narrow-screen browser coverage exercises the reclaimed space, accessible name, close action, and 315px short viewport. The self-contained prototypes remain `needs-review`. See [20260915-0230-compact-mobile-drawer-header](task/20260915-0230-compact-mobile-drawer-header.md).
+
 ## 2026-09-15 02:18 [release]
 
 Published [v0.11.3](https://github.com/itxje/merdeck/releases/tag/v0.11.3), which keeps the mobile Project files listing reachable on short screens. Exact commit `204271baa1471bb46da0358664e0dcc2ca28c035` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34919340741), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34920053087) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.3 and the tagged commit. The release does not deploy or restart separately hosted services. See [20260915-0156-release-short-mobile-file-listing](task/20260915-0156-release-short-mobile-file-listing.md).

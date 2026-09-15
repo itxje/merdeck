@@ -38,7 +38,25 @@ async function main() {
     assert.equal(response?.status(), 200)
     const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
     await expect(drawer).toBeVisible()
+    await expect(drawer.getByRole('heading', { name: 'Project files', exact: true })).toHaveCount(0)
+    await expect(drawer.getByText('Select a file or a diagram block. Your drafts stay in this tab.', { exact: true })).toHaveCount(0)
     await expect(page.getByText('No supported entries', { exact: true })).toBeVisible()
+    const topRail = await drawer.evaluate((element) => {
+      const close = element.querySelector<HTMLElement>('#close-drawer')!
+      const heading = element.querySelector<HTMLElement>('.explorer-top')!
+      const actions = [...element.querySelectorAll<HTMLElement>('.quick-actions button')]
+      const popup = element.getBoundingClientRect()
+      const closeBox = close.getBoundingClientRect()
+      const headingBox = heading.getBoundingClientRect()
+      return {
+        popupTop: popup.top,
+        headingTop: headingBox.top,
+        closeLeft: closeBox.left,
+        actions: actions.map(action => action.getBoundingClientRect().right),
+      }
+    })
+    assert.ok(topRail.headingTop <= topRail.popupTop + 32, 'Explorer does not begin in the reclaimed header space')
+    assert.ok(topRail.actions.every(right => right <= topRail.closeLeft + 1), 'Explorer actions overlap the close control')
     const emptyBounds = await drawer.evaluate((element) => {
       const bounds = element.getBoundingClientRect()
       return { bottom: bounds.bottom, height: bounds.height, viewportHeight: innerHeight }

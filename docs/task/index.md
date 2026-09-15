@@ -87,3 +87,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `P1`
 - [x] [**20260915-0119-investigate-mobile-project-files-listing Investigate the mobile Project files listing**](20260915-0119-investigate-mobile-project-files-listing.md) `P1`
 - [x] [**20260915-0156-release-short-mobile-file-listing Release the short mobile file-listing fix**](20260915-0156-release-short-mobile-file-listing.md) `P1`
+- [x] [**20260915-0230-compact-mobile-drawer-header Compact the mobile drawer header**](20260915-0230-compact-mobile-drawer-header.md) `P1`
+- [-] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `P1`

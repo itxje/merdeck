@@ -52,12 +52,9 @@
     .drawer { position: fixed; z-index: 5; right: 50%; bottom: 0; width: min(100%, 390px); max-height: min(78dvh, 44rem); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-bottom: 0; border-radius: 20px 20px 0 0; background: var(--sidebar); box-shadow: 0 -12px 36px oklch(0 0 0 / 14%); translate: 50% 0; }
     .drawer[hidden], .drawer[hidden] + .drawer-backdrop { display: none; }
     .drawer-grip { width: 34px; height: 4px; margin: 8px auto 0; flex: 0 0 auto; border-radius: 999px; background: var(--border); }
-    .drawer-heading { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; align-items: start; padding: 8px 12px 4px; }
-    .drawer-heading h1 { margin: 0; font-size: 16px; line-height: 1.35; letter-spacing: -.35px; }
-    .drawer-heading p { margin: 2px 0 0; color: var(--muted-foreground); font-size: 12px; }
-    .drawer-heading .icon-button { justify-self: end; }
+    .drawer-close { position: absolute; z-index: 1; top: 8px; right: 8px; }
     .explorer { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; padding: 0 12px 0; }
-    .explorer-top { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 4px 4px 0 6px; color: var(--muted-foreground); font-size: 10px; font-weight: 650; letter-spacing: .1em; }
+    .explorer-top { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 4px 52px 0 6px; color: var(--muted-foreground); font-size: 10px; font-weight: 650; letter-spacing: .1em; }
     .quick-actions { display: flex; gap: 2px; }
     .quick-actions button { display: grid; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 7px; color: var(--muted-foreground); background: transparent; }
     .quick-actions button:hover { color: var(--foreground); background: var(--muted); }
@@ -141,12 +138,9 @@
       </div>
     </main>
     <button class="mode-switch" id="mode-switch" type="button" aria-pressed="false">Show populated state</button>
-    <section class="drawer" id="file-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-describedby="drawer-description">
+    <section class="drawer" id="file-drawer" role="dialog" aria-modal="true" aria-label="Project files">
       <div class="drawer-grip" aria-hidden="true"></div>
-      <header class="drawer-heading">
-        <div><h1 id="drawer-title">Project files</h1><p id="drawer-description">Select a file or a diagram block. Your drafts stay in this tab.</p></div>
-        <button class="icon-button" id="close-drawer" type="button" aria-label="Close project files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
-      </header>
+      <button class="icon-button drawer-close" id="close-drawer" type="button" aria-label="Close project files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
       <div class="explorer">
         <div class="explorer-top"><span>EXPLORER</span><span class="quick-actions"><button type="button" aria-label="New file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h9l5 5v13H5zM14 3v6h6M12 11v6m-3-3h6"/></svg></button><button type="button" aria-label="New folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l1.5 2h9.5A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5zM12 11v5m-2.5-2.5h5"/></svg></button><button type="button" aria-label="Refresh files"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 1 0 2 5.3M20 4v7h-7"/></svg></button></span></div>
         <nav class="crumbs" aria-label="Directory breadcrumbs"><button type="button" aria-current="location">Root</button></nav>

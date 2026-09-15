@@ -430,8 +430,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
           )}
       <Dialog open={treeOpen && !!state.session} onOpenChange={setTreeOpen}>
         <DialogContent className="file-drawer" initialFocus={drawerFilterRef}>
-          <DialogTitle>Project files</DialogTitle>
-          <DialogDescription>Select a file or a diagram block. Your drafts stay in this tab.</DialogDescription>
+          <DialogTitle className="sr-only">Project files</DialogTitle>
           <FileTree {...treeProps} filterRef={drawerFilterRef} />
         </DialogContent>
       </Dialog>
