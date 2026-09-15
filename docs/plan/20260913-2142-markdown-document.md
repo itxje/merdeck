@@ -55,6 +55,10 @@ Findings from the current code:
 
 Out of scope: editing prose or the whole file, loading images, rendering raw HTML, math, code highlighting, drawing unselectable Mermaid fences, heading anchors in the address bar, printing and export, and prototype changes; the prototype stays needs-review.
 
+## Implementation decisions
+
+`github-slugger` **2.0.0** and `@types/mdast` **4.0.4** are promoted as exact direct dependencies from the existing lockfile. Both versions were verified against the npm registry on 2026-09-15 and match the approved renderer contract: the former owns GitHub-compatible duplicate heading slugs, and the latter replaces the renderer's ad-hoc syntax-node shape with MDAST types. No transitive dependency versions changed. Browser, performance and native acceptance evidence remains pending this implementation phase.
+
 ## Alternatives
 
 - **Render with `marked`, which Mermaid already depends on.** No new bundle weight, but its output is an HTML string needing a second sanitizer boundary, and it is not the parser the service uses, so diagram placement would depend on two different Markdown implementations agreeing.

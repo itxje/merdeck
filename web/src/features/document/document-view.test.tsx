@@ -369,6 +369,20 @@ it('keeps malformed and missing fragments inert without taking focus', async () 
   focus.remove()
 })
 
+it('uses the first reference definition and numbers repeated footnotes by first reference', async () => {
+  const scroll = vi.fn()
+  Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scroll })
+  render(<DocumentView path="docs/guide.md" text={'[first][same]\n\n[^second] then [^first] then [^second]\n\n[same]: https://first.example.test\n[same]: https://second.example.test\n\n[^first]: first definition\n[^second]: second definition'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(await screen.findByRole('link', { name: 'first' })).toHaveAttribute('href', 'https://first.example.test')
+  const secondReferences = screen.getAllByRole('button', { name: 'Footnote 1' })
+  expect(secondReferences).toHaveLength(2)
+  expect(secondReferences[0]).toHaveTextContent('1')
+  expect(screen.getByRole('button', { name: 'Footnote 2' })).toHaveTextContent('2')
+  fireEvent.click(screen.getByRole('button', { name: 'Back to footnote 1' }))
+  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  delete (HTMLElement.prototype as { scrollIntoView?: () => void }).scrollIntoView
+})
+
 it('places only exact top-level Mermaid fences and falls back to code on mismatch', async () => {
   const text = '\uFEFF```mermaid\r\nA\r\n```\r\n```mermaid\r\nB\r\n```\r\n\r\n| A |\r\n| - |\r\n| b |\r\n```mermaid\r\nC\r\n```\r\n\r\n[^n]: note\r\n```mermaid\r\nD\r\n```\r\n\r\n- ```mermaid\r\n  nested\r\n  ```\r\n\r\n> ```mermaid\r\n> quote\r\n> ```\r\n\r\n\t```mermaid\r\n\ttab\r\n\t```\r\n\r\n```mermaid\r\nunclosed'
   const selected: DiagramBlock[] = [

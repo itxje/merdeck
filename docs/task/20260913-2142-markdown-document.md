@@ -21,6 +21,6 @@ Rendering whole Markdown documents.
 ## Notes
 
 - Investigation (2026-09-13): the service parses Markdown only to locate top-level Mermaid fences and never returns the complete text; README and the architecture state that surrounding Markdown is never rendered; the web application has no Markdown renderer, although the needed parser packages are already in its lockfile; the preview is a single-diagram canvas keyed by file and block. Details are in the plan's context.
-- Proposal: recorded in [the plan](../plan/20260913-2142-markdown-document.md), awaiting approval.
+- Approval: recorded in [the plan](../plan/20260913-2142-markdown-document.md) on 2026-09-15; implementation and acceptance evidence remain in progress.
 
 - Reopened (2026-09-15): quality assessment requires complete local browser, component-security and performance evidence before completion.

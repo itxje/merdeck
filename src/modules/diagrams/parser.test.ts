@@ -44,6 +44,17 @@ describe('lossless diagram parsing', () => {
     expect(parse('', 'test.mmd').document.blocks[0]?.lineEnd).toBe(1)
   })
 
+  test('returns the complete BOM-free Markdown text and never text for standalone Mermaid', () => {
+    const markdown = '\uFEFF# Unicode π\r\n\r\n```mermaid\r\nA-->B\r\n```\r\nTail 😀'
+    const document = parse(markdown).document
+    expect(document.kind).toBe('markdown')
+    if (document.kind === 'markdown')
+      expect(document.text).toBe(markdown.slice(1))
+    const standalone = parse('graph TD\r\nA-->B', 'diagram.mmd').document
+    expect(standalone).toEqual(expect.objectContaining({ kind: 'mermaid' }))
+    expect(standalone).not.toHaveProperty('text')
+  })
+
   test('non-Mermaid fences suppress inner fences, including unclosed ordinary code', () => {
     expect(parse('````js\n```mermaid\nx\n```\n````\n').document.blocks).toEqual([])
     expect(parse('~~~text\n```mermaid\nx\n```').document.blocks).toEqual([])

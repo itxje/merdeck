@@ -1,4 +1,4 @@
-import type { Content, Definition, FootnoteDefinition, Heading, ListItem, PhrasingContent, Root, Table, TableCell, TableRow } from 'mdast'
+import type { Content, Definition, FootnoteDefinition, FootnoteReference, Heading, ListItem, PhrasingContent, Root, Table, TableCell, TableRow } from 'mdast'
 import type { DiagramBlock } from '../../../../src/shared/contracts'
 import type { OpenFile } from '@/features/preview/file-links'
 import GithubSlugger from 'github-slugger'
@@ -29,6 +29,7 @@ function collectDocumentMetadata(root: Root | null) {
   const headings: Heading[] = []
   const definitions: Definition[] = []
   const footnotes: FootnoteDefinition[] = []
+  const footnoteReferences: FootnoteReference[] = []
   const visit = (node: Root | RenderNode) => {
     if (node.type === 'heading')
       headings.push(node)
@@ -36,12 +37,33 @@ function collectDocumentMetadata(root: Root | null) {
       definitions.push(node)
     else if (node.type === 'footnoteDefinition')
       footnotes.push(node)
+    else if (node.type === 'footnoteReference')
+      footnoteReferences.push(node)
     if ('children' in node)
       node.children.forEach(child => visit(child as RenderNode))
   }
   if (root)
     visit(root)
-  return { definitions, footnotes, headings }
+  return { definitions, footnotes, footnoteReferences, headings }
+}
+
+function FootnoteReferenceControl({ number, referenceMapRef, onNavigate }: { number: number, referenceMapRef: React.RefObject<Map<number, Set<HTMLElement>>>, onNavigate: () => void }) {
+  const referenceRef = React.useRef<HTMLButtonElement>(null)
+  React.useLayoutEffect(() => {
+    const element = referenceRef.current
+    if (!element)
+      return
+    const referenceMap = referenceMapRef.current
+    const entries = referenceMap.get(number) ?? new Set<HTMLElement>()
+    entries.add(element)
+    referenceMap.set(number, entries)
+    return () => {
+      entries.delete(element)
+      if (!entries.size)
+        referenceMap.delete(number)
+    }
+  }, [number, referenceMapRef])
+  return <button ref={referenceRef} type="button" aria-label={`Footnote ${number}`} onClick={onNavigate}>{number}</button>
 }
 
 function isExternalLink(value: string): boolean {
@@ -287,8 +309,22 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const tree = parsed.tree
   const metadata = React.useMemo(() => collectDocumentMetadata(tree), [tree])
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
-  const definitions = React.useMemo(() => new Map(metadata.definitions.map(node => [node.identifier, node])), [metadata])
-  const footnotes = React.useMemo(() => new Map(metadata.footnotes.map((node, index) => [node.identifier, index + 1])), [metadata])
+  const definitions = React.useMemo(() => {
+    const entries = new Map<string, Definition>()
+    for (const definition of metadata.definitions) {
+      if (!entries.has(definition.identifier))
+        entries.set(definition.identifier, definition)
+    }
+    return entries
+  }, [metadata])
+  const footnotes = React.useMemo(() => {
+    const entries = new Map<string, number>()
+    for (const reference of metadata.footnoteReferences) {
+      if (!entries.has(reference.identifier))
+        entries.set(reference.identifier, entries.size + 1)
+    }
+    return entries
+  }, [metadata])
   const headingSlugs = React.useMemo(() => {
     const slugger = new GithubSlugger()
     return new Map(metadata.headings.map(node => [node, slugger.slug(phrasingText(node.children))]))
@@ -317,7 +353,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   }
   const headingMapRef = React.useRef(new Map<string, HTMLElement>())
   const footnoteMapRef = React.useRef(new Map<number, HTMLElement>())
-  const footnoteReferenceMapRef = React.useRef(new Map<number, HTMLElement>())
+  const footnoteReferenceMapRef = React.useRef(new Map<number, Set<HTMLElement>>())
   const resource = (url: string, children: React.ReactNode, key: string): React.ReactNode => {
     const fragment = followFragment(url)
     if (fragment)
@@ -408,17 +444,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
       return number
         ? (
             <sup key={key}>
-              <button
-                type="button"
-                aria-label={`Footnote ${number}`}
-                ref={(element) => {
-                  if (element)
-                    footnoteReferenceMapRef.current.set(number, element)
-                }}
-                onClick={() => footnoteMapRef.current.get(number)?.scrollIntoView({ block: 'nearest' })}
-              >
-                {number}
-              </button>
+              <FootnoteReferenceControl number={number} referenceMapRef={footnoteReferenceMapRef} onNavigate={() => footnoteMapRef.current.get(number)?.scrollIntoView({ block: 'nearest' })} />
             </sup>
           )
         : null
@@ -465,7 +491,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
             >
               <sup>{number}</sup>
               {children}
-              <button type="button" aria-label={`Back to footnote ${number}`} onClick={() => footnoteReferenceMapRef.current.get(number)?.scrollIntoView({ block: 'nearest' })}>Back</button>
+              <button type="button" aria-label={`Back to footnote ${number}`} onClick={() => [...(footnoteReferenceMapRef.current.get(number) ?? [])].find(element => element.isConnected)?.scrollIntoView({ block: 'nearest' })}>Back</button>
             </aside>
           )
         : null

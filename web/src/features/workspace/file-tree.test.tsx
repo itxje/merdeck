@@ -181,7 +181,7 @@ it('searches this folder and its subfolders once text is typed, and returns to t
 it('lists the chosen file type from this folder and its subfolders without any text', async () => {
   const user = userEvent.setup()
   const select = vi.fn()
-  const draft = (file: string): FileDraft => ({ baseline: { path: file, kind: 'markdown', version: 'b'.repeat(64), blocks: [{ selector: { kind: 'markdown', id: 'md:0:8:17' }, label: 'Diagram 1', lineStart: 2, lineEnd: 2, source: 'graph TD\n' }] }, sources: ['graph LR\n'], warning: null, locked: false, saving: null, saved: false })
+  const draft = (file: string): FileDraft => ({ baseline: { path: file, kind: 'markdown', text: '# Diagram\n\n```mermaid\ngraph TD\n```', version: 'b'.repeat(64), blocks: [{ selector: { kind: 'markdown', id: 'md:0:8:17' }, label: 'Diagram 1', lineStart: 2, lineEnd: 2, source: 'graph TD\n' }] }, sources: ['graph LR\n'], warning: null, locked: false, saving: null, saved: false })
   const drafts = { 'nsiod/guide.md': draft('nsiod/guide.md'), 'elsewhere/draft.md': draft('elsewhere/draft.md') }
   const result = { path: 'nsiod', query: '', kind: 'markdown' as const, complete: false, stoppedBy: 'matches' as const, visited: 4000, skipped: 0, entries: [
     { kind: 'file' as const, path: 'nsiod/mermaid/mesh-v1/notes.md', fileKind: 'markdown' as const, state: 'deferred' as const },

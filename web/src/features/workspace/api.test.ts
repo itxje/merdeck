@@ -17,12 +17,12 @@ it('decodes the authenticated capability without deriving write eligibility from
 })
 it('validates tree and document metadata without importing server schemas', () => {
   expect(decodeDocument(doc)).toEqual(doc)
-  const markdown = { ...doc, kind: 'markdown', text: '# Hello', blocks: [{ ...doc.blocks[0], selector: { kind: 'markdown', id: 'md:0:5:9' } }] }
-  expect(decodeDocument(markdown).blocks).toHaveLength(1)
+  const markdown = { ...doc, kind: 'markdown', text: '# Hello π\r\n\r\n```mermaid\r\nA-->B\r\n```', blocks: [{ ...doc.blocks[0], selector: { kind: 'markdown', id: 'md:0:5:9' } }] }
+  expect(decodeDocument(markdown)).toEqual(markdown)
   expect(decodeTree({ revision: version, pollIntervalMs: 3000, truncated: true, entries: [{ kind: 'directory', path: 'docs' }, { kind: 'file', path: 'hello.mmd', fileKind: 'mermaid', version, state: 'available', blocks: doc.blocks }, ...['unreadable', 'too_large', 'unsupported'].map(state => ({ kind: 'file', path: `${state}.md`, fileKind: 'markdown', state, blocks: [] }))] }).entries).toHaveLength(5)
   expect(decodeRevision({ path: 'hello.mmd', state: 'present', version })).toMatchObject({ version })
   expect(decodeRevision({ path: 'hello.mmd', state: 'deleted' })).toMatchObject({ state: 'deleted' })
-  for (const value of [{ ...doc, path: '../secret' }, { ...doc, version: 'bad' }, { ...doc, kind: 'pdf' }, { ...doc, blocks: null }, { ...doc, kind: 'markdown' }, { ...doc, text: 'nope' }, { ...doc, blocks: [{ ...doc.blocks[0], selector: { kind: 'markdown', id: 'bad' } }] }]) expect(() => decodeDocument(value)).toThrow(HttpError)
+  for (const value of [{ ...doc, path: '../secret' }, { ...doc, version: 'bad' }, { ...doc, kind: 'pdf' }, { ...doc, blocks: null }, { ...doc, kind: 'markdown' }, { ...doc, kind: 'markdown', text: 42 }, { ...doc, text: 'nope' }, { ...doc, blocks: [{ ...doc.blocks[0], selector: { kind: 'markdown', id: 'bad' } }] }]) expect(() => decodeDocument(value)).toThrow(HttpError)
   expect(() => decodeTree({ revision: version, pollIntervalMs: 0, entries: [], truncated: true })).toThrow()
   expect(() => decodeTree({ revision: version, pollIntervalMs: 3000, entries: [{ kind: 'bad', path: 'a.mmd' }], truncated: true })).toThrow()
   expect(() => decodeRevision({ path: 'a.mmd', state: 'invalid' })).toThrow()

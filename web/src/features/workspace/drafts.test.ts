@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { dirty, draftsReducer, warningMessage } from './drafts'
 
 export function document(version = 'a', first = 'A', second = 'B'): DiagramDocument {
-  return { path: 'docs/example.md', kind: 'markdown', version: version.repeat(64), blocks: [first, second].map((source, index) => ({ source, label: `Diagram ${index + 1}`, selector: { kind: 'markdown', id: `md:${index}:${version === 'a' ? 10 : 20}:${30 + index}` }, lineStart: index + 1, lineEnd: index + 2 })) }
+  return { path: 'docs/example.md', kind: 'markdown', text: `# Example\n\n${first}\n\n${second}`, version: version.repeat(64), blocks: [first, second].map((source, index) => ({ source, label: `Diagram ${index + 1}`, selector: { kind: 'markdown', id: `md:${index}:${version === 'a' ? 10 : 20}:${30 + index}` }, lineStart: index + 1, lineEnd: index + 2 })) }
 }
 const path = 'docs/example.md'
 const load = () => draftsReducer({}, { type: 'load', document: document() })

@@ -338,7 +338,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                       <Button variant="outline" disabled={!!file?.saving} onClick={openReview}>Review current file</Button>
                     </div>
                   )}
-                  {(selected && file) || (file?.baseline.kind === 'markdown' && file.baseline.text)
+                  {(selected && file) || file?.baseline.kind === 'markdown'
                     ? (
                         <>
                           {file?.baseline.kind === 'markdown' && (
@@ -366,7 +366,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                           {!selected && file?.baseline.kind === 'markdown'
                             ? (
                                 <DocumentView
-                                  text={file.baseline.text!}
+                                  text={file.baseline.text}
                                   path={path}
                                   blocks={file.baseline.blocks}
                                   sources={file.sources}
@@ -435,7 +435,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                   <ResizableHandle withHandle aria-label="Resize source and preview" />
                                   <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
                                     {file?.baseline.kind === 'markdown' && effectiveMarkdownView === 'document'
-                                      ? <DocumentView text={file.baseline.text!} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} />
+                                      ? <DocumentView text={file.baseline.text} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} />
                                       : <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />}
                                   </ResizablePanel>
                                 </ResizablePanelGroup>

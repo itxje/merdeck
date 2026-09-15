@@ -2,7 +2,7 @@ import type { FileDraft } from '@/features/workspace/drafts'
 import { expect, it } from 'vitest'
 import { protectedWork } from './reload-guard'
 
-const clean: FileDraft = { baseline: { path: 'sibling.md', version: 'a'.repeat(64), kind: 'markdown', blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', source: 'A-->B', lineStart: 1, lineEnd: 2 }] }, sources: ['A-->B'], warning: null, locked: false, saving: null, saved: false }
+const clean: FileDraft = { baseline: { path: 'sibling.md', version: 'a'.repeat(64), kind: 'markdown', text: '# Sibling\n\n```mermaid\nA-->B\n```', blocks: [{ selector: { kind: 'standalone' }, label: 'Diagram', source: 'A-->B', lineStart: 1, lineEnd: 2 }] }, sources: ['A-->B'], warning: null, locked: false, saving: null, saved: false }
 it('protects clean-looking sibling files with locks, warnings, pending saves or retained blocks', () => {
   expect(protectedWork({})).toBe(false)
   expect(protectedWork({ sibling: clean })).toBe(false)

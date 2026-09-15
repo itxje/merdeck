@@ -56,10 +56,12 @@ function summary(value: unknown): DiagramBlockSummary {
 export function decodeDocument(value: unknown): DiagramDocument {
   const item = object(value)
   const fileKind = kind(item.kind)
-  const text = item.text
-  if ((fileKind === 'markdown' && typeof text !== 'string') || (fileKind === 'mermaid' && text !== undefined))
+  const common = { path: path(item.path), version: version(item.version), blocks: array(item.blocks).map((block): DiagramBlock => ({ ...summary(block), source: string(object(block).source) })) }
+  if (fileKind === 'markdown')
+    return { ...common, kind: fileKind, text: string(item.text) }
+  if (item.text !== undefined)
     return invalid()
-  return { path: path(item.path), kind: fileKind, version: version(item.version), blocks: array(item.blocks).map((block): DiagramBlock => ({ ...summary(block), source: string(object(block).source) })), ...(fileKind === 'markdown' ? { text: text as string } : {}) }
+  return { ...common, kind: fileKind }
 }
 export function decodeSession(value: unknown): Session | { authenticated: false } {
   const item = object(value)

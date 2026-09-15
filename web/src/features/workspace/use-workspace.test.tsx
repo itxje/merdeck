@@ -258,7 +258,7 @@ function deferred<T>() {
   return { promise, resolve }
 }
 function markdown(next = version, first = 'Original', second = 'Sibling'): DiagramDocument {
-  return { path: 'race.md', version: next, kind: 'markdown', blocks: [first, second].map((source, index) => ({ source, label: `Diagram ${index + 1}`, selector: { kind: 'markdown', id: `md:${index}:${first.length + index * 100}:${first.length + index * 100 + 50}` }, lineStart: index * 4 + 1, lineEnd: index * 4 + 3 })) }
+  return { path: 'race.md', version: next, kind: 'markdown', text: `# Race\n\n${first}\n\n${second}`, blocks: [first, second].map((source, index) => ({ source, label: `Diagram ${index + 1}`, selector: { kind: 'markdown', id: `md:${index}:${first.length + index * 100}:${first.length + index * 100 + 50}` }, lineStart: index * 4 + 1, lineEnd: index * 4 + 3 })) }
 }
 
 it.each(['own save', 'external revision', 'deletion', 'session change'] as const)('reconciles a committed save after revision and document queries: %s', async (scenario) => {

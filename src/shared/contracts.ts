@@ -53,14 +53,14 @@ export interface DiagramBlockSummary {
 export interface DiagramBlock extends DiagramBlockSummary {
   source: string
 }
-export interface DiagramDocument {
+interface DiagramDocumentBase {
   path: RelativePath
-  kind: FileKind
   version: ContentVersion
   blocks: DiagramBlock[]
-  /** Complete BOM-free Markdown source from the same read as version and blocks. */
-  text?: string
 }
+export type DiagramDocument
+  = | (DiagramDocumentBase & { kind: 'markdown', /** Complete BOM-free Markdown source from the same read as version and blocks. */ text: string })
+    | (DiagramDocumentBase & { kind: 'mermaid', text?: never })
 export type TreeEntry
   = | { kind: 'directory', path: RelativePath }
     | { kind: 'file', path: RelativePath, fileKind: FileKind, state: 'available', version: ContentVersion, blocks: DiagramBlockSummary[] }
