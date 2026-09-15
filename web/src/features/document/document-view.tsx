@@ -146,6 +146,16 @@ function parse(text: string) {
   return fromMarkdown(text, { extensions: [gfm(), frontmatter(['yaml'])], mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(['yaml'])] })
 }
 
+function blockPlacementKey(block: DiagramBlock): string {
+  // The parser represents an empty fence as an empty source span on its closing line.
+  // MDAST still ends the code node on that closing line, unlike a non-empty fence.
+  return `${block.lineStart - 1}:${block.source === '' ? block.lineEnd : block.lineEnd + 1}`
+}
+
+function codePlacementKey(node: Extract<Content, { type: 'code' }>): string | null {
+  return node.position ? `${node.position.start.line}:${node.position.end.line}` : null
+}
+
 function useDocumentTree(text: string) {
   const [state, setState] = React.useState<{ text: string, tree: Root | null, error: string | null }>({ text, tree: null, error: null })
   React.useEffect(() => {
@@ -388,7 +398,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   }, [onOpenFile])
   const tree = parsed.tree
   const metadata = React.useMemo(() => collectDocumentMetadata(tree), [tree])
-  const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
+  const matched = React.useMemo(() => new Map(blocks.map((block, index) => [blockPlacementKey(block), index])), [blocks])
   const definitions = React.useMemo(() => {
     const entries = new Map<string, Definition>()
     for (const definition of metadata.definitions) {
@@ -417,7 +427,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     const slugger = new GithubSlugger()
     return new Map(metadata.headings.map(node => [node, slugger.slug(phrasingText(node.children))]))
   }, [metadata])
-  const placementOk = blocks.every(block => tree?.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
+  const placementOk = blocks.every(block => tree?.children.some((node): boolean => node.type === 'code' && node.lang === 'mermaid' && codePlacementKey(node) === blockPlacementKey(block)))
   const image = (alt: string | null | undefined, url: string | undefined, key: string) => (
     <span key={key} className="document-image">
       Image:
@@ -541,7 +551,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
         : null
     }
     if (node.type === 'code') {
-      const found = node.position ? matched.get(`${node.position.start.line}:${node.position.end.line}`) : undefined
+      const found = matched.get(codePlacementKey(node) ?? '')
       if (placementOk && node.lang === 'mermaid' && found !== undefined) {
         return (
           <InlineDiagram
