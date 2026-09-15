@@ -57,8 +57,12 @@ function inertPlaceholder(body: string) {
   return !markupElements.has(name.toLowerCase()) && !name.includes('-')
 }
 
-function anglePlaceholderMarker(offset: number) {
-  return `\uE000merdeck-angle-${offset.toString(36)}\uE001`
+function anglePlaceholderMarker(source: string, offset: number) {
+  for (let attempt = 0; ; attempt++) {
+    const marker = `\uE000merdeck-angle-${offset.toString(36)}-${attempt.toString(36)}\uE001`
+    if (!source.includes(marker))
+      return marker
+  }
 }
 
 // This is a render-only escape hatch for a literal placeholder, not general entity decoding.
@@ -70,7 +74,7 @@ function projectEncodedAnglePlaceholders(source: string, forMermaid = false) {
       return token
     // Mermaid receives a private inert text marker, never a tag-shaped token. The renderer only
     // restores it in generated SVG text nodes after Mermaid has finished parsing.
-    return forMermaid ? anglePlaceholderMarker(offset) : `<${body}>`
+    return forMermaid ? anglePlaceholderMarker(source, offset) : `<${body}>`
   })
 }
 
@@ -79,14 +83,48 @@ function projectEncodedAnglePlaceholders(source: string, forMermaid = false) {
 export function restoreEncodedAnglePlaceholderText(svg: Element, source: string) {
   const replacements = [...source.matchAll(encodedAnglePlaceholder)].flatMap((match) => {
     const body = match[1]!
-    return inertPlaceholder(body) && match.index !== undefined ? [[anglePlaceholderMarker(match.index), `<${body}>`] as const] : []
+    return inertPlaceholder(body) && match.index !== undefined ? [[anglePlaceholderMarker(source, match.index), `<${body}>`] as const] : []
   })
   if (!replacements.length)
     return
   const walker = document.createTreeWalker(svg, NodeFilter.SHOW_TEXT)
-  for (let text = walker.nextNode(); text; text = walker.nextNode()) {
-    for (const [marker, value] of replacements)
-      text.textContent = text.textContent?.replaceAll(marker, value) ?? ''
+  const labels = new Map<Element, { combined: string, nodes: { node: Text, start: number, end: number }[] }>()
+  for (let current = walker.nextNode(); current; current = walker.nextNode()) {
+    const node = current as Text
+    // Limit restoration to Mermaid's rendered label tree, never generated CSS or metadata.
+    const label = node.parentElement?.closest('text')
+    if (!label)
+      continue
+    const entry = labels.get(label) ?? { combined: '', nodes: [] }
+    labels.set(label, entry)
+    const start = entry.combined.length
+    entry.combined += node.data
+    if (node.data)
+      entry.nodes.push({ node, start, end: entry.combined.length })
+  }
+  for (const { combined, nodes } of labels.values()) {
+    for (const marker of replacements.flatMap(([value, replacement]) => {
+      const offsets: number[] = []
+      for (let offset = combined.indexOf(value); offset !== -1; offset = combined.indexOf(value, offset + value.length))
+        offsets.push(offset)
+      return offsets.map(offset => ({ value, replacement, start: offset, end: offset + value.length }))
+    }).sort((first, second) => second.start - first.start)) {
+      const first = nodes.findIndex(segment => segment.start <= marker.start && marker.start < segment.end)
+      const last = nodes.findIndex(segment => segment.start < marker.end && marker.end <= segment.end)
+      if (first === -1 || last === -1)
+        continue
+      const firstSegment = nodes[first]!
+      const lastSegment = nodes[last]!
+      const before = firstSegment.node.data.slice(0, marker.start - firstSegment.start)
+      const after = lastSegment.node.data.slice(marker.end - lastSegment.start)
+      firstSegment.node.data = before + marker.replacement
+      for (let index = first + 1; index < last; index++)
+        nodes[index]!.node.data = ''
+      if (first !== last)
+        lastSegment.node.data = after
+      else
+        firstSegment.node.data += after
+    }
   }
 }
 
