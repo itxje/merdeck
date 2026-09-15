@@ -19,10 +19,12 @@ function useDocumentTree(text: string) {
   React.useEffect(() => {
     let worker: Worker
     let current = true
+    let settled = false
     const id = 1
     const fallback = (error: unknown) => {
-      if (!current)
+      if (!current || settled)
         return
+      settled = true
       worker?.terminate()
       queueMicrotask(() => {
         if (!current)
@@ -40,12 +42,15 @@ function useDocumentTree(text: string) {
         throw new Error('Worker unavailable')
       worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
       worker.onmessage = (event: MessageEvent<{ id: number, tree?: { children: Node[] }, error?: string }>) => {
-        if (!current || event.data.id !== id)
+        if (!current || settled || event.data.id !== id)
           return
-        if (event.data.tree)
+        if (event.data.tree) {
+          settled = true
           setState({ text, tree: event.data.tree, error: null })
-        else
+        }
+        else {
           fallback(new Error(event.data.error ?? 'Markdown parsing failed.'))
+        }
       }
       worker.onerror = fallback
       worker.postMessage({ id, text })
