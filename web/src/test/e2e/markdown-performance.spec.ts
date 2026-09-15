@@ -9,7 +9,7 @@ if (!root)
   throw new Error('An explicit disposable sample root is required')
 
 interface Stage { name: string, at: number, parseMs?: number, compactMs?: number, message?: string }
-interface Sample { apiMs: number, readyMs: number, visibleMs: number, heartbeatWorstMs: number, longTaskWorstMs: number, rendered: number, stages: Stage[], measures: { name: string, duration: number }[] }
+interface Sample { apiMs: number, firstVisibleMs: number, fullyMaterializedMs: number, heartbeatWorstMs: number, longTaskWorstMs: number, rendered: number, stages: Stage[], measures: { name: string, duration: number }[] }
 function percentile(values: number[], ratio: number) {
   return values.toSorted((a, b) => a - b)[Math.min(values.length - 1, Math.ceil(values.length * ratio) - 1)]!
 }
@@ -50,7 +50,7 @@ async function heartbeat(page: Parameters<typeof login>[0]) {
   })
 }
 
-async function openSample(page: Parameters<typeof login>[0], name: string, visible: 'text' | 'diagram'): Promise<Sample> {
+async function openSample(page: Parameters<typeof login>[0], name: string, visible: 'text' | 'diagram', tail?: string): Promise<Sample> {
   await heartbeat(page)
   const started = await page.evaluate(() => performance.now())
   await page.evaluate(() => (window as typeof window & { markdownMetrics?: { reset: () => void } }).markdownMetrics?.reset())
@@ -63,10 +63,14 @@ async function openSample(page: Parameters<typeof login>[0], name: string, visib
     await expect(article.getByText('Large document', { exact: true })).toBeVisible()
   else
     await expect(article.locator('.document-diagram.selected svg')).toBeVisible()
-  const readyMs = (await page.evaluate(() => performance.now())) - started
+  const firstVisibleMs = (await page.evaluate(() => performance.now())) - started
+  if (tail) {
+    await expect(article.locator('[data-document-text-complete]')).toHaveText(new RegExp(`${tail}$`))
+  }
+  const fullyMaterializedMs = (await page.evaluate(() => performance.now())) - started
   const rendered = await article.locator('.document-diagram svg').count()
   const metrics = await page.evaluate(() => (window as typeof window & { markdownMetrics?: { read: () => { heartbeatWorstMs: number, longTaskWorstMs: number, stages: Stage[], measures: { name: string, duration: number }[] } } }).markdownMetrics?.read() ?? { heartbeatWorstMs: 0, longTaskWorstMs: 0, stages: [], measures: [] })
-  return { apiMs, readyMs, visibleMs: readyMs, ...metrics, rendered }
+  return { apiMs, firstVisibleMs, fullyMaterializedMs, ...metrics, rendered }
 }
 
 test('production Chromium measures worker document readiness and viewport-diagram deferral', async ({ page }) => {
@@ -80,7 +84,8 @@ test('production Chromium measures worker document readiness and viewport-diagra
   // A single ordinary prose block isolates parser/worker transfer cost from an intentionally
   // pathological thousands-of-elements layout while still exercising an exact 1 MiB document.
   const body = 'A worker parses this complete Markdown document without blocking input. '
-  const large = (`# Large document\n\n${body.repeat(Math.ceil((oneMiB - 20) / body.length))}`).slice(0, oneMiB)
+  const tail = 'MERDECK_COMPLETE_DOCUMENT_TAIL'
+  const large = (`# Large document\n\n${body.repeat(Math.ceil(oneMiB / body.length))}`).slice(0, oneMiB - tail.length) + tail
   const diagrams = `# Large document\n\n${Array.from({ length: 100 }, (_, index) => `\`\`\`mermaid\nflowchart LR\nN${index} --> N${index + 1}\n\`\`\``).join('\n\n')}\n`
   await Promise.all([...largeNames.map(name => writeFile(join(root, name), large, { flag: 'wx' })), ...diagramsNames.map(name => writeFile(join(root, name), diagrams, { flag: 'wx' }))])
   try {
@@ -91,13 +96,13 @@ test('production Chromium measures worker document readiness and viewport-diagra
     const largeSamples: Sample[] = []
     const diagramSamples: Sample[] = []
     for (const name of largeNames) {
-      largeSamples.push(await openSample(page, name, 'text'))
+      largeSamples.push(await openSample(page, name, 'text', tail))
     }
     for (const name of diagramsNames) {
       diagramSamples.push(await openSample(page, name, 'diagram'))
       expect(diagramSamples.at(-1)!.rendered).toBeLessThan(100)
     }
-    const summarize = (samples: Sample[]) => Object.fromEntries((['apiMs', 'readyMs', 'visibleMs', 'heartbeatWorstMs', 'longTaskWorstMs'] as const).map(key => [key, { median: percentile(samples.map(sample => sample[key]), 0.5), p95: percentile(samples.map(sample => sample[key]), 0.95), worst: Math.max(...samples.map(sample => sample[key])) }]))
+    const summarize = (samples: Sample[]) => Object.fromEntries((['apiMs', 'firstVisibleMs', 'fullyMaterializedMs', 'heartbeatWorstMs', 'longTaskWorstMs'] as const).map(key => [key, { median: percentile(samples.map(sample => sample[key]), 0.5), p95: percentile(samples.map(sample => sample[key]), 0.95), worst: Math.max(...samples.map(sample => sample[key])) }]))
     const evidence = { environment: { browser: 'Chromium via Playwright', bytes: new TextEncoder().encode(large).byteLength, diagrams: 100, samples: 4 }, large: { samples: largeSamples, summary: summarize(largeSamples) }, diagrams: { samples: diagramSamples, summary: summarize(diagramSamples) }, threshold: { inputBlockingMs: 100, metric: 'post-API worker parse/render main-thread long task; requestAnimationFrame gap is recorded separately as scheduling pressure', result: Math.max(...largeSamples.map(sample => sample.longTaskWorstMs)) < 100 ? 'pass' : 'investigate' } }
     await writeFile(join(process.cwd(), '..', 'tmp/markdown-document-performance.json'), JSON.stringify(evidence, null, 2))
     expect(evidence.threshold.result).toBe('pass')

@@ -126,6 +126,25 @@ it('renders deferred worker text from decoded MDAST chunks instead of raw Markdo
   await waitFor(() => expect(article).toHaveTextContent(decoded))
   expect(article).not.toHaveTextContent('&amp;')
   expect(article).not.toHaveTextContent('\\* tail')
+  const chunks = article.querySelectorAll('.document-text-chunk')
+  expect(chunks).toHaveLength(2)
+  expect([...chunks].every(chunk => chunk.parentElement?.tagName === 'P' && getComputedStyle(chunk).display === 'inline')).toBe(true)
+  expect(article.querySelector('br')).toBeNull()
+})
+
+it('clears document-link errors and ignores late link failures after a path transition', async () => {
+  let reject: (reason: Error) => void = () => {}
+  const pending = new Promise<string>((_resolve, fail) => {
+    reject = fail
+  })
+  const open = vi.fn(() => pending)
+  const view = render(<DocumentView path="docs/a.md" text="# A\n\n[Next](next.md)" blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={open} />)
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Next' }))
+  view.rerender(<DocumentView path="docs/b.md" text="# B" blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={open} />)
+  await screen.findByRole('heading', { name: 'B' })
+  await act(async () => reject(new Error('late failure')))
+  expect(screen.queryByRole('alert')).toBeNull()
+  view.unmount()
 })
 
 it('falls back when Worker construction or posting fails and when Worker is unavailable', async () => {

@@ -51,10 +51,10 @@ function DocumentText({ value, chunks }: { value: string, chunks: string[] | nul
   if (length <= progressiveTextChunkBytes)
     return value
   let offset = 0
-  return runs.slice(0, visible).map((run) => {
+  return runs.slice(0, visible).map((run, index) => {
     const key = offset
     offset += run.length
-    return <span key={key} className="document-text-chunk">{run}</span>
+    return <span key={key} className="document-text-chunk" data-document-text-complete={visible === runs.length && index === runs.length - 1 ? '' : undefined}>{run}</span>
   })
 }
 
@@ -335,12 +335,18 @@ function InlineDiagram({ index, source, selected, themeRevision, onSelect, onOpe
 
 export function DocumentView({ text, path, blocks, sources, selected, onSelect, onOpenFile, onOpenDiagramFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onSelect: (index: number) => void, onOpenFile: OpenFile, onOpenDiagramFile?: OpenFile }) {
   const parsed = useDocumentTree(text)
-  const [linkError, setLinkError] = React.useState('')
+  const [linkError, setLinkError] = React.useState<{ path: string, message: string }>({ path, message: '' })
   const [themeRevision, setThemeRevision] = React.useState(0)
   const articleRef = React.useRef<HTMLElement>(null)
   const diagramMapRef = React.useRef(new Map<number, HTMLElement>())
   const revealedRef = React.useRef<{ path: string, selected: number } | null>(null)
-  const documentLinkRequestRef = React.useRef(0)
+  const documentLinkRequestRef = React.useRef({ path, request: 0 })
+  React.useEffect(() => {
+    documentLinkRequestRef.current = { path, request: documentLinkRequestRef.current.request + 1 }
+  }, [path])
+  const publishLinkError = React.useCallback((message: string) => {
+    setLinkError(current => current.path === path && current.message === message ? current : { path, message })
+  }, [path])
   React.useLayoutEffect(() => {
     if (parsed.tree)
       reportDocumentStage('react-commit')
@@ -382,20 +388,21 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     revealedRef.current = { path, selected }
   }, [path, parsed.tree, selected])
   const followDocumentLink = React.useCallback((target: string) => {
-    const request = ++documentLinkRequestRef.current
+    const request = documentLinkRequestRef.current.request + 1
+    documentLinkRequestRef.current = { path, request }
     const show = (message: string | undefined) => {
-      if (documentLinkRequestRef.current === request)
-        setLinkError(message ?? '')
+      if (documentLinkRequestRef.current.path === path && documentLinkRequestRef.current.request === request)
+        publishLinkError(message ?? '')
     }
     const result = onOpenFile(target)
     if (result instanceof Promise) {
-      setLinkError('')
+      publishLinkError('')
       void result.then(show, () => show('That file cannot be opened. Try again.'))
     }
     else {
       show(result)
     }
-  }, [onOpenFile])
+  }, [onOpenFile, path, publishLinkError])
   const tree = parsed.tree
   const metadata = React.useMemo(() => collectDocumentMetadata(tree), [tree])
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [blockPlacementKey(block), index])), [blocks])
@@ -562,7 +569,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
             themeRevision={themeRevision}
             onSelect={() => onSelect(found)}
             onOpenFile={onOpenDiagramFile}
-            onLinkError={setLinkError}
+            onLinkError={publishLinkError}
             onMount={(element) => {
               if (element)
                 diagramMapRef.current.set(found, element)
@@ -597,7 +604,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     return <article className="document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
   return (
     <article ref={articleRef} className="document-view" aria-label="Markdown document">
-      {linkError && <p role="alert">{linkError}</p>}
+      {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
       {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
       {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
     </article>

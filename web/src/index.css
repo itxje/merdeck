@@ -341,7 +341,7 @@ button:disabled { cursor: default; }
 .document-view { overflow: auto; padding: 32px max(20px, calc((100% - 760px) / 2)); line-height: 1.65; }
 .document-view h1, .document-view h2, .document-view h3 { line-height: 1.2; margin: 1.5em 0 .6em; }
 .document-view p, .document-view ul, .document-view ol, .document-view blockquote { margin: 0 0 1em; }
-.document-text-chunk { display: block; content-visibility: auto; contain-intrinsic-size: auto 8lh; }
+.document-text-chunk { display: inline; }
 .document-view pre { overflow: auto; padding: 12px; background: var(--muted); border-radius: var(--radius-md); }
 .document-view table { border-collapse: collapse; margin: 1em 0; }.document-view td { border: 1px solid var(--border); padding: 6px 10px; }
 .document-image, .document-mismatch { display: block; padding: 10px; border: 1px solid var(--border); color: var(--muted-foreground); }
