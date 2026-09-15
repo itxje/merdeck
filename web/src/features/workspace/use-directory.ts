@@ -41,7 +41,12 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
   }, [csrf])
   const revision = useQuery({
     queryKey: ['directory-revision', epoch, path],
-    queryFn: ({ signal }) => api.directoryRevision(path, signal),
+    queryFn: ({ signal }) => {
+      // A cancellation can finish before React commits `paused`; ownership must block the request too.
+      if (pausesRef.current > 0)
+        throw new Error('Directory revision polling is paused')
+      return api.directoryRevision(path, signal)
+    },
     // A page already supplies this metadata. Probe only after its run is ready.
     enabled: enabled && !paused && !view.loading && view.run?.live === true && view.run.path === path && view.run.epoch === epoch && view.run.csrf === csrf && view.pages.length > 0,
     staleTime: interval,

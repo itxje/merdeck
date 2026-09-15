@@ -220,3 +220,42 @@ it('honors revision Retry-After on manual restart and focus without retrying a p
   client.clear()
   focusManager.setFocused(undefined)
 })
+
+it('blocks a revision refetch started after suspension cancellation but before paused commits', async () => {
+  const { client, wrapper } = setup()
+  const { result, unmount } = renderHook(() => useDirectory('', 0, true, undefined, 30000, 1), { wrapper })
+  await waitFor(() => expect(result.current.canNext).toBe(true))
+  vi.mocked(api.directoryRevision).mockClear()
+
+  const suspended = result.current.suspend()
+  await client.refetchQueries({ queryKey: ['directory-revision'] })
+
+  expect(api.directoryRevision).not.toHaveBeenCalled()
+  const resume = await suspended
+  await waitFor(() => expect(result.current.stale).toBe(true))
+  act(() => resume())
+  await waitFor(() => expect(api.directory).toHaveBeenCalledTimes(2))
+  unmount()
+  client.clear()
+})
+
+it('keeps nested suspensions paused until their last resume', async () => {
+  const { client, wrapper } = setup()
+  const { result, unmount } = renderHook(() => useDirectory('', 0, true, undefined, 30000, 1), { wrapper })
+  await waitFor(() => expect(result.current.canNext).toBe(true))
+  const pages = vi.mocked(api.directory).mock.calls.length
+  const first = await result.current.suspend()
+  await waitFor(() => expect(result.current.stale).toBe(true))
+  const second = await result.current.suspend()
+  vi.mocked(api.directoryRevision).mockClear()
+  await client.refetchQueries({ queryKey: ['directory-revision'] })
+  expect(api.directoryRevision).not.toHaveBeenCalled()
+
+  act(() => first())
+  await act(async () => {})
+  expect(api.directory).toHaveBeenCalledTimes(pages)
+  act(() => second())
+  await waitFor(() => expect(api.directory).toHaveBeenCalledTimes(pages + 1))
+  unmount()
+  client.clear()
+})
