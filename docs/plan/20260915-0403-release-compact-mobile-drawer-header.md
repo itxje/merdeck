@@ -1,6 +1,6 @@
 # 20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-15 04:03
 - **approvedAt**: 2026-09-15 04:03 UTC
 - **relatedTask**: 20260915-0403-release-compact-mobile-drawer-header
@@ -37,3 +37,7 @@ Do not publish: this would leave the completed repair unavailable to release con
 
 - The owner explicitly directed on 2026-09-15 that completed repairs are committed, pushed, and released proactively. This approval applies after the investigation and proposal recorded above.
 - Approval recorded 2026-09-15 04:03 UTC; release execution may proceed within the proposal scope.
+
+## Outcome
+
+Candidate `ebebccdb384e8ddc04df720ba8a37d67a79c2354` passed [hosted main verification](https://github.com/itxje/merdeck/actions/runs/34927937221). Annotated tag `v0.11.4` resolves to that commit, and [its tag workflow](https://github.com/itxje/merdeck/actions/runs/34928586559) published the matching non-draft, non-prerelease release. Downloaded `merdeck.tar.gz` and `SHA256SUMS` passed checksum verification; the extracted 95-entry bundle reports version 0.11.4 and the tagged commit. The release does not deploy or restart a separately hosted service.

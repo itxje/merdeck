@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 04:32 [release]
+
+Published [v0.11.4](https://github.com/itxje/merdeck/releases/tag/v0.11.4), which compacts the mobile drawer header. Exact commit `ebebccdb384e8ddc04df720ba8a37d67a79c2354` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/34927937221), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/34928586559) repeated acceptance and published the release. Downloaded `merdeck.tar.gz` passed `SHA256SUMS`; its extracted bundle reports version 0.11.4 and the tagged commit. The release does not deploy or restart separately hosted services. See [20260915-0403-release-compact-mobile-drawer-header](task/20260915-0403-release-compact-mobile-drawer-header.md).
+
 ## 2026-09-15 05:26 [fix]
 
 The preview now renders the narrowly accepted `&lt;board&gt;` placeholder as visible inert text without changing editor, draft, save-request or saved-file bytes. Only lowercase ASCII identifier placeholders that are already proven non-element text are admitted; Mermaid receives a private text marker and the generated SVG restores it only inside text nodes before the existing sanitizer. Mixed-case, numeric, malformed, nested, double-encoded, tag-like, resource and event-attribute forms remain refused. Focused browser coverage confirms the exact source, visible text, no outbound request or execution, and exact save/reload bytes. See [20260915-0516-encoded-angle-placeholder](task/20260915-0516-encoded-angle-placeholder.md).
