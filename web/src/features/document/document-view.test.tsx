@@ -105,6 +105,29 @@ it('uses a module worker, ignores stale revisions, and falls back once on worker
   expect(screen.getByRole('heading', { name: 'Second' })).toBeVisible()
 })
 
+it('renders deferred worker text from decoded MDAST chunks instead of raw Markdown source offsets', async () => {
+  vi.stubGlobal('Worker', FakeWorker)
+  const raw = `${'x'.repeat(5000)} &amp; &#x2A; \\* tail`
+  const decoded = `${'x'.repeat(5000)} & * * tail`
+  render(<DocumentView path="docs/escaped.md" text={raw} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  workers[0]?.onmessage?.({
+    data: {
+      id: 1,
+      tree: {
+        type: 'root',
+        children: [{
+          type: 'paragraph',
+          children: [{ type: 'text', value: '', data: { merdeckTextChunks: [decoded.slice(0, 4096), decoded.slice(4096)] } }],
+        }],
+      },
+    },
+  } as MessageEvent)
+  const article = await screen.findByRole('article', { name: 'Markdown document' })
+  await waitFor(() => expect(article).toHaveTextContent(decoded))
+  expect(article).not.toHaveTextContent('&amp;')
+  expect(article).not.toHaveTextContent('\\* tail')
+})
+
 it('falls back when Worker construction or posting fails and when Worker is unavailable', async () => {
   class BrokenWorker extends FakeWorker {
     postMessage() {

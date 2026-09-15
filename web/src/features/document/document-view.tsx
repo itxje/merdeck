@@ -28,41 +28,34 @@ function reportDocumentStage(name: string, detail: Record<string, unknown> = {})
   window.dispatchEvent(new CustomEvent('merdeck-markdown-stage', { detail: { name, at: performance.now(), ...detail } }))
 }
 
-function DocumentText({ value, source, range, deferred }: { value: string, source: string, range: { start: number, end: number } | null, deferred: boolean }) {
-  const length = deferred && range ? range.end - range.start : value.length
-  const chunks: { offset: number, value: string }[] = []
-  let offset = deferred && range ? range.start : 0
-  const limit = deferred && range ? range.end : value.length
-  while (offset < limit) {
-    let end = Math.min(limit, offset + progressiveTextChunkBytes)
-    if (end < limit) {
-      const boundary = (deferred ? source : value).lastIndexOf(' ', end)
-      if (boundary > offset)
-        end = boundary + 1
-    }
-    chunks.push({ offset, value: (deferred ? source : value).slice(offset, end) })
-    offset = end
-  }
+function DocumentText({ value, chunks }: { value: string, chunks: string[] | null }) {
+  const runs = chunks ?? [value]
+  const length = runs.reduce((total, run) => total + run.length, 0)
   // A megabyte paragraph is expensive for Chromium to shape in one commit. Keep the
   // complete source in the response, but materialize bounded text runs over frames.
-  const [visible, setVisible] = React.useState(() => Math.min(chunks.length, progressiveInitialChunks))
+  const [visible, setVisible] = React.useState(() => Math.min(runs.length, progressiveInitialChunks))
   React.useEffect(() => {
     let frame = 0
     const reveal = () => {
       setVisible((current) => {
-        const next = Math.min(chunks.length, current + progressiveChunksPerFrame)
-        if (next < chunks.length)
+        const next = Math.min(runs.length, current + progressiveChunksPerFrame)
+        if (next < runs.length)
           frame = requestAnimationFrame(reveal)
         return next
       })
     }
-    if (chunks.length > progressiveInitialChunks)
+    if (runs.length > progressiveInitialChunks)
       frame = requestAnimationFrame(reveal)
     return () => cancelAnimationFrame(frame)
-  }, [chunks.length])
+  }, [runs.length])
   if (length <= progressiveTextChunkBytes)
     return value
-  return chunks.slice(0, visible).map(chunk => <span key={chunk.offset} className="document-text-chunk">{chunk.value}</span>)
+  let offset = 0
+  return runs.slice(0, visible).map((run) => {
+    const key = offset
+    offset += run.length
+    return <span key={key} className="document-text-chunk">{run}</span>
+  })
 }
 
 function phrasingText(nodes: readonly PhrasingContent[]): string {
@@ -485,9 +478,9 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const render = (node: RenderNode, key: string): React.ReactNode => {
     const children = 'children' in node ? renderChildren(node.children as readonly RenderNode[]) : undefined
     if (node.type === 'text') {
-      const deferred = !!(node.data && typeof node.data === 'object' && (node.data as Record<string, unknown>).merdeckDeferredText === true)
-      const range = node.position?.start.offset !== undefined && node.position.end.offset !== undefined ? { start: node.position.start.offset, end: node.position.end.offset } : null
-      return <DocumentText key={`${range?.start ?? key}:${range?.end ?? key}:${deferred}`} value={node.value} source={text} range={range} deferred={deferred} />
+      const candidate = node.data && typeof node.data === 'object' ? (node.data as Record<string, unknown>).merdeckTextChunks : null
+      const chunks = Array.isArray(candidate) && candidate.every(item => typeof item === 'string') ? candidate : null
+      return <DocumentText key={`${node.position?.start.offset ?? key}:${chunks?.length ?? 0}:${chunks?.[0] ?? node.value}:${chunks?.at(-1) ?? ''}`} value={node.value} chunks={chunks} />
     }
     if (node.type === 'inlineCode')
       return <code key={key}>{node.value}</code>

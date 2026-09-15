@@ -6,9 +6,21 @@ import { gfm } from 'micromark-extension-gfm'
 
 const deferredTextBytes = 4096
 
-// Large prose is already retained by the document response on the main thread. Sending
-// a second copy back in the parsed tree creates a long structured-clone task, so retain
-// only its source range and let the React renderer read small visible chunks on demand.
+// Preserve MDAST's decoded text values while putting large prose into bounded runs for
+// progressive React materialization. Source offsets cannot substitute for values: they
+// still contain Markdown escapes and character references.
+function textChunks(value: string): string[] {
+  const chunks: string[] = []
+  for (let start = 0; start < value.length;) {
+    let end = Math.min(value.length, start + deferredTextBytes)
+    if (end < value.length && /[\uD800-\uDBFF]/.test(value[end - 1]!) && /[\uDC00-\uDFFF]/.test(value[end]!))
+      end--
+    chunks.push(value.slice(start, end))
+    start = end
+  }
+  return chunks
+}
+
 function compactTree<T>(node: T): T {
   if (Array.isArray(node))
     return node.map(compactTree) as T
@@ -17,7 +29,7 @@ function compactTree<T>(node: T): T {
   const record = node as Record<string, unknown>
   if (record.type === 'text' && typeof record.value === 'string' && record.value.length > deferredTextBytes) {
     const data = record.data && typeof record.data === 'object' && !Array.isArray(record.data) ? record.data as Record<string, unknown> : {}
-    return { ...record, value: '', data: { ...data, merdeckDeferredText: true } } as T
+    return { ...record, value: '', data: { ...data, merdeckTextChunks: textChunks(record.value) } } as T
   }
   if (Array.isArray(record.children))
     return { ...record, children: record.children.map(compactTree) } as T

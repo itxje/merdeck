@@ -43,10 +43,12 @@ All commands used Bun `1.4.2` first on `PATH`, Node `v24.20.0`, the project tmux
 
 `MERDECK_TEST_PERFORMANCE=true MERDECK_TEST_MAX_FILE_BYTES=2097152 bun scripts/test-e2e.ts markdown-performance.spec.ts` produced `tmp/markdown-document-performance.json` against the production build and local same-origin service. Four samples were taken per corpus. The Markdown corpus is exactly 1,048,576 bytes; the second corpus has 100 selectable Mermaid fences.
 
-- 1 MiB: Worker parse wall-clock median/p95/worst was measured separately in the Worker (the representative parse sample was 245.9 ms); API JSON decoding was 3.4–5.0 ms. Main-thread Long Task median/p95/worst was 0/0/0 ms and request-animation-frame heartbeat median/p95/worst was 19.1/20.4/20.4 ms.
-- 100 diagrams: main-thread Long Task median/p95/worst was 0/0/0 ms; heartbeat median/p95/worst was 33.6/42.3/42.3 ms. The test asserts fewer than 100 inline SVGs render before scrolling, proving viewport deferral.
+- After the decoded-text chunk correction, the 1 MiB rerun recorded Worker parse 262.6 ms in its representative sample (off-thread), API completion median/p95/worst 313.1/332.3/332.3 ms, document readiness 619.8/650.6/650.6 ms, main-thread Long Task 0/0/0 ms and request-animation-frame heartbeat 19.6/20.3/20.3 ms.
+- The 100-diagram rerun recorded API completion median/p95/worst 102.7/157.2/157.2 ms, document readiness 279.3/331.3/331.3 ms, main-thread Long Task 0/0/0 ms and heartbeat 32.8/39.6/39.6 ms. The test asserts fewer than 100 inline SVGs render before scrolling, proving viewport deferral.
 
 The prior 220–337 ms main-thread samples were attributed to a production Worker startup failure (`document is not defined`) that invoked the intentional synchronous fallback. The Vite worker resolution now uses the parser's non-DOM entry; the Worker parse may take longer than 100 ms off-thread, while the acceptance metric — largest main-thread input delay — is below the approximately 100 ms threshold.
+
+Deferred text is carried as bounded chunks of the already decoded MDAST `value`, never reconstructed from raw source offsets. The focused regression uses a >4096-character text node with named and numeric character references plus a backslash escape and verifies decoded rendered output without raw `&amp;` or `\\*` leakage.
 
 ### Reproducible size comparison
 
