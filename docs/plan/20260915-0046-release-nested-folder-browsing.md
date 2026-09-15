@@ -1,6 +1,6 @@
 # 20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-15 00:46
 - **approvedAt**: 2026-09-15 00:46
 - **relatedTask**: 20260915-0046-release-nested-folder-browsing
@@ -35,3 +35,7 @@ Do not publish: this would leave the completed defect fix unavailable to release
 
 - The owner explicitly authorized the push and release on 2026-09-15. This approval applies after the investigation and proposal recorded above.
 - Approval recorded 2026-09-15 00:46; release execution may proceed within the proposal scope.
+
+## Outcome
+
+The candidate `55a2f0ba7ba6283b3a6d6f34d0772ebefbef9067` passed [main verification](https://github.com/itxje/merdeck/actions/runs/34914655846). Annotated tag `v0.11.2` resolves to that commit, and [its tag workflow](https://github.com/itxje/merdeck/actions/runs/34915373178) published the matching non-draft, non-prerelease release. Downloaded `merdeck.tar.gz` and `SHA256SUMS` passed checksum verification; the extracted bundle reports version 0.11.2 and the tagged commit.

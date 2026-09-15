@@ -84,4 +84,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [ ] [**20260914-1559-source-pane-e2e-ordering Investigate source-pane end-to-end ordering instability**](20260914-1559-source-pane-e2e-ordering.md) `P2`
 - [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `P1`
 - [x] [**20260914-2342-fix-nested-folder-browsing Fix nested folder browsing**](20260914-2342-fix-nested-folder-browsing.md) `P1`
-- [-] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `P1`
+- [x] [**20260915-0046-release-nested-folder-browsing Release the nested folder browsing fix**](20260915-0046-release-nested-folder-browsing.md) `P1`
