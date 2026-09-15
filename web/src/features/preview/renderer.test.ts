@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { encodedAnglePlaceholderSource } from '../../test/encoded-angle-placeholder'
 import { originalFlowSource } from '../../test/original-flow'
 import { sanitizeSvg, validateSource } from './renderer'
+import { renderSource, restoreEncodedAnglePlaceholderText } from './source-policy'
 
 describe('untrusted render boundary', () => {
   it.each(['<br>', '<br/>', '<br />', '<BR>', '<BR/>', '<BR />', '<bR/>'])('accepts ordinary label breaks: %s', (tag) => {
@@ -8,6 +10,13 @@ describe('untrusted render boundary', () => {
   })
   it('accepts the unchanged original Unicode topology', () => {
     expect(() => validateSource(originalFlowSource)).not.toThrow()
+  })
+  it('restores an accepted encoded angle placeholder only as inert SVG text', () => {
+    const marker = renderSource(encodedAnglePlaceholderSource).match(/\uE000merdeck-angle-[a-z0-9]+\uE001/)![0]
+    const document = new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><text>mica-board-${marker}</text></svg>`, 'image/svg+xml')
+    restoreEncodedAnglePlaceholderText(document.documentElement, encodedAnglePlaceholderSource)
+    expect(document.querySelector('text')?.textContent).toBe('mica-board-<board>')
+    expect(document.querySelector('script,[onload],image')).toBeNull()
   })
   it.each([
     '<br onclick="alert(1)">',

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-15 05:26 [fix]
+
+The preview now renders the narrowly accepted `&lt;board&gt;` placeholder as visible inert text without changing editor, draft, save-request or saved-file bytes. Only lowercase ASCII identifier placeholders that are already proven non-element text are admitted; Mermaid receives a private text marker and the generated SVG restores it only inside text nodes before the existing sanitizer. Mixed-case, numeric, malformed, nested, double-encoded, tag-like, resource and event-attribute forms remain refused. Focused browser coverage confirms the exact source, visible text, no outbound request or execution, and exact save/reload bytes. See [20260915-0516-encoded-angle-placeholder](task/20260915-0516-encoded-angle-placeholder.md).
+
 ## 2026-09-15 02:52 [fix]
 
 The mobile file drawer no longer spends a visible row on `Project files` or its explanatory description. It opens directly into the explorer while retaining an assistive dialog name and the shared close control; the explorer action row reserves space so its file, folder, and refresh actions do not overlap that close target. Narrow-screen browser coverage exercises the reclaimed space, accessible name, close action, and 315px short viewport. The self-contained prototypes remain `needs-review`. See [20260915-0230-compact-mobile-drawer-header](task/20260915-0230-compact-mobile-drawer-header.md).

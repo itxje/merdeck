@@ -4,7 +4,7 @@ import DOMPurify from 'dompurify'
 import mermaid from 'mermaid'
 
 import { LabelEditError, labelSites, refusedLabelMessage, sameExceptLabel, sourceOnlyLabelMessage, unsafeLabelMessage, writeLabel } from './flowchart-labels'
-import { bareLabelBreak, previewLimit, renderSource, validateSource } from './source-policy'
+import { bareLabelBreak, previewLimit, renderSource, restoreEncodedAnglePlaceholderText, validateSource } from './source-policy'
 
 export { previewLimit, validateSource } from './source-policy'
 let sequence = 0
@@ -109,6 +109,7 @@ async function render(source: string): Promise<string> {
     const node = host.querySelector('svg')
     if (!node)
       throw new Error('No diagram was produced.')
+    restoreEncodedAnglePlaceholderText(node, source)
     inheritLabelFont(node)
     for (const element of [node, ...node.querySelectorAll('*')]) {
       const computed = getComputedStyle(element)
