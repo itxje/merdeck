@@ -1,8 +1,8 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-13 21:42
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-15
 - **relatedTask**: 20260913-2142-markdown-document
 
 ## Context

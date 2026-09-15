@@ -153,7 +153,7 @@ export function parseDocument(path: string, bytes: Buffer, maxBlocks: number): P
           source: bytes.subarray(start).toString('utf8'),
         },
       }]
-  return { document: { path, kind, version: contentVersion(bytes), blocks: spans.map(span => span.block) }, spans }
+  return { document: { path, kind, version: contentVersion(bytes), blocks: spans.map(span => span.block), ...(kind === 'markdown' ? { text: source.replace(/^\uFEFF/, '') } : {}) }, spans }
 }
 
 export function replaceSource(path: string, bytes: Buffer, selector: DiagramSelector, source: string, maxBlocks: number, maxFileBytes: number): Buffer {

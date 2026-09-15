@@ -5,6 +5,7 @@ import * as React from 'react'
 import { useDefaultLayout, usePanelRef } from 'react-resizable-panels'
 import { ThemeToggle } from '@/app/theme-toggle'
 import { Preview } from '@/features/preview/preview'
+import { DocumentView } from '@/features/document/document-view'
 import { UpdateNotice } from '@/features/update/update-notice'
 import { MerdeckMark } from '@/shared/components/brand/merdeck-mark'
 import { Button } from '@/shared/components/ui/button'
@@ -38,6 +39,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [entryOpen, setEntryOpen] = React.useState(false)
   const drawerFilterRef = React.useRef<HTMLInputElement>(null)
   const [pane, setPane] = React.useState('preview')
+  const [markdownView, setMarkdownView] = React.useState<'document' | 'diagram'>('document')
   const [syntaxError, setSyntaxError] = React.useState('')
   const linesRef = React.useRef<HTMLPreElement>(null)
   const sourceRef = React.useRef<HTMLTextAreaElement>(null)
@@ -326,9 +328,10 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                       <Button variant="outline" disabled={!!file?.saving} onClick={openReview}>Review current file</Button>
                     </div>
                   )}
-                  {selected && file
+                  {(selected && file) || (file?.baseline.kind === 'markdown' && file.baseline.text)
                     ? (
                         <>
+                          {file?.baseline.kind === 'markdown' && <Tabs value={markdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}><TabsList aria-label="Markdown view"><TabsTrigger value="document">Document</TabsTrigger><TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger></TabsList></Tabs>}
                           <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
                             <TabsList aria-label="Workspace pane">
                               <TabsTrigger value="source">
@@ -343,7 +346,9 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                             <TabsContent value="source" className="sr-only">Source editor</TabsContent>
                             <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
                           </Tabs>
-                          <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
+                          {file?.baseline.kind === 'markdown' && markdownView === 'document'
+                            ? <DocumentView text={file.baseline.text!} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={next => { void readTarget(next, new AbortController().signal).then(document => { if (document.path === next) navigate(next, 0) }) }} />
+                            : <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
                             <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={40} minSize="20%" defaultSize={40} onResize={size => setSourceCollapsed(sourcePanel.current?.isCollapsed() ?? size.inPixels < 120)}>
                               {sourceCollapsed && (
                                 <div className="source-rail">
@@ -394,15 +399,15 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                     {' '}
                                     bytes
                                   </span>
-                                  <span>{file.baseline.kind === 'markdown' ? `Line ${selected.lineStart}` : 'Entire file'}</span>
+                                  <span>{file.baseline.kind === 'markdown' ? `Line ${selected?.lineStart ?? 1}` : 'Entire file'}</span>
                                 </div>
                               </section>
                             </ResizablePanel>
                             <ResizableHandle withHandle aria-label="Resize source and preview" />
                             <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
-                              <Preview key={`${path}:${block}`} source={source} title={selected.label} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />
+                              <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />
                             </ResizablePanel>
-                          </ResizablePanelGroup>
+                          </ResizablePanelGroup>}
                         </>
                       )
                     : (

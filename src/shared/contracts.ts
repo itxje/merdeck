@@ -58,6 +58,8 @@ export interface DiagramDocument {
   kind: FileKind
   version: ContentVersion
   blocks: DiagramBlock[]
+  /** Complete BOM-free Markdown source from the same read as version and blocks. */
+  text?: string
 }
 export type TreeEntry
   = | { kind: 'directory', path: RelativePath }
