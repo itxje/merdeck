@@ -10,6 +10,33 @@ import { parentDirectory, validPath } from '@/features/workspace/api'
 
 interface Node { type: string, value?: string, lang?: string | null, url?: string, alt?: string | null, depth?: number, checked?: boolean | null, ordered?: boolean, align?: (string | null)[], children?: Node[], position?: { start: { line: number }, end: { line: number } } }
 
+function parse(text: string) {
+  return fromMarkdown(text, { extensions: [gfm(), frontmatter(['yaml'])], mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(['yaml'])] }) as unknown as { children: Node[] }
+}
+
+function useDocumentTree(text: string) {
+  const [tree, setTree] = React.useState(() => parse(text))
+  React.useEffect(() => {
+    if (typeof Worker === 'undefined') {
+      setTree(parse(text))
+      return
+    }
+    const worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
+    let current = true
+    const id = 1
+    worker.onmessage = (event: MessageEvent<{ id: number, tree?: { children: Node[] } }>) => {
+      if (current && event.data.id === id && event.data.tree)
+        setTree(event.data.tree)
+    }
+    worker.postMessage({ id, text })
+    return () => {
+      current = false
+      worker.terminate()
+    }
+  }, [text])
+  return tree
+}
+
 function InlineDiagram({ source, selected, onSelect }: { source: string, selected: boolean, onSelect: () => void }) {
   const [result, setResult] = React.useState<{ source: string, svg: string } | { source: string, error: string } | null>(null)
   React.useEffect(() => {
@@ -52,7 +79,7 @@ function resolveProjectLink(path: string, url: string): string | null {
 }
 
 export function DocumentView({ text, path, blocks, sources, selected, onSelect, onOpenFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onSelect: (index: number) => void, onOpenFile: (path: string) => void }) {
-  const tree = React.useMemo(() => fromMarkdown(text, { extensions: [gfm(), frontmatter(['yaml'])], mdastExtensions: [gfmFromMarkdown(), frontmatterFromMarkdown(['yaml'])] }) as unknown as { children: Node[] }, [text])
+  const tree = useDocumentTree(text)
   const matched = React.useMemo(() => new Map(blocks.map((block, index) => [`${block.lineStart - 1}:${block.lineEnd + 1}`, index])), [blocks])
   const placementOk = blocks.every(block => tree.children.some(node => node.type === 'code' && node.lang === 'mermaid' && node.position && `${node.position.start.line}:${node.position.end.line}` === `${block.lineStart - 1}:${block.lineEnd + 1}`))
   // eslint-disable-next-line ts/no-use-before-define -- The renderer and its child recursion are intentionally paired.
