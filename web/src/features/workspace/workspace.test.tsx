@@ -123,6 +123,23 @@ it('keeps a Markdown document without diagrams in Document view', async () => {
   client.clear()
 })
 
+it('removes the mobile source mode when a zero-diagram Markdown document replaces a source pane', async () => {
+  const diagram = markdownDocument('docs/diagram.md', '# Diagram\n\n```mermaid\nflowchart LR\nA-->B\n```')
+  const prose = { ...markdownDocument('docs/prose.md', '# Prose\n\nRead only.'), blocks: [] }
+  const document = mockMarkdownWorkspace(diagram)
+  document.mockImplementation(async target => target === diagram.path ? diagram : target === prose.path ? prose : Promise.reject(new HttpError(404, 'not_found', 'Missing file')))
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={diagram.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  await userEvent.setup().click(await screen.findByRole('tab', { name: 'Source' }))
+  expect(screen.getByRole('tab', { name: 'Source' })).toHaveAttribute('aria-selected', 'true')
+  view.rerender(<QueryClientProvider client={client}><ThemeProvider><Workspace path={prose.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByRole('heading', { name: 'Prose' })).toBeVisible()
+  expect(screen.queryByRole('tablist', { name: 'Workspace pane' })).toBeNull()
+  expect(screen.queryByLabelText('Mermaid source', { exact: true })).toBeNull()
+  view.unmount()
+  client.clear()
+})
+
 it('keeps the Document or Diagram choice with its Markdown path', async () => {
   const first = markdownDocument('docs/first.md', '# First\n\n```mermaid\nflowchart LR\nA-->B\n```')
   const second = markdownDocument('docs/second.md', '# Second\n\n```mermaid\nflowchart LR\nC-->D\n```')

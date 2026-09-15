@@ -355,20 +355,22 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                               </TabsList>
                             </Tabs>
                           )}
-                          <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
-                            <TabsList aria-label="Workspace pane">
-                              <TabsTrigger value="source">
-                                <Code2 />
-                                Source
-                              </TabsTrigger>
-                              <TabsTrigger value="preview">
-                                <GitBranch />
-                                Preview
-                              </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="source" className="sr-only">Source editor</TabsContent>
-                            <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
-                          </Tabs>
+                          {selected && (
+                            <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
+                              <TabsList aria-label="Workspace pane">
+                                <TabsTrigger value="source">
+                                  <Code2 />
+                                  Source
+                                </TabsTrigger>
+                                <TabsTrigger value="preview">
+                                  <GitBranch />
+                                  Preview
+                                </TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="source" className="sr-only">Source editor</TabsContent>
+                              <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
+                            </Tabs>
+                          )}
                           {!selected && file?.baseline.kind === 'markdown'
                             ? (
                                 <DocumentView

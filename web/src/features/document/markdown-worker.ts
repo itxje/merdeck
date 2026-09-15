@@ -3,23 +3,7 @@ import { frontmatterFromMarkdown } from 'mdast-util-frontmatter'
 import { gfmFromMarkdown } from 'mdast-util-gfm'
 import { frontmatter } from 'micromark-extension-frontmatter'
 import { gfm } from 'micromark-extension-gfm'
-
-const deferredTextBytes = 4096
-
-// Preserve MDAST's decoded text values while putting large prose into bounded runs for
-// progressive React materialization. Source offsets cannot substitute for values: they
-// still contain Markdown escapes and character references.
-function textChunks(value: string): string[] {
-  const chunks: string[] = []
-  for (let start = 0; start < value.length;) {
-    let end = Math.min(value.length, start + deferredTextBytes)
-    if (end < value.length && /[\uD800-\uDBFF]/.test(value[end - 1]!) && /[\uDC00-\uDFFF]/.test(value[end]!))
-      end--
-    chunks.push(value.slice(start, end))
-    start = end
-  }
-  return chunks
-}
+import { deferredTextBytes, textChunks } from './markdown-text'
 
 function compactTree<T>(node: T): T {
   if (Array.isArray(node))

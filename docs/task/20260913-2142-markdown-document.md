@@ -50,6 +50,8 @@ The prior 220–337 ms main-thread samples were attributed to a production Worke
 
 Deferred text is carried as bounded chunks of the already decoded MDAST `value`, never reconstructed from raw source offsets. The focused regression uses a >4096-character text node with named and numeric character references plus a backslash escape and verifies decoded rendered output without raw `&amp;` or `\\*` leakage.
 
+The final boundary rerun also verifies that a zero-block Markdown file removes the mobile Source control and editor even when the prior file left that pane selected. Deferred chunks keep astral Unicode code points intact at a 4096-code-unit boundary. Focused document/text/workspace tests passed 43/43; the production performance rerun passed, and the complete production Chromium suite passed 70 tests with 1 intentionally performance-gated skip and zero audit errors (`tmp/markdown-full-boundaries.log`).
+
 ### Reproducible size comparison
 
 The integration base `da21051a51e6cd968a4d5f858c0c636d5c63a9e9` was checked out detached at `/tmp/merdeck-markdown-size-base` with the current locked dependencies. Both base and `7312cb6` used Bun 1.4.2, `bun run build`, then `compile('v0.0.0', 'bun-linux-x64', { output: 'tmp/size-{base,head}', built: true })` from their required tmux sessions. Measured raw bytes:
