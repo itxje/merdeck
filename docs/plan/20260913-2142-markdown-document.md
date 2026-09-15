@@ -1,6 +1,6 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: completed
+- **status**: implementing
 - **createdAt**: 2026-09-13 21:42
 - **approvedAt**: 2026-09-15
 - **relatedTask**: 20260913-2142-markdown-document

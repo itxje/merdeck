@@ -77,7 +77,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260913-1802-directory-frontend Implement directory navigation and frontend acceptance**](20260913-1802-directory-frontend.md) `P1`
 - [x] [**20260913-2030-explorer-order Sort the loaded explorer window**](20260913-2030-explorer-order.md) `P2`
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `P1`
-- [x] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
+- [-] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `P1`
 - [ ] [**20260914-1150-directory-poll-save-race Keep directory polls out of a save's change window**](20260914-1150-directory-poll-save-race.md) `P2`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `P1`

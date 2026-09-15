@@ -89,6 +89,14 @@ export async function choose(page: Page, name: string) {
   const base = file.split('/').at(-1)!
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   await page.getByRole('button', { name: new RegExp(`^${escaped}(?: Unsaved changes)?$`) }).first().click()
+  // Markdown opens in its read-only document view; existing source-editor helpers exercise the retained Diagram view.
+  const diagram = page.getByRole('tab', { name: 'Diagram', exact: true })
+  if (file.endsWith('.md')) {
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toBeVisible()
+    await expect(diagram).toBeEnabled()
+    await diagram.click()
+    await expect(diagram).toHaveAttribute('aria-selected', 'true')
+  }
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeAttached()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })
   if (await showSource.isVisible())

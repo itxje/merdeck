@@ -1,6 +1,6 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: completed
+- **status**: in_progress
 - **priority**: P2
 - **owner**: markdown-document-20260915
 - **createdAt**: 2026-09-13 21:42
@@ -23,4 +23,4 @@ Rendering whole Markdown documents.
 - Investigation (2026-09-13): the service parses Markdown only to locate top-level Mermaid fences and never returns the complete text; README and the architecture state that surrounding Markdown is never rendered; the web application has no Markdown renderer, although the needed parser packages are already in its lockfile; the preview is a single-diagram canvas keyed by file and block. Details are in the plan's context.
 - Proposal: recorded in [the plan](../plan/20260913-2142-markdown-document.md), awaiting approval.
 
-- complete: Focused service, decoder and document-renderer tests passed; frontend production build passed. Native Linux x64/ext4 acceptance was not available in this isolated worktree.
+- Reopened (2026-09-15): quality assessment requires complete local browser, component-security and performance evidence before completion.
