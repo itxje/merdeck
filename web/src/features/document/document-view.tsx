@@ -15,7 +15,7 @@ function parse(text: string) {
 }
 
 function useDocumentTree(text: string) {
-  const [state, setState] = React.useState<{ text: string, tree: { children: Node[] } | null, error: string | null }>(() => typeof Worker === 'undefined' ? { text, tree: parse(text), error: null } : { text, tree: null, error: null })
+  const [state, setState] = React.useState<{ text: string, tree: { children: Node[] } | null, error: string | null }>({ text, tree: null, error: null })
   React.useEffect(() => {
     let worker: Worker
     let current = true
@@ -46,6 +46,7 @@ function useDocumentTree(text: string) {
           return
         if (event.data.tree) {
           settled = true
+          worker.terminate()
           setState({ text, tree: event.data.tree, error: null })
         }
         else {
