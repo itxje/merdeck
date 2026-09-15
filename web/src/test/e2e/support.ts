@@ -91,8 +91,10 @@ export async function choose(page: Page, name: string) {
   await page.getByRole('button', { name: new RegExp(`^${escaped}(?: Unsaved changes)?$`) }).first().click()
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeAttached()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })
-  if (await showSource.isVisible())
+  if (await showSource.isVisible()) {
     await showSource.click()
+    await expect(showSource).toBeHidden()
+  }
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeVisible()
 }
 export async function chooseBlock(page: Page, file: string, number: number) {

@@ -24,6 +24,7 @@ import { useDirectorySearch } from './use-directory-search'
 import { useWorkspace } from './use-workspace'
 
 const introduction = 'Browse, edit and preview diagrams in your project files.'
+const collapsedSourceWidth = 40
 
 export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
   const state = useWorkspace(path, block, directory)
@@ -52,7 +53,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
     editor.scrollTop = Math.max(0, line * (Number.parseFloat(getComputedStyle(editor).lineHeight) || 26) - editor.clientHeight / 3)
   }, [])
   const sourcePanel = usePanelRef()
-  const [sourceCollapsed, setSourceCollapsed] = React.useState(false)
+  // The default panel layout starts collapsed; match it before the first resize observation.
+  const [sourceCollapsed, setSourceCollapsed] = React.useState(true)
   const [explorerWidth, resizeExplorer] = useExplorerWidth()
   const dragExplorer = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const handle = event.currentTarget
@@ -70,6 +72,10 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
     handle.addEventListener('pointercancel', stop)
   }, [explorerWidth, resizeExplorer])
   const paneLayout = useDefaultLayout({ id: 'merdeck-panes', storage: localStorage })
+  const showSource = React.useCallback(() => {
+    sourcePanel.current?.expand()
+    setSourceCollapsed(false)
+  }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
   const source = file?.sources[block] ?? ''
@@ -344,10 +350,10 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                             <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
                           </Tabs>
                           <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
-                            <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={40} minSize="20%" defaultSize={40} onResize={size => setSourceCollapsed(sourcePanel.current?.isCollapsed() ?? size.inPixels < 120)}>
+                            <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={collapsedSourceWidth} minSize="20%" defaultSize={collapsedSourceWidth} onResize={size => setSourceCollapsed(size.inPixels <= collapsedSourceWidth)}>
                               {sourceCollapsed && (
                                 <div className="source-rail">
-                                  <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={() => sourcePanel.current?.expand()}><PanelLeftOpen /></Button>
+                                  <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={showSource}><PanelLeftOpen /></Button>
                                 </div>
                               )}
                               {/* The collapsed editor stays mounted so its scroll position and selection survive. */}
