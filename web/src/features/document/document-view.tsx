@@ -15,6 +15,56 @@ import { resolveProjectLink } from './document-links'
 
 type RenderNode = Content | ListItem | TableRow | TableCell
 
+const progressiveTextChunkBytes = 4096
+const progressiveInitialChunks = 8
+const progressiveChunksPerFrame = 8
+
+function markDocumentStage(name: string) {
+  performance.mark(`merdeck-markdown:${name}`)
+}
+
+function reportDocumentStage(name: string, detail: Record<string, unknown> = {}) {
+  markDocumentStage(name)
+  window.dispatchEvent(new CustomEvent('merdeck-markdown-stage', { detail: { name, at: performance.now(), ...detail } }))
+}
+
+function DocumentText({ value, source, range, deferred }: { value: string, source: string, range: { start: number, end: number } | null, deferred: boolean }) {
+  const length = deferred && range ? range.end - range.start : value.length
+  const chunks: { offset: number, value: string }[] = []
+  let offset = deferred && range ? range.start : 0
+  const limit = deferred && range ? range.end : value.length
+  while (offset < limit) {
+    let end = Math.min(limit, offset + progressiveTextChunkBytes)
+    if (end < limit) {
+      const boundary = (deferred ? source : value).lastIndexOf(' ', end)
+      if (boundary > offset)
+        end = boundary + 1
+    }
+    chunks.push({ offset, value: (deferred ? source : value).slice(offset, end) })
+    offset = end
+  }
+  // A megabyte paragraph is expensive for Chromium to shape in one commit. Keep the
+  // complete source in the response, but materialize bounded text runs over frames.
+  const [visible, setVisible] = React.useState(() => Math.min(chunks.length, progressiveInitialChunks))
+  React.useEffect(() => {
+    let frame = 0
+    const reveal = () => {
+      setVisible((current) => {
+        const next = Math.min(chunks.length, current + progressiveChunksPerFrame)
+        if (next < chunks.length)
+          frame = requestAnimationFrame(reveal)
+        return next
+      })
+    }
+    if (chunks.length > progressiveInitialChunks)
+      frame = requestAnimationFrame(reveal)
+    return () => cancelAnimationFrame(frame)
+  }, [chunks.length])
+  if (length <= progressiveTextChunkBytes)
+    return value
+  return chunks.slice(0, visible).map(chunk => <span key={chunk.offset} className="document-text-chunk">{chunk.value}</span>)
+}
+
 function phrasingText(nodes: readonly PhrasingContent[]): string {
   return nodes.map((node) => {
     if ('value' in node)
@@ -115,6 +165,7 @@ function useDocumentTree(text: string) {
         return
       settled = true
       worker?.terminate()
+      reportDocumentStage('worker-fallback', { error: 1 })
       queueMicrotask(() => {
         if (!current)
           return
@@ -130,19 +181,24 @@ function useDocumentTree(text: string) {
       if (typeof Worker === 'undefined')
         throw new Error('Worker unavailable')
       worker = new Worker(new URL('./markdown-worker.ts', import.meta.url), { type: 'module' })
-      worker.onmessage = (event: MessageEvent<{ id: number, tree?: Root, error?: string }>) => {
+      worker.onmessage = (event: MessageEvent<{ id: number, tree?: Root, error?: string, timing?: { parseMs: number, compactMs: number } }>) => {
         if (!current || settled || event.data.id !== id)
           return
         if (event.data.tree) {
           settled = true
           worker.terminate()
+          reportDocumentStage('worker-message', event.data.timing)
           setState({ text, tree: event.data.tree, error: null })
         }
         else {
           fallback(new Error(event.data.error ?? 'Markdown parsing failed.'))
         }
       }
-      worker.onerror = fallback
+      worker.onerror = (event) => {
+        reportDocumentStage('worker-runtime-error', { message: event.message })
+        fallback(event)
+      }
+      reportDocumentStage('worker-post')
       worker.postMessage({ id, text })
     }
     catch (error) {
@@ -282,6 +338,16 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const diagramMapRef = React.useRef(new Map<number, HTMLElement>())
   const revealedRef = React.useRef<{ path: string, selected: number } | null>(null)
   const documentLinkRequestRef = React.useRef(0)
+  React.useLayoutEffect(() => {
+    if (parsed.tree)
+      reportDocumentStage('react-commit')
+  }, [parsed.tree])
+  React.useEffect(() => {
+    if (!parsed.tree)
+      return
+    const frame = requestAnimationFrame(() => reportDocumentStage('layout-frame'))
+    return () => cancelAnimationFrame(frame)
+  }, [parsed.tree])
   React.useEffect(() => {
     const observer = new MutationObserver(() => setThemeRevision(value => value + 1))
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
@@ -418,8 +484,11 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   }
   const render = (node: RenderNode, key: string): React.ReactNode => {
     const children = 'children' in node ? renderChildren(node.children as readonly RenderNode[]) : undefined
-    if (node.type === 'text')
-      return node.value
+    if (node.type === 'text') {
+      const deferred = !!(node.data && typeof node.data === 'object' && (node.data as Record<string, unknown>).merdeckDeferredText === true)
+      const range = node.position?.start.offset !== undefined && node.position.end.offset !== undefined ? { start: node.position.start.offset, end: node.position.end.offset } : null
+      return <DocumentText key={`${range?.start ?? key}:${range?.end ?? key}:${deferred}`} value={node.value} source={text} range={range} deferred={deferred} />
+    }
     if (node.type === 'inlineCode')
       return <code key={key}>{node.value}</code>
     if (node.type === 'html') {

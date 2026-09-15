@@ -40,7 +40,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [entryOpen, setEntryOpen] = React.useState(false)
   const drawerFilterRef = React.useRef<HTMLInputElement>(null)
   const [pane, setPane] = React.useState('preview')
-  const [markdownView, setMarkdownView] = React.useState<'document' | 'diagram'>('document')
+  // View selection belongs to a Markdown document, never to the previously opened file.
+  const [markdownViews, setMarkdownViews] = React.useState<Record<string, 'document' | 'diagram'>>({})
   const [syntaxError, setSyntaxError] = React.useState('')
   const linesRef = React.useRef<HTMLPreElement>(null)
   const sourceRef = React.useRef<HTMLTextAreaElement>(null)
@@ -80,7 +81,12 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
+  const markdownView = file?.baseline.kind === 'markdown' ? markdownViews[path] ?? 'document' : 'document'
   const effectiveMarkdownView = file?.baseline.kind === 'markdown' && !selected ? 'document' : markdownView
+  const chooseMarkdownView = React.useCallback((value: 'document' | 'diagram') => {
+    if (file?.baseline.kind === 'markdown')
+      setMarkdownViews(views => views[path] === value ? views : { ...views, [path]: value })
+  }, [file?.baseline.kind, path])
   const source = file?.sources[block] ?? ''
   const changed = !!selected && source !== selected.source
   const sourceBytes = new TextEncoder().encode(source).length
@@ -342,7 +348,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     ? (
                         <>
                           {file?.baseline.kind === 'markdown' && (
-                            <Tabs className="markdown-view-tabs" value={effectiveMarkdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}>
+                            <Tabs value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
                               <TabsList aria-label="Markdown view">
                                 <TabsTrigger value="document">Document</TabsTrigger>
                                 <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>

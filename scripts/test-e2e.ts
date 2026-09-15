@@ -51,7 +51,8 @@ async function start(root: string, role: string, withToken = true) {
   const marker = join(scratch, `${role}.ready`)
   const configFile = join(scratch, `${role}.json`)
   // A service started without the token file runs with open access.
-  await writeFile(configFile, JSON.stringify({ root, origin, tokenFile: withToken ? tokenFile : undefined, marker }), { mode: 0o600 })
+  const maxFileBytes = process.env.MERDECK_TEST_MAX_FILE_BYTES
+  await writeFile(configFile, JSON.stringify({ root, origin, tokenFile: withToken ? tokenFile : undefined, marker, ...(maxFileBytes ? { maxFileBytes: Number(maxFileBytes) } : {}) }), { mode: 0o600 })
   const ready = markerEvent(scratch, basename(marker))
   try {
     const command = `${quote(process.execPath)} ${quote(join(project, 'scripts/test-service.ts'))} ${quote(configFile)} > ${quote(join(scratch, `${role}.log`))} 2>&1`

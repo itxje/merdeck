@@ -8,6 +8,7 @@ import { health, privateToken } from './test-support'
 const configuration = z.object({
   root: z.string(),
   origin: z.string(),
+  maxFileBytes: z.number().int().positive().optional(),
   // Absent for a service with open access.
   tokenFile: z.string().optional(),
   marker: z.string(),
@@ -23,7 +24,7 @@ try {
     MERDECK_ALLOWED_ORIGINS: config.origin,
     MERDECK_API_MODE: 'prefixed',
     MERDECK_COOKIE_SECURE: 'auto',
-    MERDECK_MAX_FILE_BYTES: '8192',
+    MERDECK_MAX_FILE_BYTES: String(config.maxFileBytes ?? 8192),
     MERDECK_MAX_TREE_ENTRIES: '100',
     MERDECK_POLL_INTERVAL_MS: '1000',
     NODE_ENV: 'production',

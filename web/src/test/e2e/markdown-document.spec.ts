@@ -47,6 +47,12 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     await expect(article.getByRole('link', { name: 'encoded', exact: true })).toHaveCount(0)
     await expect(article.locator('.document-diagram svg')).toHaveCount(2)
     await expect(article.locator('.document-diagram svg marker')).not.toHaveCount(0)
+    expect(await article.locator('.document-diagram').evaluateAll((figures) => {
+      const [first, second] = figures as HTMLElement[]
+      return !!first && !!second
+        && getComputedStyle(first.querySelector('.diagram-graphic')!).position === 'static'
+        && first.getBoundingClientRect().bottom <= second.getBoundingClientRect().top
+    })).toBe(true)
     await expect(article.locator('.document-diagram .diagram-graphic [data-file-link]')).toHaveCount(0)
 
     await article.getByRole('button', { name: 'project', exact: true }).click()

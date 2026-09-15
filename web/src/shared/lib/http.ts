@@ -33,7 +33,12 @@ export async function requestApi<T>(path: string, decode: (data: unknown) => T, 
     ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
     signal: options.signal ? AbortSignal.any([options.signal, timeout]) : timeout,
   })
+  if (path.startsWith('/diagrams/document'))
+    performance.mark('merdeck-markdown:api-response')
+  const jsonStarted = performance.now()
   const result: unknown = await response.json()
+  if (path.startsWith('/diagrams/document'))
+    performance.measure('merdeck-markdown:api-json', { start: jsonStarted })
   if (typeof result !== 'object' || result === null || !('success' in result))
     throw new HttpError(response.status, 'invalid_response', 'The service returned an invalid response.')
   if (!response.ok || result.success !== true) {
@@ -44,5 +49,8 @@ export async function requestApi<T>(path: string, decode: (data: unknown) => T, 
   }
   if (!('data' in result))
     throw new HttpError(response.status, 'invalid_response', 'The service returned an invalid response.')
-  return decode(result.data)
+  const decoded = decode(result.data)
+  if (path.startsWith('/diagrams/document'))
+    performance.measure('merdeck-markdown:api-decode', { start: jsonStarted })
+  return decoded
 }

@@ -123,6 +123,26 @@ it('keeps a Markdown document without diagrams in Document view', async () => {
   client.clear()
 })
 
+it('keeps the Document or Diagram choice with its Markdown path', async () => {
+  const first = markdownDocument('docs/first.md', '# First\n\n```mermaid\nflowchart LR\nA-->B\n```')
+  const second = markdownDocument('docs/second.md', '# Second\n\n```mermaid\nflowchart LR\nC-->D\n```')
+  const document = mockMarkdownWorkspace(first)
+  document.mockImplementation(async target => target === first.path ? first : target === second.path ? second : Promise.reject(new HttpError(404, 'not_found', 'Missing file')))
+  const client = createQueryClient()
+  const navigate = vi.fn()
+  const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={first.path} block={0} navigate={navigate} /></ThemeProvider></QueryClientProvider>)
+  await screen.findByRole('tab', { name: 'Diagram' })
+  await userEvent.setup().click(screen.getByRole('tab', { name: 'Diagram' }))
+  expect(screen.getByRole('tab', { name: 'Diagram' })).toHaveAttribute('aria-selected', 'true')
+  view.rerender(<QueryClientProvider client={client}><ThemeProvider><Workspace path={second.path} block={0} navigate={navigate} /></ThemeProvider></QueryClientProvider>)
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Second' })).toBeVisible())
+  expect(screen.getByRole('tab', { name: 'Document' })).toHaveAttribute('aria-selected', 'true')
+  view.rerender(<QueryClientProvider client={client}><ThemeProvider><Workspace path={first.path} block={0} navigate={navigate} /></ThemeProvider></QueryClientProvider>)
+  await waitFor(() => expect(screen.getByRole('tab', { name: 'Diagram' })).toHaveAttribute('aria-selected', 'true'))
+  view.unmount()
+  client.clear()
+})
+
 it('ignores a document-link read that resolves after navigation scope changes', async () => {
   const current = markdownDocument('docs/guide.md', '# Guide\n\n[Next](next.md)')
   const document = mockMarkdownWorkspace(current)
