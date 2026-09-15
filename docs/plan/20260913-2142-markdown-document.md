@@ -57,7 +57,7 @@ Out of scope: editing prose or the whole file, loading images, rendering raw HTM
 
 ## Implementation decisions
 
-`github-slugger` **2.0.0** and `@types/mdast` **4.0.4** are promoted as exact direct dependencies from the existing lockfile. Both versions were verified against the npm registry on 2026-09-15 and match the approved renderer contract: the former owns GitHub-compatible duplicate heading slugs, and the latter replaces the renderer's ad-hoc syntax-node shape with MDAST types. No transitive dependency versions changed. Browser, performance and native acceptance evidence remains pending this implementation phase.
+`github-slugger` **2.0.0** and `@types/mdast` **4.0.4** are promoted as exact direct dependencies from the existing lockfile. Both versions were verified against the npm registry on 2026-09-15 and match the approved renderer contract: the former owns GitHub-compatible duplicate heading slugs, and the latter replaces the renderer's ad-hoc syntax-node shape with MDAST types. No transitive dependency versions changed. Local browser, worker-performance, size and repository-gate evidence is recorded in the linked task. Native Linux x64/ext4 `check:ci --native` remains the explicit post-integration release gate; local overlayfs evidence does not claim to satisfy it.
 
 ## Alternatives
 
