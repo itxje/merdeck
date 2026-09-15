@@ -246,6 +246,9 @@ test('individual Markdown saves preserve original source and unrelated BOM, CRLF
     for (const body of writes)
       expect(JSON.parse(body)).toMatchObject({ path: name, source: originalSolarSource, selector: { kind: 'markdown' } })
     await page.reload()
+    await expect(page.getByRole('tab', { name: 'Diagram', exact: true })).toBeEnabled()
+    await page.getByRole('tab', { name: 'Diagram', exact: true }).click()
+    await expect(page.getByRole('tab', { name: 'Diagram', exact: true })).toHaveAttribute('aria-selected', 'true')
     for (const index of [1, 2]) {
       await chooseBlock(page, name, index)
       await expect(editor).toHaveValue(originalSolarSource)

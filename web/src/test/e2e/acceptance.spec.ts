@@ -182,7 +182,7 @@ test('empty Markdown and unsupported file states remain readable and recoverable
   try {
     await login(page, true)
     await page.getByRole('button', { name: 'no-diagrams.md', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'No Mermaid blocks', exact: true })).toBeVisible()
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toContainText('Ordinary prose')
     await page.getByRole('button', { name: /^binary\.mmd/ }).click()
     await expect(page.getByRole('heading', { name: /File unavailable|Unable to open this file/ })).toBeVisible()
     await choose(page, 'welcome.mmd')

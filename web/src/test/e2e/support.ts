@@ -71,6 +71,12 @@ export async function login(page: Page, reuseSession = false) {
 }
 export async function browse(page: Page, directory: string) {
   const explorer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  // On narrow layouts the persistent tree is visually covered by the drawer. Open the
+  // drawer first so every subsequent navigation action has an interactable owner.
+  if (!await explorer.isVisible() && await page.getByRole('button', { name: 'Open project files', exact: true }).isVisible()) {
+    await page.getByRole('button', { name: 'Open project files', exact: true }).click()
+    await expect(explorer).toBeVisible()
+  }
   const scope = await explorer.isVisible() ? explorer : page.getByRole('complementary', { name: 'Project files', exact: true })
   await scope.getByRole('button', { name: 'Root', exact: true }).click()
   await expect(page).toHaveURL(url => url.searchParams.get('directory') === '""' || url.searchParams.get('directory') === '')

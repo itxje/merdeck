@@ -342,7 +342,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     ? (
                         <>
                           {file?.baseline.kind === 'markdown' && (
-                            <Tabs value={effectiveMarkdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}>
+                            <Tabs className="markdown-view-tabs" value={effectiveMarkdownView} onValueChange={value => setMarkdownView(value as 'document' | 'diagram')}>
                               <TabsList aria-label="Markdown view">
                                 <TabsTrigger value="document">Document</TabsTrigger>
                                 <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>
