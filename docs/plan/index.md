@@ -62,5 +62,6 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260916-0457-release-open-access-agents Release open-access agent support**](20260916-0457-release-open-access-agents.md) `2026-09-16`
 - [x] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `2026-09-16`
 - [x] [**20260916-1346-support-agy-agent-provider Add Antigravity (agy) AI agent provider**](20260916-1346-support-agy-agent-provider.md) `2026-09-16`
-- [-] [**20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider**](20260916-1405-release-agy-agent-provider.md) `2026-09-16`
-- [-] [**20260916-1415-improve-html-document-rendering Improve HTML document rendering and layout**](20260916-1415-improve-html-document-rendering.md) `2026-09-16`
+- [x] [**20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider**](20260916-1405-release-agy-agent-provider.md) `2026-09-16`
+- [x] [**20260916-1415-improve-html-document-rendering Improve HTML document rendering and layout**](20260916-1415-improve-html-document-rendering.md) `2026-09-16`
+- [x] [**20260916-1945-remove-html-preview-restrictions Remove HTML preview restrictions and notice banner**](20260916-1945-remove-html-preview-restrictions.md) `2026-09-16`

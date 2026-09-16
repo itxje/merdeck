@@ -52,9 +52,11 @@ class AgySession implements AgentProviderSession {
     const exitCode = await proc.exited
     if (exitCode !== 0)
       throw new Error(`agy models failed with exit code ${exitCode}`)
-    const lines = output.split('\n').map(line => line.trim()).filter(Boolean)
+    const lines = output.split(/[\r\n]+/).map(line => line.trim()).filter(Boolean)
     const models: AgentModel[] = []
-    for (const [index, line] of lines.entries()) {
+    for (const line of lines) {
+      if (line.includes('Fetching available models') || /^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(line))
+        continue
       const parts = line.split('\t')
       const id = parts[0]?.trim()
       if (!id || !agentModelIdSchema.safeParse(id).success)
@@ -64,7 +66,7 @@ class AgySession implements AgentProviderSession {
         id,
         label: safeLabel(label, id, 100),
         description: '',
-        isDefault: index === 0,
+        isDefault: models.length === 0,
       })
     }
     if (!models.length)
@@ -180,7 +182,7 @@ class AgySession implements AgentProviderSession {
 
 export const agyAdapter: AgentProviderAdapter = {
   id: 'agy',
-  label: 'Antigravity',
+  label: 'Google Antigravity',
   models: AgySession.models,
   open: AgySession.open,
 }

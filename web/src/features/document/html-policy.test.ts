@@ -18,12 +18,11 @@ it('projects malformed HTML and decoded entities into a semantic inert tree', ()
   expect(serialized(result)).toContain('tbody')
 })
 
-it('drops executable and foreign subtrees and never projects file DOM attributes', () => {
+it('drops executable and foreign subtrees and never projects dangerous attributes', () => {
   const source = `
     <base href="https://bad.example/">
     <meta http-equiv="refresh" content="0;url=https://bad.example/">
     <script>globalThis.pwned = true</script>
-    <style>body { background: url(https://bad.example/style) }</style>
     <template><img src="https://bad.example/template"></template>
     <noscript><img src="https://bad.example/noscript"></noscript>
     <iframe src="https://bad.example/frame">fallback</iframe>
@@ -32,33 +31,52 @@ it('drops executable and foreign subtrees and never projects file DOM attributes
     <svg onload="pwned()"><script>pwned()</script><text>foreign</text></svg>
     <math><mtext>foreign math</mtext></math>
     <custom-element onclick="pwned()" style="background:url(https://bad.example/css)" class="danger" data-x="1" aria-label="danger">safe child</custom-element>
-    <p id="safe" onclick="pwned()" style="color:red" class="danger"><span>Visible</span></p>
+    <p id="safe" onclick="pwned()" class="danger"><span>Visible</span></p>
   `
   const result = projectHtml(source)
   const output = serialized(result)
   expect(output).toContain('safe child')
   expect(output).toContain('Visible')
-  for (const forbidden of ['globalThis.pwned', 'bad.example', 'fallback', 'foreign', 'onclick', 'style', 'class', 'data-x', 'aria-label', 'custom-element', 'script', 'iframe', 'object', 'embed', 'svg', 'math'])
+  for (const forbidden of ['globalThis.pwned', 'bad.example', 'fallback', 'foreign', 'onclick', 'class', 'data-x', 'aria-label', 'custom-element', 'script', 'iframe', 'object', 'embed', 'svg', 'math'])
     expect(output).not.toContain(forbidden)
   expect(output).toContain('"sourceId":"safe"')
 })
 
-it('keeps only bounded link and source identifiers and turns resources into labelled text placeholders', () => {
+it('supports scoped style elements and safe inline style properties', () => {
+  const source = `
+    <style>body { font-family: sans-serif; } h1, h2 { color: blue; } @import "bad.css";</style>
+    <p style="color: red; font-weight: bold; expression: alert(1); invalid: ;">Styled text</p>
+  `
+  const result = projectHtml(source)
+  const output = serialized(result)
+  expect(output).toContain('.html-document-view { font-family: sans-serif; }')
+  expect(output).toContain('.html-document-view h1, .html-document-view h2 { color: blue; }')
+  expect(output).not.toContain('bad.css')
+  expect(output).not.toContain('@import')
+  expect(output).toContain('"style":{"color":"red","fontWeight":"bold"}')
+})
+
+it('keeps only bounded link and source identifiers and projects images and media elements', () => {
   const result = projectHtml(`
     <p><a id="jump" href="next.html#part" target="_self" ping="https://bad.example/ping" onclick="pwned()">Next</a></p>
-    <img src="https://bad.example/image" srcset="https://bad.example/2x 2x" alt="Chart">
-    <picture><source srcset="https://bad.example/source"><img src="https://bad.example/picture"></picture>
-    <video poster="https://bad.example/poster"><source src="https://bad.example/video"></video>
-    <audio src="https://bad.example/audio"></audio>
+    <img src="https://example.test/image.png" alt="Chart" width="200" height="100">
+    <picture><source src="https://example.test/pic.png"><img src="https://example.test/fallback.png"></picture>
+    <video src="https://example.test/video.mp4"><source src="https://example.test/video.webm" type="video/webm"></video>
+    <audio src="https://example.test/audio.mp3"></audio>
   `)
   const output = serialized(result)
   expect(output).toContain('"href":"next.html#part"')
   expect(output).toContain('"sourceId":"jump"')
-  expect(output).toContain('"kind":"image","label":"Chart"')
-  expect(output).toContain('"kind":"media"')
-  expect(output).not.toContain('bad.example')
-  expect(output).not.toContain('target')
+  expect(output).toContain('"tag":"img"')
+  expect(output).toContain('"src":"https://example.test/image.png"')
+  expect(output).toContain('"alt":"Chart"')
+  expect(output).toContain('"tag":"picture"')
+  expect(output).toContain('"tag":"video"')
+  expect(output).toContain('"tag":"audio"')
+  expect(output).toContain('"tag":"source"')
   expect(output).not.toContain('ping')
+  expect(output).not.toContain('target')
+  expect(output).not.toContain('onclick')
 })
 
 it('unwraps form labels as text while creating no interactive controls', () => {

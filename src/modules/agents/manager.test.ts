@@ -295,7 +295,7 @@ describe('agent manager', () => {
     const capabilities = await manager.capabilities()
     expect(capabilities.enabled).toBe(true)
     expect(capabilities.providers.map(p => p.id)).toEqual(['codex', 'claude', 'agy'])
-    expect(capabilities.providers.find(p => p.id === 'agy')?.label).toBe('Antigravity')
+    expect(capabilities.providers.find(p => p.id === 'agy')?.label).toBe('Google Antigravity')
     await manager.close()
   })
 })

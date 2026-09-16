@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-16 20:05 [feature]
+
+Enhanced HTML document rendering and AI engine integration:
+- Removed the top "Safe preview: scripts, styles, forms, media and external resources are not executed or loaded." notice banner.
+- Supported direct rendering of images (`<img>`, `<picture>`) with responsive sizing (`max-width: 100%`) and rich media (`<video>`, `<audio>`, `<source>`, `<track>`) with interactive controls.
+- Supported safe inline styles and scoped `<style>` stylesheets, ensuring custom typography, colors, and layout render accurately without escaping into the host application.
+- Expanded document viewport: removed 1360px centered desktop constraint and 980px main column cap, allowing content and sidebars to flexibly occupy full screen width without excessive whitespace.
+- Updated Content-Security-Policy to admit safe image and media loads (`img-src 'self' data: https:`, `media-src 'self' data: https:`).
+- Updated AI file editor engine provider label to "Google Antigravity", fixed `agy models` output parsing to strip interactive CLI spinners, and configured `MERDECK_AGY_PATH` in `lode.toml`.
+See [20260916-1945-remove-html-preview-restrictions](task/20260916-1945-remove-html-preview-restrictions.md).
+
 ## 2026-09-16 15:15 [release]
 
 Published [v0.14.0](https://github.com/itxje/merdeck/releases/tag/v0.14.0) with support for the Antigravity (`agy`) CLI engine in AI chat and HTML document rendering improvements (semantic container layout, sticky sidebar TOC, comfortable 15px typography, top-aligned anchor scrolling and widened responsive margins). Exact commit `e6feda6b2feefa91de7bb5d647bf415b45dedb7a` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35111679279), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35113027330) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260916-1405-release-agy-agent-provider](task/20260916-1405-release-agy-agent-provider.md).

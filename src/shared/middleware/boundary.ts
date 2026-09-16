@@ -12,7 +12,7 @@ export function boundary(config: AppConfig): MiddlewareHandler<HttpEnvironment> 
     c.header('X-Frame-Options', 'DENY')
     c.header('Cross-Origin-Resource-Policy', 'same-origin')
     c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-    c.header('Content-Security-Policy', 'default-src \'none\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; font-src \'self\'; connect-src \'self\'; object-src \'none\'; base-uri \'none\'; frame-ancestors \'none\'; form-action \'self\'')
+    c.header('Content-Security-Policy', 'default-src \'none\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: https:; media-src \'self\' data: https:; font-src \'self\'; connect-src \'self\'; object-src \'none\'; base-uri \'none\'; frame-ancestors \'none\'; form-action \'self\'')
     const request = c.req.raw
     const url = new URL(request.url)
     if (request.url.length > 8192 || [...request.headers].reduce((size, [key, value]) => size + key.length + value.length, 0) > 16384)

@@ -31,7 +31,7 @@ it('uses a module Worker and renders only the inert application vocabulary', asy
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scroll })
   render(<HtmlDocumentView path="docs/page.html" text="<h1>ignored until parsed</h1>" onOpenFile={open} />)
   expect(screen.getByText('Loading document…')).toBeVisible()
-  expect(screen.getByText(/scripts, styles, forms, media and external resources/)).toBeVisible()
+  expect(workers[0]?.args[0] as URL).not.toBeNull()
   expect((workers[0]?.args[0] as URL).pathname).toContain('html-worker.ts')
   expect(workers[0]?.args[1]).toEqual({ type: 'module' })
   expect(workers[0]?.messages).toEqual([{ id: 1, text: '<h1>ignored until parsed</h1>' }])
@@ -47,15 +47,17 @@ it('uses a module Worker and renders only the inert application vocabulary', asy
           { type: 'element', tag: 'a', href: 'next.htm', children: [{ type: 'text', value: 'Next' }] },
           { type: 'element', tag: 'a', href: 'https://example.test/', children: [{ type: 'text', value: 'External' }] },
         ] },
-        { type: 'placeholder', kind: 'image', label: 'Chart' },
+        { type: 'element', tag: 'img', src: 'https://example.test/chart.png', alt: 'Chart', children: [] },
         { type: 'element', tag: 'script', children: [{ type: 'text', value: 'pwned' }] },
       ],
     },
   } } as MessageEvent)
   expect(await screen.findByRole('heading', { name: 'Safe title' })).toBeVisible()
   expect(screen.queryByText('pwned')).toBeNull()
-  expect(globalThis.document.querySelector('script,style,img,iframe,object,embed,form,input,button[formaction],svg,math,custom-element')).toBeNull()
-  expect(screen.getByText('Image: Chart')).toBeVisible()
+  expect(globalThis.document.querySelector('script,iframe,object,embed,form,input,button[formaction],svg,math,custom-element')).toBeNull()
+  const chartImg = screen.getByRole('img', { name: 'Chart' })
+  expect(chartImg).toBeVisible()
+  expect(chartImg).toHaveAttribute('src', 'https://example.test/chart.png')
   const external = screen.getByRole('link', { name: 'External' })
   expect(external).toHaveAttribute('rel', 'noopener noreferrer')
   expect(external).toHaveAttribute('referrerpolicy', 'no-referrer')

@@ -60,7 +60,7 @@ export interface AgentManagerOptions {
   terminalRetentionMs?: number
 }
 
-const labels: Record<AgentProvider, string> = { codex: 'Codex', claude: 'Claude Code', agy: 'Antigravity' }
+const labels: Record<AgentProvider, string> = { codex: 'Codex', claude: 'Claude Code', agy: 'Google Antigravity' }
 const defaultModels = (): AgentModel[] => [{ id: 'default', label: 'Provider default', description: 'Use the model configured by the provider.', isDefault: true }]
 
 export class AgentManager {
