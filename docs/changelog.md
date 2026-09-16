@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-16 20:38 [release]
+
+Published [v0.14.1](https://github.com/itxje/merdeck/releases/tag/v0.14.1) delivering rich media and scoped style rendering in HTML documents, responsive full-width layout, and Google Antigravity engine enhancements. Exact commit `3622a4727075fb3b6dafb960b05303ffa2cf71e6` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35145625156), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35146714603) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260916-2030-release-v0.14.1](task/20260916-2030-release-v0.14.1.md).
+
 ## 2026-09-16 20:05 [feature]
 
 Enhanced HTML document rendering and AI engine integration:

@@ -107,4 +107,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider**](20260916-1405-release-agy-agent-provider.md) `P1`
 - [x] [**20260916-1415-improve-html-document-rendering Improve HTML document rendering and layout**](20260916-1415-improve-html-document-rendering.md) `P1`
 - [x] [**20260916-1945-remove-html-preview-restrictions Remove HTML preview restrictions and notice banner**](20260916-1945-remove-html-preview-restrictions.md) `P1`
-- [-] [**20260916-2030-release-v0.14.1 Release v0.14.1**](20260916-2030-release-v0.14.1.md) `P1`
+- [x] [**20260916-2030-release-v0.14.1 Release v0.14.1**](20260916-2030-release-v0.14.1.md) `P1`
