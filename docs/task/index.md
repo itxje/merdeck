@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-15
+> Updated: 2026-09-16
 
 ## Usage
 
@@ -92,3 +92,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `P1`
 - [-] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `P1`
 - [x] [**20260915-0924-split-angle-marker Restore split encoded-angle markers safely**](20260915-0924-split-angle-marker.md) `P0`
+- [x] [**20260916-0018-markdown-heading-hierarchy Restore Markdown heading hierarchy**](20260916-0018-markdown-heading-hierarchy.md) `P2`
+- [-] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `P1`

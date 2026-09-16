@@ -16,7 +16,7 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
   const targetPath = join(root, target)
   const first = 'flowchart LR\nFirst --> Arrow\n'
   const second = 'flowchart LR\nSecond --> Arrow\n'
-  const prefix = `\uFEFF# Complete document\r\n\r\nA paragraph with [external](https://example.test/safe), [section](#complete-document), and [project](./${target}).\r\n\r\n[bad](javascript:alert(1)) [escape](../outside.md) [encoded](%2e%2e/secret.md)\r\n\r\n| Name | Value |\r\n| :--- | ---: |\r\n| prose | 2 |\r\n\r\n![remote](https://example.test/remote.png)\r\n\r\n<script>window.markdownPwned = true</script>\r\n<img src="https://example.test/onerror.png" onerror="window.markdownPwned = true">\r\n<iframe src="https://example.test/frame"></iframe>\r\n\r\n\`\`\`mermaid\r\n`
+  const prefix = `\uFEFF# Complete document\r\n\r\n## Section heading\r\n\r\n### Subsection heading\r\n\r\n#### Detail heading\r\n\r\n##### Minor heading\r\n\r\n###### Small heading\r\n\r\nA paragraph with [external](https://example.test/safe), [section](#complete-document), and [project](./${target}).\r\n\r\n[bad](javascript:alert(1)) [escape](../outside.md) [encoded](%2e%2e/secret.md)\r\n\r\n| Name | Value |\r\n| :--- | ---: |\r\n| prose | 2 |\r\n\r\n![remote](https://example.test/remote.png)\r\n\r\n<script>window.markdownPwned = true</script>\r\n<img src="https://example.test/onerror.png" onerror="window.markdownPwned = true">\r\n<iframe src="https://example.test/frame"></iframe>\r\n\r\n\`\`\`mermaid\r\n`
   const middle = '```\r\n\r\nUnrelated CRLF prose.\r\n\r\n```mermaid\r\n'
   const ending = '```\r\n'
   const initial = prefix + first + middle + second + ending
@@ -33,6 +33,24 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     await page.getByRole('button', { name, exact: true }).click()
     const article = page.getByRole('article', { name: 'Markdown document', exact: true })
     await expect(article).toContainText('A paragraph with')
+    const typography = await article.locator('h1, h2, h3, h4, h5, h6').evaluateAll((headings) => {
+      const paragraph = headings[0]?.parentElement?.querySelector('p')
+      if (!paragraph)
+        return null
+      const body = getComputedStyle(paragraph)
+      return {
+        bodySize: Number.parseFloat(body.fontSize),
+        bodyWeight: Number.parseInt(body.fontWeight, 10),
+        headings: headings.map((heading) => {
+          const style = getComputedStyle(heading)
+          return { size: Number.parseFloat(style.fontSize), weight: Number.parseInt(style.fontWeight, 10) }
+        }),
+      }
+    })
+    expect(typography).not.toBeNull()
+    expect(typography?.headings).toHaveLength(6)
+    expect(typography?.headings.every(heading => heading.size > typography.bodySize && heading.weight > typography.bodyWeight)).toBe(true)
+    expect(typography?.headings.every((heading, index, headings) => index === 0 || headings[index - 1]!.size > heading.size)).toBe(true)
     await expect(article.getByRole('table')).toBeVisible()
     await expect(article.locator('img, iframe, script')).toHaveCount(0)
     await expect(article).toContainText('<script>window.markdownPwned = true</script>')

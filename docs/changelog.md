@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-16 00:18 [fix]
+
+Restored the visual hierarchy of rendered Markdown headings after the Tailwind base reset left semantic `h1` through `h6` elements inheriting body typography. Every heading level now has an explicit, descending size and stronger weight while retaining the existing theme colour boundary. The production-browser regression verifies computed typography alongside the existing security, navigation, responsive, theme and byte-preservation path. The focused browser case and complete local repository check passed. See [20260916-0018-markdown-heading-hierarchy](task/20260916-0018-markdown-heading-hierarchy.md).
+
 ## 2026-09-15 09:32 [fix]
 
 Restored narrowly admitted encoded angle placeholders when Mermaid splits their private marker across adjacent or nested SVG text nodes, as exposed by the Linux x64/native executable smoke. Restoration is confined to generated label `Text.data`, grouped per label and applied without creating markup or attributes; source-specific private markers also avoid collisions with marker-like source text. The original strict admission grammar, validation, sanitizer, persistence and mounting boundaries remain unchanged. Focused policy/renderer tests, frontend coverage, root checks and three production-browser repetitions passed locally; hosted Linux x64/native acceptance remains required. See [20260915-0924-split-angle-marker](task/20260915-0924-split-angle-marker.md).

@@ -339,7 +339,13 @@ button:disabled { cursor: default; }
 .label-editor p { margin: 0; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--destructive); font-size: 11px; line-height: 1.5; }
 .preview-note { border-bottom: 1px solid var(--border); padding: 8px 18px; color: var(--muted-foreground); font-size: 11px; }
 .document-view { overflow: auto; padding: 32px max(20px, calc((100% - 760px) / 2)); line-height: 1.65; }
-.document-view h1, .document-view h2, .document-view h3 { line-height: 1.2; margin: 1.5em 0 .6em; }
+.document-view h1, .document-view h2, .document-view h3, .document-view h4, .document-view h5, .document-view h6 { color: var(--foreground); line-height: 1.2; margin: 1.5em 0 .6em; font-weight: 600; }
+.document-view h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.03em; }
+.document-view h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+.document-view h3 { font-size: 1.25rem; font-weight: 650; letter-spacing: -.01em; }
+.document-view h4 { font-size: 1.125rem; font-weight: 650; }
+.document-view h5 { font-size: 1rem; }
+.document-view h6 { font-size: .875rem; }
 .document-view p, .document-view ul, .document-view ol, .document-view blockquote { margin: 0 0 1em; }
 .document-text-chunk { display: inline; }
 .document-view pre { overflow: auto; padding: 12px; background: var(--muted); border-radius: var(--radius-md); }
