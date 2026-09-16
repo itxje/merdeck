@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-16 03:51 [release]
+
+Published [v0.13.0](https://github.com/itxje/merdeck/releases/tag/v0.13.0) with read-only safe HTML documents, the opt-in direct AI file editor with engine/model selection, and complete Markdown/HTML table-header frames. Exact commit `fb9f69809dff4f51210ea1323bcec8d46a7501d1` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35051994698), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35052722296) repeated acceptance and published exactly `merdeck.tar.gz` and `SHA256SUMS`. Downloaded checksum verification passed; the extracted 97-file bundle reports version 0.13.0 and the tagged commit. The release does not deploy or restart separately hosted services. See [20260916-0228-release-html-ai-editor](task/20260916-0228-release-html-ai-editor.md).
+
 ## 2026-09-16 02:58 [fix]
 
 Document tables now give every header cell a complete theme-aware frame and retain a continuous table perimeter. Production-browser coverage checks computed top, right, bottom and left borders for both Markdown and safe HTML tables in light and dark themes. See [20260916-0227-table-header-borders](task/20260916-0227-table-header-borders.md).

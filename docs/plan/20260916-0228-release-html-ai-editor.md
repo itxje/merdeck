@@ -1,6 +1,6 @@
 # 20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 02:28
 - **approvedAt**: 2026-09-16 02:28 UTC
 - **relatedTask**: 20260916-0228-release-html-ai-editor
@@ -42,3 +42,7 @@ Included: the approved HTML renderer, AI file editor and model selection, table-
 - 2026-09-16: The owner approved the direct-editing and read-only HTML proposals, required engine/model selection and requested publication after completion.
 - 2026-09-16: The owner separately requested complete table-header frames; that bounded repair is included in the same minor release.
 - 2026-09-16: [Hosted main run 35051994698](https://github.com/itxje/merdeck/actions/runs/35051994698) passed for the exact clean candidate on Linux x64/ext4; release execution is now unblocked.
+
+## Outcome
+
+Annotated tag `v0.13.0` resolves to exact verified candidate `fb9f69809dff4f51210ea1323bcec8d46a7501d1`. [Tag run 35052722296](https://github.com/itxje/merdeck/actions/runs/35052722296) repeated native verification and published the matching non-draft, non-prerelease release with exactly `merdeck.tar.gz` and `SHA256SUMS`. Downloaded checksums passed, and the extracted 97-file bundle reports version 0.13.0 and the tagged commit. Publication did not deploy or restart a service.
