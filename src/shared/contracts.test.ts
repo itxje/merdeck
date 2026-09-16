@@ -28,6 +28,7 @@ describe('transport boundaries', () => {
   test('pairs agent engines with one bounded model identifier', () => {
     expect(createAgentConversationRequestSchema.parse({ provider: 'codex', model: 'gpt-5.6-terra' })).toEqual({ provider: 'codex', model: 'gpt-5.6-terra' })
     expect(createAgentConversationRequestSchema.safeParse({ provider: 'claude', model: 'opus[1m]' }).success).toBe(true)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'agy', model: 'gemini-flash' }).success).toBe(true)
     for (const model of ['', '--model=evil', 'model name', 'x'.repeat(101), 'safe\nunsafe'])
       expect(agentModelIdSchema.safeParse(model).success).toBe(false)
     expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex' }).success).toBe(false)

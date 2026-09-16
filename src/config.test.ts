@@ -130,23 +130,25 @@ describe('startup configuration', () => {
       await chmod(plainFile, 0o600)
       await chmod(projectExecutable, 0o700)
 
-      const configured = await loadConfig({ ...env(), MERDECK_CODEX_PATH: executable, MERDECK_CLAUDE_PATH: executable })
-      expect(configured.agents).toEqual({ codex: executable, claude: executable })
+      const configured = await loadConfig({ ...env(), MERDECK_CODEX_PATH: executable, MERDECK_CLAUDE_PATH: executable, MERDECK_AGY_PATH: executable })
+      expect(configured.agents).toEqual({ codex: executable, claude: executable, agy: executable })
       expect(Object.isFrozen(configured.agents)).toBe(true)
 
       const open = await loadConfig({ MERDECK_ROOT: project, MERDECK_CODEX_PATH: executable })
       expect(open.token).toBeUndefined()
-      expect(open.agents).toEqual({ codex: executable, claude: undefined })
+      expect(open.agents).toEqual({ codex: executable, claude: undefined, agy: undefined })
 
-      const internal = await loadConfig({ MERDECK_ROOT: project, MERDECK_HOST: '0.0.0.0', MERDECK_ALLOWED_ORIGINS: 'http://merdeck.internal:8787', MERDECK_OPEN_ACCESS: 'true', MERDECK_CLAUDE_PATH: executable })
+      const internal = await loadConfig({ MERDECK_ROOT: project, MERDECK_HOST: '0.0.0.0', MERDECK_ALLOWED_ORIGINS: 'http://merdeck.internal:8787', MERDECK_OPEN_ACCESS: 'true', MERDECK_CLAUDE_PATH: executable, MERDECK_AGY_PATH: executable })
       expect(internal.token).toBeUndefined()
-      expect(internal.agents).toEqual({ codex: undefined, claude: executable })
+      expect(internal.agents).toEqual({ codex: undefined, claude: executable, agy: executable })
 
       for (const environment of [
         { ...env(), MERDECK_CODEX_PATH: 'codex' },
         { ...env(), MERDECK_CODEX_PATH: `${project}/missing` },
         { ...env(), MERDECK_CLAUDE_PATH: plainFile },
+        { ...env(), MERDECK_AGY_PATH: plainFile },
         { ...env(), MERDECK_CODEX_PATH: projectExecutable },
+        { ...env(), MERDECK_AGY_PATH: projectExecutable },
       ])
         await expect(loadConfig(environment)).rejects.toBeInstanceOf(ConfigError)
     }

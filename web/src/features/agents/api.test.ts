@@ -7,6 +7,7 @@ describe('agent response decoding', () => {
     const models = [{ id: 'gpt-5.6-terra', label: 'GPT-5.6-Terra', description: 'Balanced model', isDefault: true }]
     expect(decodeAgentCapabilities({ enabled: true, providers: [{ id: 'codex', label: 'Codex', models }] })).toEqual({ enabled: true, providers: [{ id: 'codex', label: 'Codex', models }] })
     expect(decodeAgentConversation({ id: 'a'.repeat(48), provider: 'claude', model: 'sonnet' })).toEqual({ id: 'a'.repeat(48), provider: 'claude', model: 'sonnet' })
+    expect(decodeAgentConversation({ id: 'b'.repeat(48), provider: 'agy', model: 'gemini-flash' })).toEqual({ id: 'b'.repeat(48), provider: 'agy', model: 'gemini-flash' })
     expect(decodeAgentEvent({ id: 1, type: 'assistant.delta', text: '<script>alert(1)</script>' })).toEqual({ id: 1, type: 'assistant.delta', text: '<script>alert(1)</script>' })
     expect(decodeAgentEvent({ id: 2, type: 'file.changed', path: 'docs/flow.mmd', change: 'update' })).toEqual({ id: 2, type: 'file.changed', path: 'docs/flow.mmd', change: 'update' })
     expect(decodeAgentEvent({ id: 3, type: 'approval.requested', approvalId: 'b'.repeat(48), kind: 'command', summary: 'bun test' })).toMatchObject({ type: 'approval.requested' })

@@ -37,6 +37,7 @@ const environmentSchema = z.object({
   MERDECK_MAX_SESSIONS: integer(1, 1000, 100),
   MERDECK_CODEX_PATH: executablePath,
   MERDECK_CLAUDE_PATH: executablePath,
+  MERDECK_AGY_PATH: executablePath,
 })
 
 export class ConfigError extends Error {
@@ -46,7 +47,7 @@ export class ConfigError extends Error {
   }
 }
 
-async function canonicalExecutable(value: string | undefined, name: 'MERDECK_CODEX_PATH' | 'MERDECK_CLAUDE_PATH', projectRoot: string): Promise<string | undefined> {
+async function canonicalExecutable(value: string | undefined, name: 'MERDECK_CODEX_PATH' | 'MERDECK_CLAUDE_PATH' | 'MERDECK_AGY_PATH', projectRoot: string): Promise<string | undefined> {
   if (!value)
     return undefined
   try {
@@ -101,6 +102,7 @@ export async function loadConfig(environment: Record<string, string | undefined>
   const agents = Object.freeze({
     codex: await canonicalExecutable(env.MERDECK_CODEX_PATH, 'MERDECK_CODEX_PATH', projectRoot),
     claude: await canonicalExecutable(env.MERDECK_CLAUDE_PATH, 'MERDECK_CLAUDE_PATH', projectRoot),
+    agy: await canonicalExecutable(env.MERDECK_AGY_PATH, 'MERDECK_AGY_PATH', projectRoot),
   })
   return Object.freeze({
     projectRoot,

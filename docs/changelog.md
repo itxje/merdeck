@@ -1,6 +1,12 @@
 # Changelog
 
-## 2026-09-16 13:30 [fix]
+## 2026-09-16 14:00 [feature]
+
+Added support for the Antigravity (`agy`) CLI engine in AI chat alongside Codex and Claude Code. Configured via `MERDECK_AGY_PATH`, it supports model discovery via `agy models`, interactive NDJSON streaming (`stream-json`), assistant delta streaming, tool events and direct file mutation notifications. See [20260916-1346-support-agy-agent-provider](task/20260916-1346-support-agy-agent-provider.md).
+
+## 2026-09-16 13:59 [release]
+
+Published [v0.13.2](https://github.com/itxje/merdeck/releases/tag/v0.13.2) with the safe-HTML void element rendering correction. Exact commit `09ac19b393edf0cec4f618b2b2704a4918b3763f` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35103139383), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35104282388) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260916-1335-release-html-void-elements](task/20260916-1335-release-html-void-elements.md).
 
 Safe HTML document preview now renders void elements such as `<hr>` and `<br>` without children, preventing React error #137. The application-owned tree, explicit element allowlist and strict DOM boundary remain unchanged. See [20260916-1328-fix-html-void-elements](task/20260916-1328-fix-html-void-elements.md).
 

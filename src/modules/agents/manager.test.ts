@@ -2,7 +2,7 @@ import type { AgentEvent } from '../../shared/contracts'
 import type { AgentAdapterEvent, AgentProviderAdapter, AgentProviderContext, AgentProviderSession } from './types'
 import { describe, expect, test } from 'bun:test'
 import { AppError } from '../../shared/errors'
-import { AgentManager } from './manager'
+import { AgentManager, createAgentManager } from './manager'
 import { providerEnvironment } from './process'
 
 class FakeSession implements AgentProviderSession {
@@ -285,5 +285,17 @@ describe('agent manager', () => {
       HTTP_PROXY: 'http://secret@example.test',
       NODE_OPTIONS: '--require=evil',
     })).toEqual({ CI: '1', NO_COLOR: '1', TERM: 'dumb', HOME: '/home/test', PATH: '/usr/bin', LANG: 'C.UTF-8' })
+  })
+
+  test('createAgentManager registers configured agy, codex and claude adapters', async () => {
+    const manager = createAgentManager({
+      projectRoot: '/project',
+      agents: { codex: '/bin/codex', claude: '/bin/claude', agy: '/bin/agy' },
+    } as any)
+    const capabilities = await manager.capabilities()
+    expect(capabilities.enabled).toBe(true)
+    expect(capabilities.providers.map(p => p.id)).toEqual(['codex', 'claude', 'agy'])
+    expect(capabilities.providers.find(p => p.id === 'agy')?.label).toBe('Antigravity')
+    await manager.close()
   })
 })

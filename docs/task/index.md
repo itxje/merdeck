@@ -102,4 +102,6 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-0457-release-open-access-agents Release open-access agent support**](20260916-0457-release-open-access-agents.md) `P1`
 - [-] [**20260916-0555-configure-deployed-agent-providers Configure deployed agent providers**](20260916-0555-configure-deployed-agent-providers.md) `P1`
 - [x] [**20260916-1328-fix-html-void-elements Fix safe-HTML void element rendering**](20260916-1328-fix-html-void-elements.md) `P1`
-- [-] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `P1`
+- [x] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `P1`
+- [x] [**20260916-1346-support-agy-agent-provider Add Antigravity (agy) AI agent provider**](20260916-1346-support-agy-agent-provider.md) `P1`
+- [-] [**20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider**](20260916-1405-release-agy-agent-provider.md) `P1`

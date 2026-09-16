@@ -23,7 +23,7 @@ function exact(value: Record<string, unknown>, fields: string[]): void {
     invalid()
 }
 function provider(value: unknown): AgentProvider {
-  return value === 'codex' || value === 'claude' ? value : invalid()
+  return value === 'codex' || value === 'claude' || value === 'agy' ? value : invalid()
 }
 function modelId(value: unknown): string {
   return typeof value === 'string' && value.length <= 100 && /^[a-z\d][\w.:[\]-]*$/i.test(value) ? value : invalid()

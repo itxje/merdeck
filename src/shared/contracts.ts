@@ -32,7 +32,7 @@ export const deleteEntryRequestSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('directory'), path: relativePathSchema }),
 ])
 export const loginRequestSchema = z.strictObject({ token: z.string().min(32).max(256) })
-export const agentProviderSchema = z.enum(['codex', 'claude'])
+export const agentProviderSchema = z.enum(['codex', 'claude', 'agy'])
 export const agentModelIdSchema = z.string().min(1).max(100).regex(/^[a-z\d][\w.:[\]-]*$/i)
 export const createAgentConversationRequestSchema = z.strictObject({ provider: agentProviderSchema, model: agentModelIdSchema })
 export const agentTurnRequestSchema = z.strictObject({ prompt: z.string().trim().min(1).max(16000) })

@@ -1,8 +1,9 @@
 # 20260916-1335-release-html-void-elements Release safe-HTML void element fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 13:35
 - **approvedAt**: 2026-09-16 13:34 UTC
+- **completedAt**: 2026-09-16 13:59
 - **relatedTask**: 20260916-1335-release-html-void-elements
 
 ## Context

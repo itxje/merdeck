@@ -4,6 +4,7 @@ import type { AgentAdapterEvent, AgentProviderAdapter, AgentProviderSession } fr
 import { Buffer } from 'node:buffer'
 import { agentModelIdSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
+import { agyAdapter } from './agy'
 import { claudeAdapter } from './claude'
 import { codexAdapter } from './codex'
 import { opaqueId, safeLabel } from './paths'
@@ -59,7 +60,7 @@ export interface AgentManagerOptions {
   terminalRetentionMs?: number
 }
 
-const labels: Record<AgentProvider, string> = { codex: 'Codex', claude: 'Claude Code' }
+const labels: Record<AgentProvider, string> = { codex: 'Codex', claude: 'Claude Code', agy: 'Antigravity' }
 const defaultModels = (): AgentModel[] => [{ id: 'default', label: 'Provider default', description: 'Use the model configured by the provider.', isDefault: true }]
 
 export class AgentManager {
@@ -418,6 +419,8 @@ export function createAgentManager(config: AppConfig, clock?: () => number): Age
     providers.push({ adapter: codexAdapter, executable: config.agents.codex })
   if (config.agents.claude)
     providers.push({ adapter: claudeAdapter, executable: config.agents.claude })
+  if (config.agents.agy)
+    providers.push({ adapter: agyAdapter, executable: config.agents.agy })
   return new AgentManager({ projectRoot: config.projectRoot, providers, ...(clock ? { clock } : {}) })
 }
 

@@ -2,6 +2,7 @@ import type { AgentAdapterEvent } from './types'
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, test } from 'bun:test'
+import { agyAdapter } from './agy'
 import { claudeAdapter } from './claude'
 import { codexAdapter } from './codex'
 
@@ -274,6 +275,56 @@ for await (const chunk of Bun.stdin.stream()) {
     expect(inputs.find(input => input.response?.request_id === 'missing')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'idle')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'inside')?.response.response).toMatchObject({ behavior: 'allow', updatedInput: { file_path: 'flow.mmd' } })
+    await session.close()
+  })
+
+  test('Antigravity (agy) uses stream-json, emits deltas and tracks tool file mutations', async () => {
+    const root = await fixture()
+    const fake = await executable(root, 'fake-agy', String.raw`
+if (process.argv[2] === 'models') {
+  console.log('gemini-flash\tGemini Flash\ngpt-model\tGPT Model\n--unsafe\tUnsafe\n')
+  process.exit(0)
+}
+await Bun.write('agy-launch.json', JSON.stringify({ argv: process.argv.slice(2), env: Object.keys(process.env).sort() }))
+const inputs = []
+const decoder = new TextDecoder()
+let pending = ''
+for await (const chunk of Bun.stdin.stream()) {
+  pending += decoder.decode(chunk, { stream: true })
+  let newline
+  while ((newline = pending.indexOf('\n')) >= 0) {
+    const line = pending.slice(0, newline)
+    pending = pending.slice(newline + 1)
+    if (!line) continue
+    const message = JSON.parse(line)
+    inputs.push(message)
+    await Bun.write('agy-inputs.json', JSON.stringify(inputs))
+    if (message.event === 'user') {
+      console.log(JSON.stringify({ event: 'step_update', step_update: { step_type: 'agent_response', text_delta: 'Hello from agy' } }))
+      console.log(JSON.stringify({ event: 'step_update', step_update: { step_type: 'tool', state: 'ACTIVE', tool_name: 'write_to_file' } }))
+      console.log(JSON.stringify({ event: 'step_update', step_update: { step_type: 'tool', state: 'DONE', tool_name: 'write_to_file', tool_info: { parameters: { TargetFile: 'diagram.mmd' } } } }))
+      console.log(JSON.stringify({ event: 'result', result: { status: 'SUCCESS' } }))
+    }
+  }
+}
+`)
+    expect(await agyAdapter.models?.({ executable: fake, projectRoot: root })).toEqual([
+      { id: 'gemini-flash', label: 'Gemini Flash', description: '', isDefault: true },
+      { id: 'gpt-model', label: 'GPT Model', description: '', isDefault: false },
+    ])
+    const events: AgentAdapterEvent[] = []
+    const session = await agyAdapter.open({ executable: fake, projectRoot: root, model: 'gemini-flash', emit: event => events.push(event) })
+    await session.startTurn('Update diagram')
+    await waitFor(() => events.some(event => event.type === 'turn.completed'))
+    expect(events).toContainEqual({ type: 'assistant.delta', text: 'Hello from agy' })
+    expect(events).toContainEqual({ type: 'tool.started', label: 'write_to_file' })
+    expect(events).toContainEqual({ type: 'file.changed', path: 'diagram.mmd', change: 'update' })
+    expect(events).toContainEqual({ type: 'turn.completed' })
+    const launch = JSON.parse(await readFile(`${root}/agy-launch.json`, 'utf8')) as { argv: string[] }
+    expect(launch.argv).toContain('--input-format')
+    expect(launch.argv).toContain('stream-json')
+    expect(launch.argv).toContain('--dangerously-skip-permissions')
+    expect(launch.argv).toContain('--model=gemini-flash')
     await session.close()
   })
 })
