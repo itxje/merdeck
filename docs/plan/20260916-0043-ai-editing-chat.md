@@ -1,6 +1,6 @@
 # 20260916-0043-ai-editing-chat Add an AI editing chat
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 00:43
 - **approvedAt**: 2026-09-16 01:00
 - **relatedTask**: 20260916-0040-ai-editing-chat
@@ -78,3 +78,7 @@ Expected cross-module work includes validated configuration, an agent domain and
 - Awaiting owner approval. Implementation must not begin until the owner explicitly approves this proposal and confirms that direct provider file edits, with the stated data-transfer and external-writer boundaries, are desired.
 - 2026-09-16: The owner approved the direct-editing proposal and authorized implementation alongside the HTML document plan.
 - 2026-09-16: The owner expanded the approved UI to require both engine and model selection. Local protocol investigation confirmed Codex `model/list` and Claude initialize-model metadata, and the owner authorized implementation and release after verification.
+
+## Outcome
+
+The opt-in authenticated agent gateway, Codex and Claude Code adapters, engine/model UI, bounded streaming/approval lifecycle and direct-edit live refresh were implemented and reviewed. Exact candidate `fb9f69809dff4f51210ea1323bcec8d46a7501d1` passed enabled-provider browser acceptance, the clean local gate and [hosted Linux x64/ext4 native verification](https://github.com/itxje/merdeck/actions/runs/35051994698).

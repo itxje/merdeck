@@ -1,6 +1,6 @@
 # 20260916-0011-html-document-support Add HTML document support
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 00:11
 - **approvedAt**: 2026-09-16 01:00
 - **relatedTask**: 20260916-0011-html-document-support
@@ -64,3 +64,7 @@ Out of scope: editing or saving HTML source, inline Mermaid extraction/editing f
 - 2026-09-16: The owner asked whether HTML document support can be added. No rendering or editing semantics have been approved yet.
 - 2026-09-16: Investigation selected a read-only semantic renderer as the recommended boundary. The plan remains draft and implementation has not started.
 - 2026-09-16: The owner approved the HTML proposal and authorized implementation.
+
+## Outcome
+
+The read-only HTML document contract, inert semantic renderer, complete file lifecycle and security/performance evidence were implemented and reviewed. Exact candidate `fb9f69809dff4f51210ea1323bcec8d46a7501d1` passed the clean local gate and [hosted Linux x64/ext4 native verification](https://github.com/itxje/merdeck/actions/runs/35051994698).

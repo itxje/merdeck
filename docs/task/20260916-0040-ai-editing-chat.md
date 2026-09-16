@@ -1,6 +1,6 @@
 # 20260916-0040-ai-editing-chat Add an AI editing chat
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: coordinator/20260916-0040
 - **createdAt**: 2026-09-16 00:40
@@ -30,3 +30,5 @@ Implementing the bounded AI editing chat, engine/model selection and live-render
 - Implementation (2026-09-16): added validated opt-in provider configuration, direct no-shell child adapters, a principal-bound bounded manager, strict CSRF routes and authenticated SSE, model discovery and engine/model pairing, the responsive chat pane, inert transcripts and opaque approvals, active-turn mutation locks, structured invalidation and 500 ms selected-document polling. Codex requests one root-only workspace-write sandbox with tool networking disabled; Claude Code receives only file read/edit/search tools. Provider executables must resolve outside `MERDECK_ROOT`, and raw stderr, provider IDs, executable paths, credentials and unrelated environment secrets never cross the browser boundary.
 - Verification (2026-09-16): the latest focused backend adapter/manager/route/process set passed 20 tests and 89 assertions after the final protocol-lifecycle corrections; strict root types and lint passed. Earlier complete source checks passed 280 backend and 548 frontend tests, coverage thresholds and the production build. The complete production browser suite passed 72 cases with two opt-in performance cases skipped, including exact selected `{ provider: 'codex', model: 'browser-model' }` transport, a hostile-text inertness check, explicit approval, exact direct-write bytes, live SVG rerender and Stop cleanup. Engine/model catalogue switching and exact Claude selection are also covered at component level. The clean aggregate and hosted native gates remain required before completion.
 - Review (2026-09-16): shared/backend/frontend review corrected capacity accounting, failed-provider retry state, terminal SSE draining, slow-client/listener bounds, brief terminal replay before capacity release, child teardown on Stop/timeout/output/provider failure, strict model metadata, malformed/output bounds, missing/idle Claude file-path approvals and stale Codex turn attribution. The final correction retains completed/cancelled turn IDs so late provider events cannot enter the next turn's startup window. No remaining CRITICAL/HIGH finding is known; task stays in progress until the exact clean candidate passes hosted Linux x64/ext4 acceptance.
+
+- complete: Exact candidate fb9f698 passed the clean local check:ci gate, enabled-provider browser acceptance, and hosted Linux x64/ext4 native run 35051994698.

@@ -7,7 +7,7 @@
 
 ## Context
 
-The reviewed candidate adds the public read-only HTML document kind, the opt-in direct AI file editor with engine/model selection, and complete document-table header frames. `v0.12.1` is the latest published release. The HTML file kind and authenticated agent API widen the public contract, so the documented pre-1.0 policy selects `v0.13.0` rather than a patch release. The feature tasks remain in progress until the exact integrated candidate passes the required hosted Linux x64/ext4 native gate.
+The reviewed candidate adds the public read-only HTML document kind, the opt-in direct AI file editor with engine/model selection, and complete document-table header frames. `v0.12.1` is the latest published release. The HTML file kind and authenticated agent API widen the public contract, so the documented pre-1.0 policy selects `v0.13.0` rather than a patch release. The feature tasks completed after exact integrated candidate `fb9f69809dff4f51210ea1323bcec8d46a7501d1` passed the required hosted Linux x64/ext4 native gate.
 
 The repository tag workflow repeats native source, executable, bundle and browser verification before publication. A successful tag run publishes only `merdeck.tar.gz` and `SHA256SUMS`; it does not deploy or restart a separately hosted service.
 
@@ -41,3 +41,4 @@ Included: the approved HTML renderer, AI file editor and model selection, table-
 
 - 2026-09-16: The owner approved the direct-editing and read-only HTML proposals, required engine/model selection and requested publication after completion.
 - 2026-09-16: The owner separately requested complete table-header frames; that bounded repair is included in the same minor release.
+- 2026-09-16: [Hosted main run 35051994698](https://github.com/itxje/merdeck/actions/runs/35051994698) passed for the exact clean candidate on Linux x64/ext4; release execution is now unblocked.

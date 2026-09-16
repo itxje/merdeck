@@ -1,6 +1,6 @@
 # 20260916-0011-html-document-support Add HTML document support
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: html-document-20260916
 - **createdAt**: 2026-09-16 00:11
@@ -27,3 +27,5 @@ Adding safe HTML document support.
 - Implementation (2026-09-16): added `.html`/`.htm` recognition to the shared, backend and frontend contracts; exact same-read BOM-free text with empty blocks; read-only create/move/delete/search behavior; a direct `parse5` 8.0.1 Worker dependency; a bounded semantic projection and explicit React element allowlist; guarded project/external/fragment navigation; explorer/workspace integration; and hostile-input, decoder, service, HTTP, component, browser and performance coverage. No file markup, file attribute, active/resource element or HTML save path is mounted or exposed.
 - Verification (2026-09-16): focused backend/frontend tests, lint, strict types, production build and the complete source `bun run check` passed. The production Chromium hostile document retained exact request/disk/reload bytes at desktop and 390 px, made no unexpected request, executed no script/event code, created no forbidden active node and verified table framing in both themes. The complete production browser suite passed 72 cases with two opt-in performance cases skipped. Separate production performance runs measured a 1 MiB document at 116.6 ms first-visible and 1,110 ms fully materialized, and a 10,000-node adversarial document at 120 ms first-visible and 128 ms truncation, with no observed main-thread Long Task. The clean aggregate and hosted native gates remain required before completion.
 - Review (2026-09-16): shared, TypeScript backend and TypeScript frontend review found no remaining CRITICAL/HIGH issue in the HTML boundary. The application-owned tree, strict Worker decoder, no-resource browser evidence and byte-preserving server path remain intact. Task stays in progress until the exact clean candidate passes hosted Linux x64/ext4 acceptance.
+
+- complete: Exact candidate fb9f698 passed the clean local check:ci gate and hosted Linux x64/ext4 native run 35051994698.
