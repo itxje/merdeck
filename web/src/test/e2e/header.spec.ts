@@ -27,6 +27,16 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   await expect(header.getByRole('button', { name: /Save/ })).toHaveCount(0)
   await expect(header.getByRole('heading', { level: 1 })).toHaveCount(0)
 
+  if (process.env.MERDECK_TEST_AGENTS !== 'true') {
+    await agent.click()
+    const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+    await expect(editor.getByText('No provider is configured. Set an approved executable path on the service and restart it.', { exact: true })).toBeVisible()
+    await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('')
+    await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('')
+    await editor.getByRole('button', { name: 'Close AI file editor', exact: true }).click()
+    await expect(editor).not.toBeVisible()
+  }
+
   // Icon controls share one height and render their icons at the design-system size.
   expect((await size(theme)).height).toBeCloseTo(32, 0)
   expect((await size(logout)).height).toBeCloseTo(32, 0)

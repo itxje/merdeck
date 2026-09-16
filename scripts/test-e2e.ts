@@ -69,7 +69,12 @@ for await (const chunk of Bun.stdin.stream()) {
     else if (message.method === 'turn/start') {
       turn++
       const turnId = 'browser-turn-' + turn
+      const prompt = message.params?.input?.[0]?.text
       console.log(JSON.stringify({ id: message.id, result: { turn: { id: turnId } } }))
+      if (typeof prompt === 'string' && prompt.includes('[provider-failure]')) {
+        setTimeout(() => console.log(JSON.stringify({ method: 'turn/completed', params: { threadId: 'browser-thread', turn: { id: turnId, status: 'failed' } } })), 25)
+        continue
+      }
       console.log(JSON.stringify({ method: 'item/agentMessage/delta', params: { threadId: 'browser-thread', turnId, itemId: 'message-' + turn, delta: turn === 1 ? '<img src=x onerror=alert(1)> Updated the diagram.' : 'Waiting for cancellation.' } }))
       if (turn === 1)
         console.log(JSON.stringify({ id: 'browser-approval', method: 'item/fileChange/requestApproval', params: { threadId: 'browser-thread', turnId, itemId: 'change-1', startedAtMs: Date.now(), reason: 'Update agent-live.mmd' } }))

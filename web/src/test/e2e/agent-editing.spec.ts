@@ -65,6 +65,13 @@ test('an approved agent edit changes exact bytes and rerenders live', async ({ p
     await editor.getByRole('button', { name: 'Stop', exact: true }).click()
     await expect(editor.getByText('The turn was stopped.', { exact: true })).toBeVisible()
     expect(await readFile(path, 'utf8')).toBe(updated)
+
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Fail without leaking provider details. [provider-failure]')
+    await editor.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(editor.getByText('The provider could not complete the turn.', { exact: true })).toBeVisible()
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Start a recovery turn.')
+    await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
+    expect(await readFile(path, 'utf8')).toBe(updated)
   }
   finally {
     await rm(path, { force: true })
