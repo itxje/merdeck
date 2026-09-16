@@ -19,11 +19,12 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   const dark = theme.getByRole('button', { name: 'Dark theme', exact: true })
   const system = theme.getByRole('button', { name: 'System theme', exact: true })
   const logout = header.getByRole('button', { name: 'Log out', exact: true })
-  const save = header.getByRole('button', { name: /Save/ })
+  const agent = header.getByRole('button', { name: 'Open AI file editor', exact: true })
   await expect(system).toHaveAttribute('aria-pressed', 'true')
-  // The brand, the open file and saving share the header; no second bar takes height from the diagram.
+  // With no open file there is no inert save control competing for narrow-screen space.
   await expect(header.getByRole('button')).toHaveCount(5)
-  await expect(save).toBeDisabled()
+  await expect(agent).toBeVisible()
+  await expect(header.getByRole('button', { name: /Save/ })).toHaveCount(0)
   await expect(header.getByRole('heading', { level: 1 })).toHaveCount(0)
 
   // Icon controls share one height and render their icons at the design-system size.

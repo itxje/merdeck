@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-16 02:58 [fix]
+
+Document tables now give every header cell a complete theme-aware frame and retain a continuous table perimeter. Production-browser coverage checks computed top, right, bottom and left borders for both Markdown and safe HTML tables in light and dark themes. See [20260916-0227-table-header-borders](task/20260916-0227-table-header-borders.md).
+
+## 2026-09-16 01:51 [feature]
+
+Added an opt-in AI file editor backed by explicitly configured Codex or Claude Code executables outside the project root. Token-authenticated sessions can choose a configured engine and a validated model discovered from its CLI, stream a bounded normalized conversation, approve or deny opaque provider requests, stop a turn and see direct file edits refresh the selected preview. Children run without a shell from the canonical project root with a narrow environment; Codex requests a root-only workspace-write sandbox with tool networking disabled, while Claude Code exposes only file read/edit/search tools. Dirty drafts block Send, active turns lock Merdeck saves and entry mutations, and logout, expiry and shutdown reap conversations. Direct provider writes remain external-actor writes, are not guaranteed to request approval first and may send project context to the selected provider. See [20260916-0040-ai-editing-chat](task/20260916-0040-ai-editing-chat.md).
+
+## 2026-09-16 01:50 [feature]
+
+Added read-only `.html` and `.htm` documents across discovery, search, file operations and workspace navigation. A same-origin Worker parses exact same-read text with pinned `parse5` and projects only a bounded inert application tree; React creates the semantic allowlist without mounting file-derived HTML. Scripts, styles, forms, frames, custom/foreign elements and remote resources never execute or load, while guarded external, project and fragment links retain the existing navigation boundary. Production-browser evidence preserves exact disk bytes and reports no unexpected request or execution; a 1 MiB document and 10,000-element adversarial input produced no observed main-thread Long Task. See [20260916-0011-html-document-support](task/20260916-0011-html-document-support.md).
+
 ## 2026-09-16 00:18 [fix]
 
 Restored the visual hierarchy of rendered Markdown headings after the Tailwind base reset left semantic `h1` through `h6` elements inheriting body typography. Every heading level now has an explicit, descending size and stronger weight while retaining the existing theme colour boundary. The production-browser regression verifies computed typography alongside the existing security, navigation, responsive, theme and byte-preservation path. The focused browser case and complete local repository check passed. See [20260916-0018-markdown-heading-hierarchy](task/20260916-0018-markdown-heading-hierarchy.md).

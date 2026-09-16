@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { closeDirectoryRequestSchema, contentVersionSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
+import { agentModelIdSchema, closeDirectoryRequestSchema, contentVersionSchema, createAgentConversationRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, directorySearchRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
 import { AppError, errorStatus, safeError } from './errors'
 
 const version = 'a'.repeat(64)
@@ -24,6 +24,14 @@ describe('transport boundaries', () => {
     expect(diagramSelectorSchema.safeParse({ kind: 'standalone' }).success).toBe(true)
     expect(contentVersionSchema.safeParse('A'.repeat(64)).success).toBe(false)
     expect(loginRequestSchema.safeParse({ token: 'short' }).success).toBe(false)
+  })
+  test('pairs agent engines with one bounded model identifier', () => {
+    expect(createAgentConversationRequestSchema.parse({ provider: 'codex', model: 'gpt-5.6-terra' })).toEqual({ provider: 'codex', model: 'gpt-5.6-terra' })
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'claude', model: 'opus[1m]' }).success).toBe(true)
+    for (const model of ['', '--model=evil', 'model name', 'x'.repeat(101), 'safe\nunsafe'])
+      expect(agentModelIdSchema.safeParse(model).success).toBe(false)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex' }).success).toBe(false)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex', model: 'default', extra: true }).success).toBe(false)
   })
   test('maps conflicts/deletions and redacts unexpected errors', () => {
     expect(errorStatus.conflict).toBe(409)
@@ -63,6 +71,7 @@ test('directory requests have strict defaults, canonical limits and bound cursor
   expect(closeDirectoryRequestSchema.safeParse({ path: '', cursor: version, extra: 1 }).success).toBe(false)
   expect(relativePathSchema.safeParse('bad-\uD800.md').success).toBe(false)
   expect(relativePathSchema.safeParse('valid-😀.md').success).toBe(true)
+  expect(directorySearchRequestSchema.parse({ path: '', query: '', kind: 'html' })).toEqual({ path: '', query: '', kind: 'html' })
   for (const code of ['directory_changed', 'cursor_stale'] as const) {
     expect(errorStatus[code]).toBe(409)
     expect(new AppError(code, version).toResponse()).not.toHaveProperty('currentVersion')

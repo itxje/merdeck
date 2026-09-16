@@ -17,7 +17,7 @@ const tree: DirectoryPage = {
   nextCursor: null,
   expiresAt: null,
   stoppedBy: null,
-  visited: 4,
+  visited: 5,
   excluded: 0,
   limit: 100,
   maxPathDepth: 64,
@@ -26,6 +26,7 @@ const tree: DirectoryPage = {
     { kind: 'file', path: 'welcome.mmd', fileKind: 'mermaid', state: 'deferred' },
     { kind: 'directory', path: 'docs', children: 'unloaded' },
     { kind: 'file', path: 'overview.md', fileKind: 'markdown', state: 'deferred' },
+    { kind: 'file', path: 'report.html', fileKind: 'html', state: 'deferred' },
     { kind: 'directory', path: 'empty', children: 'unloaded' },
   ],
 }
@@ -45,9 +46,10 @@ it('lists every supported file, its folders and an empty folder by default', () 
   const { unmount } = renderTree('all')
   expect(screen.getByRole('button', { name: 'welcome.mmd' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'overview.md' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'report.html' }).querySelector('.lucide-file-type-2')).not.toBeNull()
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'empty' })).toBeVisible()
-  expect(screen.getByText('2 loaded files · .mmd · .mermaid · .md')).toBeVisible()
+  expect(screen.getByText('3 loaded files · .mmd · .mermaid · .md · .html · .htm')).toBeVisible()
   unmount()
 })
 
@@ -101,6 +103,15 @@ it('lists Markdown files under the folders that hold them', () => {
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.queryByRole('button', { name: 'welcome.mmd' })).toBeNull()
   expect(screen.getByText('1 loaded file · .md')).toBeVisible()
+  unmount()
+})
+
+it('lists HTML documents under a distinct file-type filter', () => {
+  const { unmount } = renderTree('html')
+  expect(screen.getByRole('button', { name: 'report.html' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'welcome.mmd' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'overview.md' })).toBeNull()
+  expect(screen.getByText('1 loaded file · .html · .htm')).toBeVisible()
   unmount()
 })
 

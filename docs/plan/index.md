@@ -54,4 +54,6 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `2026-09-15`
 - [-] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `2026-09-15`
 - [x] [**20260915-0924-split-angle-marker Restore split encoded-angle markers safely**](20260915-0924-split-angle-marker.md) `2026-09-15`
+- [-] [**20260916-0011-html-document-support Add HTML document support**](20260916-0011-html-document-support.md) `2026-09-16`
 - [-] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `2026-09-16`
+- [-] [**20260916-0043-ai-editing-chat Add an AI editing chat**](20260916-0043-ai-editing-chat.md) `2026-09-16`

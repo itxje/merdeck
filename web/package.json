@@ -34,6 +34,7 @@
     "mermaid": "11.17.2",
     "micromark-extension-frontmatter": "2.0.0",
     "micromark-extension-gfm": "3.0.0",
+    "parse5": "8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-resizable-panels": "4.12.4",

@@ -1,0 +1,72 @@
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { choose, expect, live, login, test } from './support'
+
+const root = process.env.MERDECK_SMOKE_ROOT
+if (!root)
+  throw new Error('An explicit disposable sample root is required')
+
+test.skip(process.env.MERDECK_TEST_AGENTS !== 'true', 'Set MERDECK_TEST_AGENTS=true to run the fake-provider acceptance.')
+
+test('an approved agent edit changes exact bytes and rerenders live', async ({ page }) => {
+  const path = join(root, 'agent-live.mmd')
+  const initial = 'flowchart LR\nA[Before]-->B[Preview]\n'
+  const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
+  await writeFile(path, initial, { flag: 'wx' })
+  try {
+    await login(page)
+    await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+    await choose(page, 'agent-live.mmd')
+    await live(page)
+    const source = page.getByLabel('Mermaid source', { exact: true })
+    const baseline = await source.inputValue()
+    await source.fill(`${baseline}\nC[Draft]`)
+    await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+    const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+    await expect(editor).toBeVisible()
+    const engine = editor.getByLabel('Engine', { exact: true })
+    const model = editor.getByLabel('Model', { exact: true })
+    await expect(engine).toHaveValue('codex')
+    await expect(model).toHaveValue('browser-model')
+    await expect(model.getByRole('option', { name: 'Browser model', exact: true })).toHaveCount(1)
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram through the configured provider.')
+    await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeDisabled()
+    await expect(editor.getByText('Save or discard browser drafts before starting an agent turn.', { exact: true })).toBeVisible()
+    await source.fill(baseline)
+    await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
+    const createRequest = page.waitForRequest(request => request.method() === 'POST' && new URL(request.url()).pathname === '/api/agents/conversations')
+    await editor.getByRole('button', { name: 'Send', exact: true }).click()
+    expect(JSON.parse((await createRequest).postData() ?? '{}')).toEqual({ provider: 'codex', model: 'browser-model' })
+    await expect(engine).toBeDisabled()
+    await expect(model).toBeDisabled()
+    await expect(editor.getByText('<img src=x onerror=alert(1)> Updated the diagram.', { exact: true })).toBeVisible()
+    await expect(editor.locator('img')).toHaveCount(0)
+    await expect(editor.getByRole('region', { name: 'Agent approval request', exact: true })).toContainText('Update agent-live.mmd')
+    await editor.getByRole('button', { name: 'Approve', exact: true }).click()
+    await expect(source).toHaveValue(updated, { timeout: 15000 })
+    await expect(page.locator('.diagram-graphic svg')).toContainText('AI')
+    await expect(page.locator('.diagram-graphic svg')).toContainText('Live')
+    expect(await readFile(path, 'utf8')).toBe(updated)
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    const mobilePane = await editor.boundingBox()
+    expect(mobilePane).not.toBeNull()
+    expect(mobilePane!.x).toBe(0)
+    expect(mobilePane!.width).toBe(390)
+    expect(mobilePane!.y).toBe(58)
+    expect(mobilePane!.y + mobilePane!.height).toBeLessThanOrEqual(814)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await expect(engine).toBeVisible()
+    await expect(model).toBeVisible()
+
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Wait until stopped.')
+    await editor.getByRole('button', { name: 'Send', exact: true }).click()
+    await expect(editor.getByText('Waiting for cancellation.', { exact: true })).toBeVisible()
+    await editor.getByRole('button', { name: 'Stop', exact: true }).click()
+    await expect(editor.getByText('The turn was stopped.', { exact: true })).toBeVisible()
+    expect(await readFile(path, 'utf8')).toBe(updated)
+  }
+  finally {
+    await rm(path, { force: true })
+  }
+})

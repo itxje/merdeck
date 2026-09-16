@@ -15,10 +15,12 @@ export interface DiagramServiceOptions {
 }
 
 const diagramTemplate = 'flowchart TD\n  A[Start] --> B[End]\n'
+const htmlTemplate = '<!doctype html>\n<html lang="en">\n<head>\n  <meta charset="utf-8">\n  <title>Untitled</title>\n</head>\n<body>\n  <h1>Untitled</h1>\n  <p>Edit this file with an external editor.</p>\n</body>\n</html>\n'
 
 // New files start with one small valid diagram; requests never carry file content.
 function template(path: string): Buffer {
-  return Buffer.from(fileKind(path) === 'markdown' ? `\`\`\`mermaid\n${diagramTemplate}\`\`\`\n` : diagramTemplate)
+  const kind = fileKind(path)
+  return Buffer.from(kind === 'markdown' ? `\`\`\`mermaid\n${diagramTemplate}\`\`\`\n` : kind === 'html' ? htmlTemplate : diagramTemplate)
 }
 
 export class DiagramService {
@@ -120,6 +122,8 @@ export class DiagramService {
     if (!parsed.success)
       throw new AppError('invalid_request')
     const { path, source, selector, expectedVersion } = parsed.data
+    if (fileKind(path) === 'html')
+      throw new AppError('unsupported')
     if (Buffer.byteLength(source) > this.config.limits.maxFileBytes)
       throw new AppError('too_large')
     const bytes = await this.mutate([path], [], () => this.repository.replace(path, expectedVersion, original => replaceSource(path, original, selector, source, this.config.limits.maxBlocks, this.config.limits.maxFileBytes)))

@@ -38,8 +38,17 @@ export function validPath(value: unknown): value is string {
 function path(value: unknown): string {
   return validPath(value) ? value : invalid()
 }
-function kind(value: unknown): 'mermaid' | 'markdown' {
-  return value === 'mermaid' || value === 'markdown' ? value : invalid()
+function kind(value: unknown): FileKind {
+  return value === 'mermaid' || value === 'markdown' || value === 'html' ? value : invalid()
+}
+function pathKind(value: string): FileKind | null {
+  if (value.endsWith('.md'))
+    return 'markdown'
+  if (value.endsWith('.html') || value.endsWith('.htm'))
+    return 'html'
+  if (value.endsWith('.mmd') || value.endsWith('.mermaid'))
+    return 'mermaid'
+  return null
 }
 function selector(value: unknown): DiagramSelector {
   const item = object(value)
@@ -56,11 +65,22 @@ function summary(value: unknown): DiagramBlockSummary {
 export function decodeDocument(value: unknown): DiagramDocument {
   const item = object(value)
   const fileKind = kind(item.kind)
-  const common = { path: path(item.path), version: version(item.version), blocks: array(item.blocks).map((block): DiagramBlock => ({ ...summary(block), source: string(object(block).source) })) }
-  if (fileKind === 'markdown')
-    return { ...common, kind: fileKind, text: string(item.text) }
-  if (item.text !== undefined)
+  const documentPath = path(item.path)
+  const blocks = array(item.blocks).map((block): DiagramBlock => ({ ...summary(block), source: string(object(block).source) }))
+  if (pathKind(documentPath) !== fileKind)
     return invalid()
+  const common = { path: documentPath, version: version(item.version), blocks }
+  if (fileKind === 'markdown') {
+    exact(item, ['path', 'version', 'kind', 'text', 'blocks'])
+    return { ...common, kind: fileKind, text: string(item.text) }
+  }
+  if (fileKind === 'html') {
+    exact(item, ['path', 'version', 'kind', 'text', 'blocks'])
+    if (blocks.length)
+      return invalid()
+    return { ...common, kind: fileKind, text: string(item.text), blocks: [] }
+  }
+  exact(item, ['path', 'version', 'kind', 'blocks'])
   return { ...common, kind: fileKind }
 }
 export function decodeSession(value: unknown): Session | { authenticated: false } {
@@ -91,8 +111,14 @@ export function decodeTree(value: unknown): TreeSnapshot {
     if (file.kind !== 'file')
       return invalid()
     const fileKind = kind(file.fileKind)
-    if (file.state === 'available')
-      return { kind: 'file', path: relative, fileKind, state: 'available', version: version(file.version), blocks: array(file.blocks).map(summary) }
+    if (pathKind(relative) !== fileKind)
+      return invalid()
+    if (file.state === 'available') {
+      const blocks = array(file.blocks).map(summary)
+      if (fileKind === 'html' && blocks.length)
+        return invalid()
+      return { kind: 'file', path: relative, fileKind, state: 'available', version: version(file.version), blocks }
+    }
     if (file.state === 'unreadable' || file.state === 'too_large' || file.state === 'unsupported')
       return { kind: 'file', path: relative, fileKind, state: file.state, blocks: [] }
     return invalid()
@@ -155,10 +181,10 @@ export function decodeDirectoryPage(value: unknown): DirectoryPage {
       return { kind: 'directory', path: name, children: 'unloaded' }
     }
     exact(entry, ['kind', 'path', 'fileKind', 'state'])
-    if (entry.kind !== 'file' || entry.state !== 'deferred' || !/\.(?:mmd|mermaid|md)$/.test(name))
+    if (entry.kind !== 'file' || entry.state !== 'deferred')
       return invalid()
     const fileKind = kind(entry.fileKind)
-    if ((fileKind === 'markdown') !== name.endsWith('.md'))
+    if (pathKind(name) !== fileKind)
       return invalid()
     return { kind: 'file', path: name, fileKind, state: 'deferred' }
   })
@@ -206,10 +232,10 @@ export function decodeDirectorySearch(value: unknown): DirectorySearch {
       return { kind: 'directory', path: name, children: 'unloaded' }
     }
     exact(entry, ['kind', 'path', 'fileKind', 'state'])
-    if (entry.kind !== 'file' || entry.state !== 'deferred' || !/\.(?:mmd|mermaid|md)$/.test(name))
+    if (entry.kind !== 'file' || entry.state !== 'deferred')
       return invalid()
     const fileKind = kind(entry.fileKind)
-    if ((fileKind === 'markdown') !== name.endsWith('.md') || (searched && fileKind !== searched))
+    if (pathKind(name) !== fileKind || (searched && fileKind !== searched))
       return invalid()
     return { kind: 'file', path: name, fileKind, state: 'deferred' }
   })
@@ -264,7 +290,7 @@ export function entryErrorMessage(error: unknown): string {
     case 'deleted': return 'This entry no longer exists. Refresh the file list.'
     case 'conflict': return 'This file changed outside the editor. Review it before moving or deleting it.'
     case 'forbidden': return 'This location cannot be used. Hidden names, excluded folders, links and other storage mounts are not allowed.'
-    case 'unsupported': return 'Use a .mmd, .mermaid or .md file name.'
+    case 'unsupported': return 'Use a .mmd, .mermaid, .md, .html or .htm file name.'
     case 'invalid_request': return 'Enter a valid path. A folder cannot move into itself, and a rename keeps the file type.'
     case 'filesystem_unsupported': return 'File changes are unavailable on this storage. Ask the operator to verify write support for this project.'
     case 'unauthorized': return 'Your session expired. Sign in again.'

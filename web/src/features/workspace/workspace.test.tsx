@@ -9,6 +9,13 @@ import { api } from './api'
 import { Workspace } from './workspace'
 
 vi.mock('@/features/preview/preview', () => ({ Preview: () => <div>Diagram canvas</div> }))
+vi.mock('@/features/agents/agent-chat', () => ({ AgentChat: () => null }))
+vi.mock('@/features/document/html-document-view', () => ({ HtmlDocumentView: ({ text }: { text: string }) => (
+  <article aria-label="HTML document">
+    <p>Safe HTML preview</p>
+    <h1>{text}</h1>
+  </article>
+) }))
 beforeEach(() => {
   const media = Object.assign(new EventTarget(), { matches: false })
   vi.stubGlobal('matchMedia', () => media)
@@ -119,6 +126,25 @@ it('keeps a Markdown document without diagrams in Document view', async () => {
   expect(screen.getByRole('tab', { name: 'Document' })).toHaveAttribute('aria-selected', 'true')
   expect(screen.getByRole('tab', { name: 'Diagram' })).toHaveAttribute('aria-disabled', 'true')
   expect(screen.queryByLabelText('Mermaid source', { exact: true })).toBeNull()
+  unmount()
+  client.clear()
+})
+
+it('opens HTML as a read-only document without source, diagram or save controls', async () => {
+  const revision = 'a'.repeat(64)
+  const current = { path: 'docs/page.html', kind: 'html' as const, version: revision, text: 'HTML title', blocks: [] as [] }
+  vi.spyOn(api, 'session').mockResolvedValue({ authenticated: true, access: 'open', version: '0.0.0-test', pollIntervalMs: 30000, maxSourceBytes: 1048576, storage: { writable: true, identity: 'stable', filesystemType: 'test', supportedFilesystem: 'linux-overlayfs' } })
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: 'docs', parent: '', entries: [{ kind: 'file', path: current.path, fileKind: 'html', state: 'deferred' }], revision, complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 1, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: 'docs', revision, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'revision').mockResolvedValue({ path: current.path, state: 'present', version: revision })
+  vi.spyOn(api, 'document').mockResolvedValue(current)
+  const client = createQueryClient()
+  const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={current.path} block={0} directory="docs" navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByRole('article', { name: 'HTML document' })).toHaveTextContent('HTML title')
+  expect(screen.queryByRole('button', { name: 'Save' })).toBeNull()
+  expect(screen.queryByLabelText('Mermaid source', { exact: true })).toBeNull()
+  expect(screen.queryByRole('tab', { name: 'Document' })).toBeNull()
+  expect(screen.queryByRole('tablist', { name: 'Workspace pane' })).toBeNull()
   unmount()
   client.clear()
 })

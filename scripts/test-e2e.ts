@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { basename, join, resolve } from 'node:path'
 import { health, identifyFixture, markerEvent, privateToken } from './test-support'
@@ -45,6 +45,51 @@ const scratch = await mkdtemp(join(project, 'tmp/e2e-'))
 const ownedRoots: string[] = []
 const windows: { id: string, marker: string }[] = []
 const tokenFile = join(scratch, 'token')
+let fakeCodex: string | undefined
+if (process.env.MERDECK_TEST_AGENTS === 'true') {
+  fakeCodex = join(scratch, 'fake-codex')
+  await writeFile(fakeCodex, `#!${process.execPath}\n${String.raw`
+let pending = ''
+let turn = 0
+const decoder = new TextDecoder()
+for await (const chunk of Bun.stdin.stream()) {
+  pending += decoder.decode(chunk, { stream: true })
+  let newline
+  while ((newline = pending.indexOf('\n')) >= 0) {
+    const line = pending.slice(0, newline)
+    pending = pending.slice(newline + 1)
+    if (!line) continue
+    const message = JSON.parse(line)
+    if (message.method === 'initialize')
+      console.log(JSON.stringify({ id: message.id, result: { userAgent: 'merdeck-browser-fake' } }))
+    else if (message.method === 'thread/start')
+      console.log(JSON.stringify({ id: message.id, result: { thread: { id: 'browser-thread' } } }))
+    else if (message.method === 'model/list')
+      console.log(JSON.stringify({ id: message.id, result: { data: [{ model: 'browser-model', displayName: 'Browser model', description: 'Deterministic browser fixture', hidden: false, isDefault: true }], nextCursor: null } }))
+    else if (message.method === 'turn/start') {
+      turn++
+      const turnId = 'browser-turn-' + turn
+      console.log(JSON.stringify({ id: message.id, result: { turn: { id: turnId } } }))
+      console.log(JSON.stringify({ method: 'item/agentMessage/delta', params: { threadId: 'browser-thread', turnId, itemId: 'message-' + turn, delta: turn === 1 ? '<img src=x onerror=alert(1)> Updated the diagram.' : 'Waiting for cancellation.' } }))
+      if (turn === 1)
+        console.log(JSON.stringify({ id: 'browser-approval', method: 'item/fileChange/requestApproval', params: { threadId: 'browser-thread', turnId, itemId: 'change-1', startedAtMs: Date.now(), reason: 'Update agent-live.mmd' } }))
+    }
+    else if (message.id === 'browser-approval') {
+      if (message.result?.decision === 'accept') {
+        await Bun.write('agent-live.mmd', 'flowchart LR\nA[AI]-->B[Live]\n')
+        console.log(JSON.stringify({ method: 'item/fileChange/patchUpdated', params: { threadId: 'browser-thread', turnId: 'browser-turn-1', itemId: 'change-1', changes: [{ path: 'agent-live.mmd', kind: { type: 'update', move_path: null }, diff: 'updated' }] } }))
+      }
+      console.log(JSON.stringify({ method: 'turn/completed', params: { threadId: 'browser-thread', turn: { id: 'browser-turn-1', status: 'completed' } } }))
+    }
+    else if (message.method === 'turn/interrupt') {
+      console.log(JSON.stringify({ id: message.id, result: {} }))
+      console.log(JSON.stringify({ method: 'turn/completed', params: { threadId: 'browser-thread', turn: { id: message.params.turnId, status: 'interrupted' } } }))
+    }
+  }
+}
+`}`, { mode: 0o700 })
+  await chmod(fakeCodex, 0o700)
+}
 let status = 1
 async function start(root: string, role: string, withToken = true) {
   const origin = await availableOrigin()
@@ -52,7 +97,7 @@ async function start(root: string, role: string, withToken = true) {
   const configFile = join(scratch, `${role}.json`)
   // A service started without the token file runs with open access.
   const maxFileBytes = process.env.MERDECK_TEST_MAX_FILE_BYTES
-  await writeFile(configFile, JSON.stringify({ root, origin, tokenFile: withToken ? tokenFile : undefined, marker, ...(maxFileBytes ? { maxFileBytes: Number(maxFileBytes) } : {}) }), { mode: 0o600 })
+  await writeFile(configFile, JSON.stringify({ root, origin, tokenFile: withToken ? tokenFile : undefined, marker, ...(role === 'supported' && fakeCodex ? { codexPath: fakeCodex } : {}), ...(maxFileBytes ? { maxFileBytes: Number(maxFileBytes) } : {}) }), { mode: 0o600 })
   const ready = markerEvent(scratch, basename(marker))
   try {
     const command = `${quote(process.execPath)} ${quote(join(project, 'scripts/test-service.ts'))} ${quote(configFile)} > ${quote(join(scratch, `${role}.log`))} 2>&1`

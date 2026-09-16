@@ -1,7 +1,7 @@
 import { parentDirectory, validPath } from '@/features/workspace/api'
 
 export function resolveProjectLink(path: string, url: string): string | null {
-  if (!/^(?:[^:/?#]+\/)*[^/?#]+\.(?:md|mmd|mermaid)(?:#.*)?$/i.test(url))
+  if (!/^(?:[^:/?#]+\/)*[^/?#]+\.(?:md|mmd|mermaid|html|htm)(?:#.*)?$/i.test(url))
     return null
   const encoded = url.split('#', 1)[0] ?? ''
   if (/%(?:2f|5c|2e)/i.test(encoded))
@@ -29,4 +29,16 @@ export function resolveProjectLink(path: string, url: string): string | null {
   }
   const result = normalized.join('/')
   return validPath(result) ? result : null
+}
+
+export function isExternalLink(value: string): boolean {
+  try {
+    const url = new URL(value)
+    const web = (url.protocol === 'http:' || url.protocol === 'https:') && /^https?:\/\/\S+$/i.test(value)
+    const mail = url.protocol === 'mailto:' && /^mailto:\S+$/i.test(value)
+    return web || mail
+  }
+  catch {
+    return false
+  }
 }

@@ -133,6 +133,7 @@ test('HTTP cancellation after a native read and quota rejection release actual d
 
 test('search answers over HTTP, closes every stream it opened and refuses other methods and unknown keys', async () => {
   const f = await fixture('prefixed')
+  await writeFile(`${f.config.projectRoot}/folder/page.htm`, '<h1>Page</h1>')
   const response = await f.request('/diagrams/search?path=folder&query=A.md')
   expect(response.status).toBe(200)
   const body = await response.json() as { success: boolean, data: { kind: string | null, entries: { path: string }[], complete: boolean } }
@@ -145,6 +146,8 @@ test('search answers over HTTP, closes every stream it opened and refuses other 
   const typed = await (await f.request('/diagrams/search?path=folder&kind=markdown')).json() as { data: { query: string, kind: string | null, entries: { path: string }[] } }
   expect(typed.data).toMatchObject({ query: '', kind: 'markdown' })
   expect(typed.data.entries.map(entry => entry.path).sort()).toEqual(['folder/a.md', 'folder/b.md'])
+  const html = await (await f.request('/diagrams/search?path=folder&kind=html')).json() as { data: { kind: string, entries: { path: string }[] } }
+  expect(html.data).toEqual(expect.objectContaining({ kind: 'html', entries: [expect.objectContaining({ path: 'folder/page.htm' })] }))
   expect(f.handles()).toBe(0)
   for (const query of ['kind=all', 'kind=', 'kind=Markdown', 'kind=markdown&kind=mermaid', 'query=%20%20'])
     expect((await f.request(`/diagrams/search?path=folder&${query}`)).status).toBe(400)

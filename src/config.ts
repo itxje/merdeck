@@ -1,10 +1,11 @@
 import { constants } from 'node:fs'
 import { access, realpath, stat } from 'node:fs/promises'
 import { isIP } from 'node:net'
-import { isAbsolute } from 'node:path'
+import { isAbsolute, relative, sep } from 'node:path'
 import { z } from 'zod'
 
 const integer = (minimum: number, maximum: number, fallback: number) => z.coerce.number().int().min(minimum).max(maximum).default(fallback)
+const executablePath = z.union([z.literal(''), z.string().min(1).refine(isAbsolute).refine(value => !value.includes('\0'))]).optional().transform(value => value || undefined)
 const originSchema = z.url().refine((value) => {
   if (!URL.canParse(value))
     return false
@@ -34,12 +35,33 @@ const environmentSchema = z.object({
   MERDECK_POLL_INTERVAL_MS: integer(1000, 30000, 3000),
   MERDECK_SESSION_TTL_SECONDS: integer(60, 86400, 3600),
   MERDECK_MAX_SESSIONS: integer(1, 1000, 100),
+  MERDECK_CODEX_PATH: executablePath,
+  MERDECK_CLAUDE_PATH: executablePath,
 })
 
 export class ConfigError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'ConfigError'
+  }
+}
+
+async function canonicalExecutable(value: string | undefined, name: 'MERDECK_CODEX_PATH' | 'MERDECK_CLAUDE_PATH', projectRoot: string): Promise<string | undefined> {
+  if (!value)
+    return undefined
+  try {
+    const canonical = await realpath(value)
+    const metadata = await stat(canonical)
+    if (!metadata.isFile() || (metadata.mode & 0o111) === 0)
+      throw new Error('Not a file')
+    await access(canonical, constants.X_OK)
+    const fromRoot = relative(projectRoot, canonical)
+    if (fromRoot === '' || (fromRoot !== '..' && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot)))
+      throw new Error('Project-owned executable')
+    return canonical
+  }
+  catch {
+    throw new ConfigError(`${name} must be an accessible executable file`)
   }
 }
 
@@ -76,6 +98,12 @@ export async function loadConfig(environment: Record<string, string | undefined>
   // Without a token anyone who can connect may change project files, so wider exposure must be deliberate.
   if (!token && !openAccess && !(loopback(host) && allowedOrigins.every(value => loopback(new URL(value).hostname))))
     throw new ConfigError('A service reachable beyond loopback requires MERDECK_TOKEN or MERDECK_OPEN_ACCESS=true')
+  if (!token && (env.MERDECK_CODEX_PATH || env.MERDECK_CLAUDE_PATH))
+    throw new ConfigError('Agent providers require MERDECK_TOKEN')
+  const agents = Object.freeze({
+    codex: await canonicalExecutable(env.MERDECK_CODEX_PATH, 'MERDECK_CODEX_PATH', projectRoot),
+    claude: await canonicalExecutable(env.MERDECK_CLAUDE_PATH, 'MERDECK_CLAUDE_PATH', projectRoot),
+  })
   return Object.freeze({
     projectRoot,
     host,
@@ -85,6 +113,7 @@ export async function loadConfig(environment: Record<string, string | undefined>
     secureCookie: env.MERDECK_COOKIE_SECURE === 'true' || allowedOrigins.every(value => value.startsWith('https:')),
     allowedOrigins: Object.freeze(allowedOrigins),
     apiBasePath: env.MERDECK_API_MODE === 'stripped' ? '/' as const : '/api' as const,
+    agents,
     limits: Object.freeze({
       maxFileBytes: env.MERDECK_MAX_FILE_BYTES,
       maxTreeEntries: env.MERDECK_MAX_TREE_ENTRIES,

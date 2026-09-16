@@ -64,6 +64,8 @@ it('resolves only contained, valid project-document links', () => {
   expect(resolveProjectLink('docs/guide.md', 'data:text/plain,hello')).toBeNull()
   expect(resolveProjectLink('docs/guide.md', 'file:///secret.md')).toBeNull()
   expect(resolveProjectLink('docs/guide.md', 'nested/diagram.mermaid#section')).toBe('docs/nested/diagram.mermaid')
+  expect(resolveProjectLink('docs/guide.md', './page.html#section')).toBe('docs/page.html')
+  expect(resolveProjectLink('docs/guide.md', '../index.htm')).toBe('index.htm')
 })
 it('renders safe Markdown as React elements and places matching diagrams', async () => {
   const open = vi.fn()

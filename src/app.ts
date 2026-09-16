@@ -1,4 +1,5 @@
 import type { AppConfig } from './config'
+import type { AgentManager } from './modules/agents'
 import type { DiagramService } from './modules/diagrams'
 import type { BuildInfo } from './shared/build-info'
 import type { ApplicationBuild, HealthStatus } from './shared/contracts'
@@ -6,6 +7,7 @@ import type { HttpEnvironment } from './shared/middleware/boundary'
 import type { StaticAssets } from './shared/static-assets'
 import { Hono } from 'hono'
 import { z } from 'zod'
+import { agentRoutes, createAgentManager } from './modules/agents'
 import { authRoutes } from './modules/auth/routes'
 import { Sessions } from './modules/auth/sessions'
 import { diagramRoutes } from './modules/diagrams/routes'
@@ -21,6 +23,7 @@ export interface AppServices {
   assets?: StaticAssets
   clock?: () => number
   buildInfo?: BuildInfo
+  agents?: AgentManager
 }
 
 export function createApp(config: AppConfig, services: AppServices) {
@@ -28,6 +31,7 @@ export function createApp(config: AppConfig, services: AppServices) {
   const api = new Hono<HttpEnvironment>()
   // Without an access token the service runs with open access and keeps no sessions.
   const sessions = config.token === undefined ? undefined : new Sessions(config, config.token, services.clock)
+  const agents = services.agents ?? createAgentManager(config, services.clock)
   // The served interface is fixed for the life of the service, and so is its build identity.
   const build = config.apiBasePath === '/api' && services.assets ? snapshotBuildAssets(services.assets) : null
   let closed = false
@@ -53,7 +57,8 @@ export function createApp(config: AppConfig, services: AppServices) {
     queryInput(new URL(c.req.url), z.strictObject({}))
     return c.json({ success: true as const, data: { identity: build?.identity ?? null, pollIntervalMs: buildPollIntervalMs } satisfies ApplicationBuild })
   })
-  api.route('/', authRoutes(config, services.diagrams, sessions, (services.buildInfo ?? developmentBuild).version))
+  api.route('/', authRoutes(config, services.diagrams, sessions, (services.buildInfo ?? developmentBuild).version, (id, origin) => agents.closePrincipal(id, origin)))
+  api.route('/', agentRoutes(services.diagrams, sessions, agents))
   api.route('/', diagramRoutes(config, services.diagrams, sessions))
   app.route(config.apiBasePath, api)
   app.notFound((c) => {
@@ -73,6 +78,6 @@ export function createApp(config: AppConfig, services: AppServices) {
   return Object.assign(app, { close: () => {
     closed = true
     sessions?.close()
-    return services.diagrams.close()
+    return Promise.all([agents.close(), services.diagrams.close()]).then(() => undefined)
   } })
 }

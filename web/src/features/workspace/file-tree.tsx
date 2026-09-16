@@ -4,7 +4,7 @@ import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
 import type { useDirectory } from './use-directory'
 import type { SearchView } from './use-directory-search'
-import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, Folder, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
+import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
@@ -40,7 +40,12 @@ const fileFilters: { value: FileFilter, text: string, label: string }[] = [
   { value: 'all', text: 'All', label: 'All files' },
   { value: 'mermaid', text: '.mmd', label: '.mmd and .mermaid files' },
   { value: 'markdown', text: '.md', label: '.md files' },
+  { value: 'html', text: '.html', label: '.html and .htm files' },
 ]
+
+function FileKindIcon({ kind }: { kind: 'mermaid' | 'markdown' | 'html' }) {
+  return kind === 'markdown' ? <FileText /> : kind === 'html' ? <FileType2 /> : <FileCode2 />
+}
 
 // Diagram rows of one Markdown file; only the selected diagram is the current row.
 function DiagramList({ file, blocks, draft, open, block, select }: DiagramListProps) {
@@ -266,7 +271,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                         }}
                       >
                         <span className="tree-twistie" />
-                        {entry.kind === 'directory' ? <Folder className="folder-icon" /> : entry.fileKind === 'markdown' ? <FileText /> : <FileCode2 />}
+                        {entry.kind === 'directory' ? <Folder className="folder-icon" /> : <FileKindIcon kind={entry.fileKind} />}
                         <span className="truncate">{below}</span>
                         {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
                       </Button>
@@ -348,7 +353,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                     <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} title={entry.path} onKeyDown={shortcuts(rename, remove)} onClick={() => select(entry.path)}>
                       {/* An empty chevron column keeps a file's icon in line with the folders beside it. */}
                       <span className="tree-twistie" />
-                      {entry.fileKind === 'markdown' ? <FileText /> : <FileCode2 />}
+                      <FileKindIcon kind={entry.fileKind} />
                       <span className="truncate">{name}</span>
                       {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
                       {!draft && <span className="file-count" aria-hidden="true">Unopened</span>}

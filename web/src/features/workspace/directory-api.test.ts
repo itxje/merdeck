@@ -56,6 +56,7 @@ const directorySearch = (overrides = {}) => ({ path: 'docs', query: '', kind: 'm
 it('decodes a search by file type or text and keeps the searched type with the result', () => {
   expect(decodeDirectorySearch(directorySearch())).toEqual(directorySearch())
   expect(decodeDirectorySearch(directorySearch({ query: 'guide', kind: null })).kind).toBeNull()
+  expect(decodeDirectorySearch(directorySearch({ kind: 'html', entries: [{ kind: 'file', path: 'docs/page.htm', fileKind: 'html', state: 'deferred' }] })).kind).toBe('html')
 })
 it.each([
   { kind: null },
@@ -72,7 +73,9 @@ it('sends a search by file type without empty text', async () => {
   const { api } = await import('./api')
   const signal = new AbortController().signal
   expect((await api.search('docs', '', 'markdown', signal)).kind).toBe('markdown')
+  await api.search('docs', '', 'html', signal)
   await api.search('', 'guide', null, signal)
   expect(fetch.mock.calls[0]?.[0]).toBe('/api/diagrams/search?path=docs&kind=markdown')
-  expect(fetch.mock.calls[1]?.[0]).toBe('/api/diagrams/search?path=&query=guide')
+  expect(fetch.mock.calls[1]?.[0]).toBe('/api/diagrams/search?path=docs&kind=html')
+  expect(fetch.mock.calls[2]?.[0]).toBe('/api/diagrams/search?path=&query=guide')
 })

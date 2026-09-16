@@ -11,6 +11,8 @@ const configuration = z.object({
   maxFileBytes: z.number().int().positive().optional(),
   // Absent for a service with open access.
   tokenFile: z.string().optional(),
+  codexPath: z.string().optional(),
+  claudePath: z.string().optional(),
   marker: z.string(),
 })
 const config = configuration.parse(JSON.parse(await readFile(process.argv[2]!, 'utf8')))
@@ -28,6 +30,8 @@ try {
     MERDECK_MAX_TREE_ENTRIES: '100',
     MERDECK_POLL_INTERVAL_MS: '1000',
     NODE_ENV: 'production',
+    ...(config.codexPath ? { MERDECK_CODEX_PATH: config.codexPath } : {}),
+    ...(config.claudePath ? { MERDECK_CLAUDE_PATH: config.claudePath } : {}),
   })
   await import(pathToFileURL(resolve('dist/index.js')).href)
   if (process.exitCode)

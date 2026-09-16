@@ -1,17 +1,18 @@
 import * as React from 'react'
 
-export type FileFilter = 'all' | 'mermaid' | 'markdown'
+export type FileFilter = 'all' | 'mermaid' | 'markdown' | 'html'
 export const fileExtensions: Record<FileFilter, string[]> = {
-  all: ['.mmd', '.mermaid', '.md'],
+  all: ['.mmd', '.mermaid', '.md', '.html', '.htm'],
   mermaid: ['.mmd', '.mermaid'],
   markdown: ['.md'],
+  html: ['.html', '.htm'],
 }
 const storageKey = 'merdeck.file-filter'
 
 function storedFilter(): FileFilter {
   try {
     const value = localStorage.getItem(storageKey)
-    return value === 'mermaid' || value === 'markdown' ? value : 'all'
+    return value === 'mermaid' || value === 'markdown' || value === 'html' ? value : 'all'
   }
   catch {
     return 'all'

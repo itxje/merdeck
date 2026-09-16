@@ -34,6 +34,8 @@ export function fileKind(path: string): FileKind {
     case '.mmd':
     case '.mermaid': return 'mermaid'
     case '.md': return 'markdown'
+    case '.html':
+    case '.htm': return 'html'
     default: throw new AppError('unsupported')
   }
 }
@@ -139,24 +141,28 @@ export function parseDocument(path: string, bytes: Buffer, maxBlocks: number): P
   const start = source.startsWith('\uFEFF') ? 3 : 0
   const spans: Span[] = kind === 'markdown'
     ? markdownSpans(bytes, source, maxBlocks)
-    : [{
-        start,
-        end: bytes.length,
-        indent: 0,
-        fence: '',
-        newline: /\r?\n/.exec(source)?.[0] ?? '\n',
-        block: {
-          selector: { kind: 'standalone' },
-          label: 'Diagram',
-          lineStart: 1,
-          lineEnd: lineCount(bytes),
-          source: bytes.subarray(start).toString('utf8'),
-        },
-      }]
+    : kind === 'html'
+      ? []
+      : [{
+          start,
+          end: bytes.length,
+          indent: 0,
+          fence: '',
+          newline: /\r?\n/.exec(source)?.[0] ?? '\n',
+          block: {
+            selector: { kind: 'standalone' },
+            label: 'Diagram',
+            lineStart: 1,
+            lineEnd: lineCount(bytes),
+            source: bytes.subarray(start).toString('utf8'),
+          },
+        }]
   const common = { path, version: contentVersion(bytes), blocks: spans.map(span => span.block) }
   const document: DiagramDocument = kind === 'markdown'
     ? { ...common, kind, text: source.replace(/^\uFEFF/, '') }
-    : { ...common, kind }
+    : kind === 'html'
+      ? { ...common, kind, text: source.replace(/^\uFEFF/, ''), blocks: [] }
+      : { ...common, kind }
   return { document, spans }
 }
 

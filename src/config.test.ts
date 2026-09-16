@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { createApp } from './app'
@@ -116,6 +116,36 @@ describe('startup configuration', () => {
   test('only permits prefix stripping in explicit development mode', async () => {
     await expect(loadConfig({ ...env(), MERDECK_API_MODE: 'stripped' })).rejects.toThrow('NODE_ENV=development')
     expect((await loadConfig({ ...env(), MERDECK_API_MODE: 'stripped', NODE_ENV: 'development' })).apiBasePath).toBe('/')
+  })
+  test('enables agents only through canonical executable paths with token access', async () => {
+    const providerRoot = await mkdtemp(resolve('tmp/config-provider-'))
+    try {
+      const executable = `${providerRoot}/fake-agent`
+      const plainFile = `${providerRoot}/plain-agent`
+      const projectExecutable = `${project}/project-agent`
+      await writeFile(executable, '#!/bin/sh\n')
+      await writeFile(plainFile, 'plain\n')
+      await writeFile(projectExecutable, '#!/bin/sh\n')
+      await chmod(executable, 0o700)
+      await chmod(plainFile, 0o600)
+      await chmod(projectExecutable, 0o700)
+
+      const configured = await loadConfig({ ...env(), MERDECK_CODEX_PATH: executable, MERDECK_CLAUDE_PATH: executable })
+      expect(configured.agents).toEqual({ codex: executable, claude: executable })
+      expect(Object.isFrozen(configured.agents)).toBe(true)
+
+      for (const environment of [
+        { MERDECK_ROOT: project, MERDECK_CODEX_PATH: executable },
+        { ...env(), MERDECK_CODEX_PATH: 'codex' },
+        { ...env(), MERDECK_CODEX_PATH: `${project}/missing` },
+        { ...env(), MERDECK_CLAUDE_PATH: plainFile },
+        { ...env(), MERDECK_CODEX_PATH: projectExecutable },
+      ])
+        await expect(loadConfig(environment)).rejects.toBeInstanceOf(ConfigError)
+    }
+    finally {
+      await rm(providerRoot, { recursive: true, force: true })
+    }
   })
 })
 

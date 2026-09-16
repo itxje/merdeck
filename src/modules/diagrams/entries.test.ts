@@ -63,6 +63,20 @@ describe('contained file and folder operations', () => {
     expect(await readFile(join(outside, 'private.mmd'), 'utf8')).toBe('outside-secret')
   })
 
+  test('creates read-only HTML templates and permits only HTML-to-HTML suffix moves', async () => {
+    const diagrams = await service()
+    await diagrams.createEntry({ kind: 'file', path: 'docs/page.html' })
+    const original = await diagrams.readDocument('docs/page.html')
+    expect(original).toMatchObject({ kind: 'html', path: 'docs/page.html', blocks: [] })
+    expect(original.kind === 'html' && original.text).toContain('<!doctype html>')
+    expect(await readFile(join(root, 'docs', 'page.html'), 'utf8')).toBe(original.kind === 'html' ? original.text : '')
+    await expectCode(diagrams.saveDiagram({ path: original.path, selector: { kind: 'standalone' }, expectedVersion: original.version, source: '<h1>Changed</h1>' }), 'unsupported')
+    expect(await diagrams.moveEntry({ kind: 'file', from: original.path, to: 'docs/page.htm', expectedVersion: original.version })).toEqual({ kind: 'file', path: 'docs/page.htm' })
+    const moved = await diagrams.readDocument('docs/page.htm')
+    expect(moved).toMatchObject({ kind: 'html', version: original.version, blocks: [] })
+    await expectCode(diagrams.moveEntry({ kind: 'file', from: moved.path, to: 'docs/page.md', expectedVersion: moved.version }), 'invalid_request')
+  })
+
   test('refuses unsafe, excluded, unsupported, too deep and missing-parent entries', async () => {
     const diagrams = await service()
     await symlink(outside, join(root, 'escape'))

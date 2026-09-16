@@ -55,6 +55,21 @@ describe('lossless diagram parsing', () => {
     expect(standalone).not.toHaveProperty('text')
   })
 
+  test('returns exact same-read text for HTML without editable diagram blocks', () => {
+    const html = '\uFEFF<!doctype html>\r\n<h1 title="π">Hello &amp; goodbye</h1>\r\n'
+    for (const path of ['page.html', 'page.htm']) {
+      const document = parse(html, path).document
+      expect(document).toEqual({
+        kind: 'html',
+        path,
+        version: contentVersion(Buffer.from(html)),
+        text: html.slice(1),
+        blocks: [],
+      })
+      expect(fileKind(path)).toBe('html')
+    }
+  })
+
   test('non-Mermaid fences suppress inner fences, including unclosed ordinary code', () => {
     expect(parse('````js\n```mermaid\nx\n```\n````\n').document.blocks).toEqual([])
     expect(parse('~~~text\n```mermaid\nx\n```').document.blocks).toEqual([])

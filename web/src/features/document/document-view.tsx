@@ -11,13 +11,10 @@ import * as React from 'react'
 import { annotateFileLinks, linkedFile } from '@/features/preview/file-links'
 import { renderDiagram } from '@/features/preview/renderer'
 import { fileLinks } from '@/features/preview/source-policy'
-import { resolveProjectLink } from './document-links'
+import { isExternalLink, resolveProjectLink } from './document-links'
+import { DocumentText } from './document-text'
 
 type RenderNode = Content | ListItem | TableRow | TableCell
-
-const progressiveTextChunkBytes = 4096
-const progressiveInitialChunks = 8
-const progressiveChunksPerFrame = 8
 
 function markDocumentStage(name: string) {
   performance.mark(`merdeck-markdown:${name}`)
@@ -26,36 +23,6 @@ function markDocumentStage(name: string) {
 function reportDocumentStage(name: string, detail: Record<string, unknown> = {}) {
   markDocumentStage(name)
   window.dispatchEvent(new CustomEvent('merdeck-markdown-stage', { detail: { name, at: performance.now(), ...detail } }))
-}
-
-function DocumentText({ value, chunks }: { value: string, chunks: string[] | null }) {
-  const runs = chunks ?? [value]
-  const length = runs.reduce((total, run) => total + run.length, 0)
-  // A megabyte paragraph is expensive for Chromium to shape in one commit. Keep the
-  // complete source in the response, but materialize bounded text runs over frames.
-  const [visible, setVisible] = React.useState(() => Math.min(runs.length, progressiveInitialChunks))
-  React.useEffect(() => {
-    let frame = 0
-    const reveal = () => {
-      setVisible((current) => {
-        const next = Math.min(runs.length, current + progressiveChunksPerFrame)
-        if (next < runs.length)
-          frame = requestAnimationFrame(reveal)
-        return next
-      })
-    }
-    if (runs.length > progressiveInitialChunks)
-      frame = requestAnimationFrame(reveal)
-    return () => cancelAnimationFrame(frame)
-  }, [runs.length])
-  if (length <= progressiveTextChunkBytes)
-    return value
-  let offset = 0
-  return runs.slice(0, visible).map((run, index) => {
-    const key = offset
-    offset += run.length
-    return <span key={key} className="document-text-chunk" data-document-text-complete={visible === runs.length && index === runs.length - 1 ? '' : undefined}>{run}</span>
-  })
 }
 
 function phrasingText(nodes: readonly PhrasingContent[]): string {
@@ -128,18 +95,6 @@ function FootnoteDefinitionView({ number, definitionMapRef, children }: { number
       {children}
     </aside>
   )
-}
-
-function isExternalLink(value: string): boolean {
-  try {
-    const url = new URL(value)
-    const web = (url.protocol === 'http:' || url.protocol === 'https:') && /^https?:\/\/\S+$/i.test(value)
-    const mail = url.protocol === 'mailto:' && /^mailto:\S+$/i.test(value)
-    return web || mail
-  }
-  catch {
-    return false
-  }
 }
 
 function parse(text: string) {

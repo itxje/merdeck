@@ -36,7 +36,7 @@ function cookie(config: AppConfig, value = ''): string {
   return `${sessionCookie}=${value}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${value ? config.limits.sessionTtlSeconds : 0}${secure}`
 }
 
-export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions: Sessions | undefined, version: string) {
+export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions: Sessions | undefined, version: string, closeAgentPrincipal: (id: string, origin: string) => Promise<void> = async () => {}) {
   const router = new Hono<HttpEnvironment>()
   const methods = sessions ? ['GET', 'POST', 'DELETE'] : ['GET']
   const status = async (session?: Session): Promise<SessionStatus> => {
@@ -75,7 +75,7 @@ export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions
       const data = await status(session)
       sessions.remove(old)
       if (old)
-        await diagrams.closePrincipal(old.id, old.origin)
+        await Promise.all([diagrams.closePrincipal(old.id, old.origin), closeAgentPrincipal(old.id, old.origin)])
       c.header('Set-Cookie', cookie(config, sessions.cookieValue(session)))
       return c.json({ success: true as const, data })
     }
@@ -89,7 +89,7 @@ export function authRoutes(config: AppConfig, diagrams: DiagramService, sessions
     requireMutation(c.req.raw, c.get('origin'), session)
     sessions.remove(session)
     if (session)
-      await diagrams.closePrincipal(session.id, session.origin)
+      await Promise.all([diagrams.closePrincipal(session.id, session.origin), closeAgentPrincipal(session.id, session.origin)])
     c.header('Set-Cookie', cookie(config))
     return c.json({ success: true as const, data: { authenticated: false as const } })
   })

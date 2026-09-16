@@ -32,6 +32,12 @@ export const deleteEntryRequestSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('directory'), path: relativePathSchema }),
 ])
 export const loginRequestSchema = z.strictObject({ token: z.string().min(32).max(256) })
+export const agentProviderSchema = z.enum(['codex', 'claude'])
+export const agentModelIdSchema = z.string().min(1).max(100).regex(/^[a-z\d][\w.:[\]-]*$/i)
+export const createAgentConversationRequestSchema = z.strictObject({ provider: agentProviderSchema, model: agentModelIdSchema })
+export const agentTurnRequestSchema = z.strictObject({ prompt: z.string().trim().min(1).max(16000) })
+export const agentApprovalRequestSchema = z.strictObject({ decision: z.enum(['approve', 'deny']) })
+export const agentOpaqueIdSchema = z.string().regex(/^[a-f0-9]{48}$/)
 
 export type RelativePath = z.infer<typeof relativePathSchema>
 export type ContentVersion = z.infer<typeof contentVersionSchema>
@@ -42,7 +48,11 @@ export type CreateEntryRequest = z.infer<typeof createEntryRequestSchema>
 export type MoveEntryRequest = z.infer<typeof moveEntryRequestSchema>
 export type DeleteEntryRequest = z.infer<typeof deleteEntryRequestSchema>
 export type LoginRequest = z.infer<typeof loginRequestSchema>
-export type FileKind = 'mermaid' | 'markdown'
+export type AgentProvider = z.infer<typeof agentProviderSchema>
+export type CreateAgentConversationRequest = z.infer<typeof createAgentConversationRequestSchema>
+export type AgentTurnRequest = z.infer<typeof agentTurnRequestSchema>
+export type AgentApprovalRequest = z.infer<typeof agentApprovalRequestSchema>
+export type FileKind = 'mermaid' | 'markdown' | 'html'
 
 export interface DiagramBlockSummary {
   selector: DiagramSelector
@@ -61,6 +71,7 @@ interface DiagramDocumentBase {
 export type DiagramDocument
   = | (DiagramDocumentBase & { kind: 'markdown', /** Complete BOM-free Markdown source from the same read as version and blocks. */ text: string })
     | (DiagramDocumentBase & { kind: 'mermaid', text?: never })
+    | (Omit<DiagramDocumentBase, 'blocks'> & { kind: 'html', /** Complete BOM-free HTML source from the same read as version. */ text: string, blocks: [] })
 export type TreeEntry
   = | { kind: 'directory', path: RelativePath }
     | { kind: 'file', path: RelativePath, fileKind: FileKind, state: 'available', version: ContentVersion, blocks: DiagramBlockSummary[] }
@@ -110,6 +121,32 @@ export interface ApplicationBuild {
   pollIntervalMs: number
 }
 
+export interface AgentCapabilities {
+  enabled: boolean
+  providers: Array<{ id: AgentProvider, label: string, models: AgentModel[] }>
+}
+export interface AgentModel {
+  id: string
+  label: string
+  description: string
+  isDefault: boolean
+}
+export interface AgentConversation {
+  id: string
+  provider: AgentProvider
+  model: string
+}
+export type AgentEvent
+  = | { id: number, type: 'conversation.started', conversationId: string, provider: AgentProvider }
+    | { id: number, type: 'turn.started', turnId: string }
+    | { id: number, type: 'assistant.delta', text: string }
+    | { id: number, type: 'tool.started', label: string }
+    | { id: number, type: 'file.changed', path: RelativePath, change: 'add' | 'update' | 'delete' }
+    | { id: number, type: 'approval.requested', approvalId: string, kind: 'file_access' | 'file_change' | 'command', summary: string }
+    | { id: number, type: 'turn.completed' }
+    | { id: number, type: 'turn.failed', message: string }
+    | { id: number, type: 'provider.unavailable', message: string }
+
 export const directoryPathSchema = z.union([z.literal(''), relativePathSchema])
 export const directoryCursorSchema = z.string().regex(/^[a-f0-9]{64}$/)
 export const directoryRequestSchema = z.strictObject({
@@ -128,7 +165,7 @@ export const directoryRevisionRequestSchema = z.strictObject({ path: directoryPa
 export const directorySearchRequestSchema = z.strictObject({
   path: directoryPathSchema.default(''),
   query: z.string().trim().max(200).refine(value => ![...value].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)).default(''),
-  kind: z.enum(['mermaid', 'markdown']).optional(),
+  kind: z.enum(['mermaid', 'markdown', 'html']).optional(),
 }).refine(request => request.query.length > 0 || request.kind !== undefined)
 export const closeDirectoryRequestSchema = z.strictObject({ path: directoryPathSchema, cursor: directoryCursorSchema })
 export type DirectoryPath = z.infer<typeof directoryPathSchema>

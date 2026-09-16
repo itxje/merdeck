@@ -19,7 +19,7 @@ function subscribeOnline(listener: () => void) {
   return onlineManager.subscribe(listener)
 }
 
-export function useWorkspace(path: string, block: number, directory = '') {
+export function useWorkspace(path: string, block: number, directory = '', agent: { active: boolean, activeRef: React.RefObject<boolean> } = { active: false, activeRef: { current: false } }) {
   const online = React.useSyncExternalStore(subscribeOnline, () => onlineManager.isOnline())
   const client = useQueryClient()
   const [drafts, applyDraftAction] = React.useReducer(draftsReducer, {})
@@ -100,7 +100,7 @@ export function useWorkspace(path: string, block: number, directory = '') {
   const restartDirectory = listing.restart
   const suspendDirectory = listing.suspend
   const revisionKey = ['revision', epoch, path] as const
-  const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : interval, retry: false })
+  const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : agent.active ? 500 : interval, retry: false })
   const observed = revision.data?.state === 'present' ? revision.data.version : ''
   const documentQuery = useQuery({
     queryKey: ['document', epoch, path, observed],
@@ -174,7 +174,7 @@ export function useWorkspace(path: string, block: number, directory = '') {
   const save = React.useCallback(async () => {
     const selected = file?.baseline.blocks[block]
     const source = file?.sources[block]
-    if (navigatingRef.current || !online || !session || !session.storage.writable || !file || !selected || source === undefined || source === selected.source || file.saving || file.warning || file.locked || busyRef.current || new TextEncoder().encode(source).length > session.maxSourceBytes)
+    if (agent.activeRef.current || navigatingRef.current || !online || !session || !session.storage.writable || !file || !selected || source === undefined || source === selected.source || file.saving || file.warning || file.locked || busyRef.current || new TextEncoder().encode(source).length > session.maxSourceBytes)
       return
     busyRef.current = true
     activeSavesRef.current++
@@ -214,7 +214,7 @@ export function useWorkspace(path: string, block: number, directory = '') {
       if (currentGeneration === generationRef.current)
         busyRef.current = false
     }
-  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch, directory, suspendDirectory])
+  }, [file, block, path, session, client, epoch, saveMutation, expire, online, dispatch, directory, suspendDirectory, agent.activeRef])
   const review = useMutation({
     networkMode: 'always',
     mutationFn: async (filePath: string) => {
@@ -232,6 +232,8 @@ export function useWorkspace(path: string, block: number, directory = '') {
     mutationFn: async (operation: EntryOperation) => {
       if (!session)
         throw new HttpError(401, 'unauthorized', 'Sign in to continue.')
+      if (agent.activeRef.current)
+        throw new HttpError(409, 'conflict', 'Wait for the agent turn to finish.')
       const resumeDirectory = affectsDirectory(operation, directory) ? await suspendDirectory() : () => {}
       try {
         await client.cancelQueries({ predicate: query => query.queryKey[0] === 'document' || query.queryKey[0] === 'revision' })
@@ -293,8 +295,15 @@ export function useWorkspace(path: string, block: number, directory = '') {
     void client.invalidateQueries({ queryKey: ['document', epoch, path, observed], exact: true })
     void client.invalidateQueries({ queryKey: ['session'] })
   }
+  const reconcileAgentChange = React.useCallback((target?: string) => {
+    restartDirectory()
+    if (!target || target === path) {
+      void client.invalidateQueries({ queryKey: ['revision', epoch, path] })
+      void client.invalidateQueries({ predicate: query => query.queryKey[0] === 'document' && query.queryKey[2] === path })
+    }
+  }, [restartDirectory, client, epoch, path])
   const hasUnsaved = Object.values(drafts).some(item => dirty(item) || item.saving)
-  const reloadBlocked = !online || protectedWork(drafts) || saveMutation.isPending || entries.isPending || review.isPending || login.isPending || logout.isPending
+  const reloadBlocked = agent.active || !online || protectedWork(drafts) || saveMutation.isPending || entries.isPending || review.isPending || login.isPending || logout.isPending
   // Re-checks the latest drafts and pending work when reload is chosen, and then lets no save start.
   const reloadApplication = (uiBlocked: boolean, navigate = () => window.location.reload()) => {
     if (uiBlocked || reloadBlocked || navigatingRef.current || busyRef.current || activeSavesRef.current > 0 || protectedWork(draftsRef.current) || client.isMutating() > 0)
@@ -314,5 +323,5 @@ export function useWorkspace(path: string, block: number, directory = '') {
     window.addEventListener('beforeunload', beforeUnload)
     return () => window.removeEventListener('beforeunload', beforeUnload)
   }, [hasUnsaved])
-  return { online, drafts, dispatch, session, sessionQuery, login, logout, file, listing, revision, documentQuery, save, savePending: saveMutation.isPending, review, entries, reload, refresh, readTarget, hasUnsaved, expired, reloadBlocked, reloadApplication }
+  return { online, drafts, dispatch, session, sessionQuery, login, logout, file, listing, revision, documentQuery, save, savePending: saveMutation.isPending, review, entries, reload, refresh, reconcileAgentChange, readTarget, hasUnsaved, expired, reloadBlocked, reloadApplication }
 }

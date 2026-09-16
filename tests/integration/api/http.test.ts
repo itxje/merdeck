@@ -302,6 +302,22 @@ describe('HTTP open access', () => {
 })
 
 describe('HTTP file contracts', () => {
+  test('returns exact HTML text from the versioned read while keeping source saves unavailable', async () => {
+    const f = await fixture()
+    const auth = await login(f)
+    const source = '\uFEFF<!doctype html>\r\n<h1 title="π">Hello &amp; goodbye</h1>\r\n'
+    await writeFile(`${f.root}/page.html`, source)
+    const originalBytes = await readFile(`${f.root}/page.html`)
+    const document = await data<DiagramDocument>(await f.request('/api/diagrams/document?path=page.html', { headers: auth.headers }))
+    expect(document).toMatchObject({ kind: 'html', path: 'page.html', text: source.slice(1), blocks: [] })
+    expect(document.version).toHaveLength(64)
+    expect((await readFile(`${f.root}/page.html`)).equals(originalBytes)).toBe(true)
+    await error(await f.request('/api/diagrams/source', { method: 'PUT', headers: auth.headers, body: JSON.stringify({ path: 'page.html', selector: { kind: 'standalone' }, expectedVersion: document.version, source: '<h1>Changed</h1>' }) }), 415, 'unsupported')
+    expect((await readFile(`${f.root}/page.html`)).equals(originalBytes)).toBe(true)
+    const tree = await data<TreeSnapshot>(await f.request('/api/diagrams/tree', { headers: auth.headers }))
+    expect(tree.entries).toContainEqual(expect.objectContaining({ kind: 'file', path: 'page.html', fileKind: 'html', state: 'available', blocks: [] }))
+  })
+
   test('independent Markdown edits preserve all unrelated bytes and update versions/selectors', async () => {
     const f = await fixture()
     const auth = await login(f)

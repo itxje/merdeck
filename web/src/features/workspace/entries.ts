@@ -9,6 +9,15 @@ export type EntryAction
 
 // Mirrors the service's excluded folder names for early feedback; the service remains the authority.
 const excluded = new Set(['node_modules', 'vendor', 'dist', 'build', 'coverage', 'secrets', 'target', '__pycache__'])
+function fileKind(path: string): 'mermaid' | 'markdown' | 'html' | null {
+  if (path.endsWith('.md'))
+    return 'markdown'
+  if (path.endsWith('.html') || path.endsWith('.htm'))
+    return 'html'
+  if (path.endsWith('.mmd') || path.endsWith('.mermaid'))
+    return 'mermaid'
+  return null
+}
 
 export function entryPathProblem(value: string, kind: EntryKind, from?: string): string {
   if (!validPath(value))
@@ -18,14 +27,14 @@ export function entryPathProblem(value: string, kind: EntryKind, from?: string):
     return 'Names that start with a dot are hidden and cannot be used.'
   if (parts.some(part => excluded.has(part)))
     return 'Excluded folders such as node_modules, dist and build cannot be used.'
-  if (kind === 'file' && !/\.(?:mmd|mermaid|md)$/.test(value))
-    return 'Use a .mmd, .mermaid or .md file name.'
+  if (kind === 'file' && !fileKind(value))
+    return 'Use a .mmd, .mermaid, .md, .html or .htm file name.'
   if (from === undefined)
     return ''
   if (value === from)
     return 'Enter a different path.'
-  if (kind === 'file' && from.endsWith('.md') !== value.endsWith('.md'))
-    return 'A rename keeps the file type: Markdown files stay .md.'
+  if (kind === 'file' && fileKind(from) !== fileKind(value))
+    return 'A rename keeps the file type: Mermaid, Markdown and HTML files cannot be mixed.'
   if (kind === 'directory' && value.startsWith(`${from}/`))
     return 'A folder cannot move into itself.'
   return ''

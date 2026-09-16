@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { chooseBlock, expect, login, test } from './support'
+import { chooseBlock, expect, login, tableHeaderIsFramed, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -51,7 +51,9 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     expect(typography?.headings).toHaveLength(6)
     expect(typography?.headings.every(heading => heading.size > typography.bodySize && heading.weight > typography.bodyWeight)).toBe(true)
     expect(typography?.headings.every((heading, index, headings) => index === 0 || headings[index - 1]!.size > heading.size)).toBe(true)
-    await expect(article.getByRole('table')).toBeVisible()
+    const table = article.getByRole('table')
+    await expect(table).toBeVisible()
+    expect(await tableHeaderIsFramed(table)).toBe(true)
     await expect(article.locator('img, iframe, script')).toHaveCount(0)
     await expect(article).toContainText('<script>window.markdownPwned = true</script>')
     await expect(article.getByText('Image:remote (https://example.test/remote.png)', { exact: true })).toBeVisible()
@@ -110,6 +112,7 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.getByRole('button', { name: 'Dark theme', exact: true }).click()
     await expect(page.locator('html')).toHaveClass('dark')
+    expect(await tableHeaderIsFramed(table)).toBe(true)
     await expect(secondFigure.locator('svg')).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.reload()

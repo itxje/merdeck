@@ -81,6 +81,29 @@ it('guards duplicate saves, keeps new typing and reports conflicts without overw
 
   client.clear()
 })
+it('locks saves and entry mutations while an agent turn is active', async () => {
+  const { client, wrapper } = setup()
+  vi.spyOn(api, 'save').mockResolvedValue(doc('one.mmd', 'agent race', 'b'.repeat(64)))
+  vi.spyOn(api, 'createEntry').mockResolvedValue({ kind: 'directory', path: 'new-folder' })
+  const activeRef = { current: true }
+  const { result, rerender, unmount } = renderHook(
+    ({ active }) => useWorkspace('one.mmd', 0, '', { active, activeRef }),
+    { wrapper, initialProps: { active: true } },
+  )
+  await waitFor(() => expect(result.current.file).toBeDefined())
+  act(() => result.current.dispatch({ type: 'edit', path: 'one.mmd', block: 0, source: 'agent race' }))
+  await act(() => result.current.save())
+  expect(api.save).not.toHaveBeenCalled()
+  await expect(result.current.entries.mutateAsync({ type: 'create', request: { kind: 'directory', path: 'new-folder' } })).rejects.toMatchObject({ code: 'conflict' })
+  expect(api.createEntry).not.toHaveBeenCalled()
+  expect(result.current.reloadBlocked).toBe(true)
+  activeRef.current = false
+  rerender({ active: false })
+  await act(() => result.current.save())
+  expect(api.save).toHaveBeenCalledOnce()
+  unmount()
+  client.clear()
+})
 it('clears server cache on auth expiration while locking recoverable drafts and rejecting late saves', async () => {
   const { client, wrapper } = setup()
   let complete: (value: DiagramDocument) => void = () => {}

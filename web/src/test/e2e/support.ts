@@ -1,4 +1,4 @@
-import type { BrowserContext, Page } from '@playwright/test'
+import type { BrowserContext, Locator, Page } from '@playwright/test'
 import { readFile, stat } from 'node:fs/promises'
 import { test as base, expect } from '@playwright/test'
 
@@ -49,6 +49,20 @@ export const test = base.extend<{ audit: Audit }>({
   }, { auto: true }],
 })
 export { expect } from '@playwright/test'
+
+export async function tableHeaderIsFramed(table: Locator): Promise<boolean> {
+  return table.evaluate((element) => {
+    const header = element.querySelector('thead')
+    const cells = [...element.querySelectorAll('thead th')]
+    if (!header || !cells.length)
+      return false
+    const framed = (target: Element) => {
+      const style = getComputedStyle(target)
+      return ['top', 'right', 'bottom', 'left'].every(side => style.getPropertyValue(`border-${side}-style`) === 'solid' && Number.parseFloat(style.getPropertyValue(`border-${side}-width`)) >= 1)
+    }
+    return framed(header) && cells.every(framed)
+  })
+}
 
 let sessionCookies: Awaited<ReturnType<BrowserContext['cookies']>> = []
 export async function login(page: Page, reuseSession = false) {

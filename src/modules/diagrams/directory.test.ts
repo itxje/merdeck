@@ -692,6 +692,8 @@ test('search by file kind lists only that kind below the folder, with or without
   await writeFile(join(root, 'nsiod/mermaid/mesh-v1/03-relay-state.mmd'), 'graph TD')
   await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mermaid'), 'gantt')
   await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/relay.md'), '# Relay')
+  await writeFile(join(root, 'nsiod/mermaid/mesh-v1/deep/report.html'), '<h1>Report</h1>')
+  await writeFile(join(root, 'nsiod/page.htm'), '<p>Page</p>')
   await writeFile(join(root, 'nsiod/mermaid/.hidden/hidden.md'), '# Hidden')
   await writeFile(join(root, 'nsiod/relay-notes/relay.txt'), 'relay')
   await writeFile(join(root, 'nsiod/overview.md'), '# Overview')
@@ -703,6 +705,8 @@ test('search by file kind lists only that kind below the folder, with or without
   expect(markdown.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/deep/relay.md', 'nsiod/overview.md'])
   const mermaid = await diagrams.searchDirectory({ path: 'nsiod', query: '', kind: 'mermaid' }, context)
   expect(mermaid.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/03-relay-state.mmd', 'nsiod/mermaid/mesh-v1/deep/13-relay-gantt.mermaid'])
+  const html = await diagrams.searchDirectory({ path: 'nsiod', query: '', kind: 'html' }, context)
+  expect(html.entries.map(entry => entry.path).sort()).toEqual(['nsiod/mermaid/mesh-v1/deep/report.html', 'nsiod/page.htm'])
 
   // With text, files must have the kind and match the text, while folders still match by text alone.
   const both = await diagrams.searchDirectory({ path: 'nsiod', query: 'relay', kind: 'markdown' }, context)
