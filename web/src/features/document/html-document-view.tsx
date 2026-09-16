@@ -177,7 +177,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
         .filter(c => typeof c === 'object' && c !== null && (c as { type?: string }).type === 'text')
         .map(c => (c as { value: string }).value)
         .join('')
-      return <style key={key} dangerouslySetInnerHTML={{ __html: css }} />
+      return <style key={key}>{css}</style>
     }
     if (node.tag === 'hr' || node.tag === 'br')
       return React.createElement(node.tag, { key, ref, style })
