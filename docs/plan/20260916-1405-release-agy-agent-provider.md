@@ -7,7 +7,7 @@
 
 ## Context
 
-The Antigravity (`agy`) CLI engine provider support has been implemented, tested, and verified locally across backend and frontend. The user requested to release the change. Adding a new engine provider adds new functionality in a backward-compatible manner, selecting minor release `v0.14.0`.
+The Antigravity (`agy`) CLI engine provider support and HTML document rendering improvements (sidebar TOC layout, typography, anchor scrolling, and container allowlist) have been implemented, tested, and verified locally across backend and frontend. The user requested to release the changes. Adding a new engine provider and layout capabilities extends functionality in a backward-compatible manner, selecting minor release `v0.14.0`.
 
 ## Proposal
 

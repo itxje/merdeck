@@ -7,11 +7,11 @@
 
 ## Description
 
-Publish Antigravity (`agy`) agent provider support as minor release `v0.14.0`. Acceptance: the exact clean candidate passes local checks, is committed and pushed to `main`, passes hosted Linux x64/ext4 native gates; an annotated tag `v0.14.0` is created and pushed; the tag workflow publishes exactly the documented bundle and checksum assets; downloaded assets and embedded identity are verified.
+Publish Antigravity (`agy`) agent provider support and HTML document rendering improvements (sidebar TOC layout, typography, anchor scroll and width) as minor release `v0.14.0`. Acceptance: the exact clean candidate passes local checks, is committed and pushed to `main`, passes hosted Linux x64/ext4 native gates; an annotated tag `v0.14.0` is created and pushed; the tag workflow publishes exactly the documented bundle and checksum assets; downloaded assets and embedded identity are verified.
 
 ## ActiveForm
 
-Publishing Antigravity (agy) agent provider support as `v0.14.0`.
+Publishing Antigravity (agy) agent provider support and HTML document rendering improvements as `v0.14.0`.
 
 ## Dependencies
 
