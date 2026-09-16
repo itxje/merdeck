@@ -99,3 +99,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-0227-table-header-borders Frame document table headers**](20260916-0227-table-header-borders.md) `P2`
 - [x] [**20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor**](20260916-0228-release-html-ai-editor.md) `P1`
 - [x] [**20260916-0425-open-access-agents Allow agent providers with open access**](20260916-0425-open-access-agents.md) `P1`
+- [x] [**20260916-0457-release-open-access-agents Release open-access agent support**](20260916-0457-release-open-access-agents.md) `P1`
+- [-] [**20260916-0555-configure-deployed-agent-providers Configure deployed agent providers**](20260916-0555-configure-deployed-agent-providers.md) `P1`
+- [x] [**20260916-1328-fix-html-void-elements Fix safe-HTML void element rendering**](20260916-1328-fix-html-void-elements.md) `P1`
+- [-] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `P1`

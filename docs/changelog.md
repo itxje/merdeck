@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-16 13:30 [fix]
+
+Safe HTML document preview now renders void elements such as `<hr>` and `<br>` without children, preventing React error #137. The application-owned tree, explicit element allowlist and strict DOM boundary remain unchanged. See [20260916-1328-fix-html-void-elements](task/20260916-1328-fix-html-void-elements.md).
+
 ## 2026-09-16 04:30 [feature]
 
 Explicitly configured AI file-editor providers now work in open-access deployments without `MERDECK_TOKEN`. The UI entry, bounded conversation API, approvals, cancellation and SSE use the existing open authorization domain; every mutation still requires the exact configured Origin, non-loopback open access still requires deliberate acknowledgement, and executable-path, sandbox, environment, storage, output and process-lifecycle limits are unchanged. Open conversations are origin-bound, opaque and limited to the configured session lifetime. Anyone who can reach an open-access service can invoke its configured providers. See [20260916-0425-open-access-agents](task/20260916-0425-open-access-agents.md).

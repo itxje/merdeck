@@ -136,8 +136,10 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     }
     if (node.type !== 'element' || !isHtmlElementTag(node.tag) || !Array.isArray(node.children))
       return null
-    const children = node.children.map((child, index) => render(child, `${key}-${index}`))
     const ref = mountSourceId(typeof node.sourceId === 'string' ? node.sourceId : undefined)
+    if (node.tag === 'hr' || node.tag === 'br')
+      return React.createElement(node.tag, { key, ref })
+    const children = node.children.map((child, index) => render(child, `${key}-${index}`))
     if (node.tag === 'a') {
       const href = typeof node.href === 'string' ? node.href : ''
       if (href.startsWith('#') && href.length > 1) {

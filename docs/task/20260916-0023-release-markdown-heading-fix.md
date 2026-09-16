@@ -22,3 +22,4 @@ Releasing the Markdown heading hierarchy correction.
 
 - Authorization: the owner directed on 2026-09-15 that subsequent completed fixes be released with tags. The current correction is an ordinary patch under the documented pre-1.0 release policy.
 - Investigation (2026-09-16): `v0.12.0` is the latest release and exact `main` head `e20b6b0` passed both main and tag native workflows. The heading correction changes only document CSS and its browser regression; local focused production Chromium and the complete repository check pass.
+- Candidate (2026-09-16): commit `d9c66ab4494bbf2bfbf2098be064331532883731` was pushed to `main`. Hosted Linux x64/ext4 verification is [run 35039888551](https://github.com/itxje/merdeck/actions/runs/35039888551); tag creation remains blocked until that exact run succeeds.

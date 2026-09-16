@@ -92,3 +92,26 @@ it('keeps unsafe link targets as text and contains rejected project navigation',
   expect(await screen.findByRole('alert')).toHaveTextContent('That file cannot be opened')
   expect(screen.queryByText('private detail')).toBeNull()
 })
+
+it('renders void elements like hr and br without children', async () => {
+  vi.stubGlobal('Worker', FakeWorker)
+  render(<HtmlDocumentView path="docs/page.html" text="<p>Before<br>Break</p><hr>" onOpenFile={vi.fn()} />)
+  workers[0]?.onmessage?.({ data: {
+    id: 1,
+    projection: {
+      truncated: false,
+      stats: { visitedNodes: 5, textCharacters: 11 },
+      children: [
+        { type: 'element', tag: 'p', children: [
+          { type: 'text', value: 'Before' },
+          { type: 'element', tag: 'br', children: [] },
+          { type: 'text', value: 'Break' },
+        ] },
+        { type: 'element', tag: 'hr', sourceId: 'divider', children: [] },
+      ],
+    },
+  } } as MessageEvent)
+  expect(await screen.findByText(/Before/)).toBeVisible()
+  expect(globalThis.document.querySelector('br')).not.toBeNull()
+  expect(globalThis.document.querySelector('hr')).not.toBeNull()
+})
