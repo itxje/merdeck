@@ -58,3 +58,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [-] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `2026-09-16`
 - [x] [**20260916-0043-ai-editing-chat Add an AI editing chat**](20260916-0043-ai-editing-chat.md) `2026-09-16`
 - [x] [**20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor**](20260916-0228-release-html-ai-editor.md) `2026-09-16`
+- [x] [**20260916-0425-open-access-agents Allow agent providers with open access**](20260916-0425-open-access-agents.md) `2026-09-16`

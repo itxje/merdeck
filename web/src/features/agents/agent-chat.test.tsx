@@ -32,6 +32,14 @@ const session = {
   maxSourceBytes: 1048576,
   storage: { writable: true, identity: 'stable' as const, filesystemType: 'test', supportedFilesystem: 'test' },
 }
+const openSession = {
+  authenticated: true as const,
+  access: 'open' as const,
+  version: 'test',
+  pollIntervalMs: 3000,
+  maxSourceBytes: 1048576,
+  storage: { writable: true, identity: 'stable' as const, filesystemType: 'test', supportedFilesystem: 'test' },
+}
 
 const codexProvider = { id: 'codex' as const, label: 'Codex', models: [
   { id: 'gpt-safe', label: 'GPT Safe', description: 'Default model', isDefault: true },
@@ -104,6 +112,25 @@ it('sends a turn, renders hostile provider text inertly, routes approval and rep
   source.emit({ id: 5, type: 'turn.completed' })
   await waitFor(() => expect(active).toHaveBeenLastCalledWith(false))
   expect(settled).toHaveBeenCalled()
+  view.unmount()
+  client.clear()
+})
+
+it('sends open-access turns without manufacturing a CSRF token', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'e'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  const view = render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={openSession} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  const user = userEvent.setup()
+  await user.type(await screen.findByLabelText('Agent instruction'), 'Edit in open access')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(agentApi.create).toHaveBeenCalledWith('codex', 'gpt-safe', undefined))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('e'.repeat(48), 'Edit in open access', undefined))
   view.unmount()
   client.clear()
 })

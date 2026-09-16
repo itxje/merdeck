@@ -58,7 +58,7 @@ export function createApp(config: AppConfig, services: AppServices) {
     return c.json({ success: true as const, data: { identity: build?.identity ?? null, pollIntervalMs: buildPollIntervalMs } satisfies ApplicationBuild })
   })
   api.route('/', authRoutes(config, services.diagrams, sessions, (services.buildInfo ?? developmentBuild).version, (id, origin) => agents.closePrincipal(id, origin)))
-  api.route('/', agentRoutes(services.diagrams, sessions, agents))
+  api.route('/', agentRoutes(services.diagrams, sessions, agents, { openAccessTtlMs: config.limits.sessionTtlSeconds * 1000, ...(services.clock ? { clock: services.clock } : {}) }))
   api.route('/', diagramRoutes(config, services.diagrams, sessions))
   app.route(config.apiBasePath, api)
   app.notFound((c) => {

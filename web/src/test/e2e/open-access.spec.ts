@@ -16,6 +16,7 @@ test('opens the workspace without an access token and saves through it', async (
   await expect(page.getByText('Open access', { exact: true })).toBeVisible()
   await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Open AI file editor', exact: true })).toBeVisible()
   await choose(page, 'welcome.mmd')
   await live(page)
   const editor = page.getByLabel('Mermaid source', { exact: true })

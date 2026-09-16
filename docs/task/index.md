@@ -98,3 +98,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-0040-ai-editing-chat Add an AI editing chat**](20260916-0040-ai-editing-chat.md) `P1`
 - [x] [**20260916-0227-table-header-borders Frame document table headers**](20260916-0227-table-header-borders.md) `P2`
 - [x] [**20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor**](20260916-0228-release-html-ai-editor.md) `P1`
+- [x] [**20260916-0425-open-access-agents Allow agent providers with open access**](20260916-0425-open-access-agents.md) `P1`

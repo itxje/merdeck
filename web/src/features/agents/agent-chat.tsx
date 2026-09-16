@@ -7,7 +7,7 @@ import { Textarea } from '@/shared/components/ui/textarea'
 import { useAgentChat } from './use-agent-chat'
 
 interface AgentChatProps {
-  session: Extract<Session, { access: 'token' }>
+  session: Session
   open: boolean
   blockedReason: string | undefined
   onClose: () => void

@@ -61,7 +61,7 @@ function headers(session: Awaited<ReturnType<typeof login>>, mutation = false) {
 }
 
 describe('agent HTTP boundary', () => {
-  test('refuses every agent capability under open access', async () => {
+  test('allows open-access conversations while requiring the exact mutation Origin', async () => {
     const root = await mkdtemp('/tmp/merdeck-agent-open-route-')
     roots.push(root)
     const adapter: AgentProviderAdapter = {
@@ -69,11 +69,37 @@ describe('agent HTTP boundary', () => {
       label: 'Injected agent',
       open: async () => ({ startTurn: async () => {}, approve: async () => {}, cancel: async () => {}, close: async () => {} }),
     }
-    const config = await loadConfig({ MERDECK_ROOT: root })
+    const otherOrigin = 'http://localhost:8787'
+    const config = await loadConfig({ MERDECK_ROOT: root, MERDECK_ALLOWED_ORIGINS: `${origin},${otherOrigin}` })
     const agents = new AgentManager({ projectRoot: root, providers: [{ adapter, executable: '/fake' }] })
     const app = createApp(config, { diagrams: await createDiagramService(config), agents })
     apps.push(app)
-    expect((await app.request(`${origin}/api/agents/capabilities`)).status).toBe(403)
+    const capability = await app.request(`${origin}/api/agents/capabilities`)
+    expect(capability.status).toBe(200)
+    expect(await capability.json()).toMatchObject({ success: true, data: { enabled: true } })
+
+    const refused = await app.request(`${origin}/api/agents/conversations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'codex', model: 'default' }),
+    })
+    expect(refused.status).toBe(403)
+
+    const created = await app.request(`${origin}/api/agents/conversations`, {
+      method: 'POST',
+      headers: { 'Origin': origin, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider: 'codex', model: 'default' }),
+    })
+    expect(created.status).toBe(200)
+    const conversation = (await created.json() as { data: { id: string } }).data
+    expect(conversation.id).toMatch(/^[a-f0-9]{48}$/)
+
+    const otherOriginAccess = await app.request(`${otherOrigin}/api/agents/conversations/${conversation.id}/cancel`, {
+      method: 'POST',
+      headers: { 'Origin': otherOrigin, 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    expect(otherOriginAccess.status).toBe(404)
   })
 
   test('requires a session and CSRF, validates bodies and isolates conversations', async () => {

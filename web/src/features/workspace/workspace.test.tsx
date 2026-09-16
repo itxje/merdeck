@@ -52,6 +52,7 @@ it('opens directly with open access, without sign-in or Log out, and names the m
   expect(screen.queryByText('Connected')).toBeNull()
   expect(screen.queryByLabelText('Access token')).toBeNull()
   expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Open AI file editor' })).toBeVisible()
   unmount()
 
   client.clear()

@@ -2,6 +2,7 @@ import type { AgentEvent, AgentProvider } from '../../../../src/shared/contracts
 import type { Session } from '@/features/workspace/api'
 import { useQuery } from '@tanstack/react-query'
 import * as React from 'react'
+import { sessionCsrf } from '@/features/workspace/api'
 import { HttpError } from '@/shared/lib/http'
 import { agentApi, decodeAgentEvent } from './api'
 import { agentChatReducer, initialAgentChatState } from './state'
@@ -23,7 +24,7 @@ function message(error: unknown): string {
 }
 
 interface AgentChatOptions {
-  session: Extract<Session, { access: 'token' }>
+  session: Session
   open: boolean
   blocked: boolean
   onActiveChange: (active: boolean) => void
@@ -41,6 +42,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
   const [connection, setConnection] = React.useState<'idle' | 'connected' | 'reconnecting'>('idle')
   const activeRef = React.useRef(false)
   const lastEventRef = React.useRef(0)
+  const csrfToken = sessionCsrf(session)
   const capabilities = useQuery({
     queryKey: ['agents', 'capabilities'],
     queryFn: ({ signal }) => agentApi.capabilities(signal),
@@ -119,11 +121,11 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     try {
       let target = conversation
       if (!target || target.provider !== effectiveProvider || target.model !== effectiveModel) {
-        target = await agentApi.create(effectiveProvider, effectiveModel, session.csrfToken)
+        target = await agentApi.create(effectiveProvider, effectiveModel, csrfToken)
         lastEventRef.current = 0
         setConversation(target)
       }
-      await agentApi.turn(target.id, trimmed, session.csrfToken)
+      await agentApi.turn(target.id, trimmed, csrfToken)
       return true
     }
     catch (error) {
@@ -137,14 +139,14 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     finally {
       setPending(false)
     }
-  }, [blocked, pending, effectiveProvider, effectiveModel, conversation, session.csrfToken, setActive, onSettled, abandonConversation])
+  }, [blocked, pending, effectiveProvider, effectiveModel, conversation, csrfToken, setActive, onSettled, abandonConversation])
 
   const cancel = React.useCallback(async () => {
     if (!conversation || !activeRef.current || pending)
       return
     setPending(true)
     try {
-      await agentApi.cancel(conversation.id, session.csrfToken)
+      await agentApi.cancel(conversation.id, csrfToken)
       const terminalSeen = !activeRef.current
       setActive(false)
       abandonConversation()
@@ -159,14 +161,14 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     finally {
       setPending(false)
     }
-  }, [conversation, pending, session.csrfToken, setActive, onSettled, abandonConversation])
+  }, [conversation, pending, csrfToken, setActive, onSettled, abandonConversation])
 
   const answer = React.useCallback(async (approvalId: string, decision: 'approve' | 'deny') => {
     if (!conversation || answering.has(approvalId))
       return
     setAnswering(current => new Set(current).add(approvalId))
     try {
-      await agentApi.approve(conversation.id, approvalId, decision, session.csrfToken)
+      await agentApi.approve(conversation.id, approvalId, decision, csrfToken)
       dispatch({ type: 'approval', approvalId, decision })
     }
     catch (error) {
@@ -179,7 +181,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
         return next
       })
     }
-  }, [answering, conversation, session.csrfToken])
+  }, [answering, conversation, csrfToken])
 
   return {
     ...state,

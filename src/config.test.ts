@@ -117,7 +117,7 @@ describe('startup configuration', () => {
     await expect(loadConfig({ ...env(), MERDECK_API_MODE: 'stripped' })).rejects.toThrow('NODE_ENV=development')
     expect((await loadConfig({ ...env(), MERDECK_API_MODE: 'stripped', NODE_ENV: 'development' })).apiBasePath).toBe('/')
   })
-  test('enables agents only through canonical executable paths with token access', async () => {
+  test('enables agents through canonical executable paths in token and open access', async () => {
     const providerRoot = await mkdtemp(resolve('tmp/config-provider-'))
     try {
       const executable = `${providerRoot}/fake-agent`
@@ -134,8 +134,15 @@ describe('startup configuration', () => {
       expect(configured.agents).toEqual({ codex: executable, claude: executable })
       expect(Object.isFrozen(configured.agents)).toBe(true)
 
+      const open = await loadConfig({ MERDECK_ROOT: project, MERDECK_CODEX_PATH: executable })
+      expect(open.token).toBeUndefined()
+      expect(open.agents).toEqual({ codex: executable, claude: undefined })
+
+      const internal = await loadConfig({ MERDECK_ROOT: project, MERDECK_HOST: '0.0.0.0', MERDECK_ALLOWED_ORIGINS: 'http://merdeck.internal:8787', MERDECK_OPEN_ACCESS: 'true', MERDECK_CLAUDE_PATH: executable })
+      expect(internal.token).toBeUndefined()
+      expect(internal.agents).toEqual({ codex: undefined, claude: executable })
+
       for (const environment of [
-        { MERDECK_ROOT: project, MERDECK_CODEX_PATH: executable },
         { ...env(), MERDECK_CODEX_PATH: 'codex' },
         { ...env(), MERDECK_CODEX_PATH: `${project}/missing` },
         { ...env(), MERDECK_CLAUDE_PATH: plainFile },

@@ -5,6 +5,8 @@ import { choose, expect, live, login, test } from './support'
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
   throw new Error('An explicit disposable sample root is required')
+const openRoot = process.env.MERDECK_OPEN_ROOT
+const openUrl = process.env.MERDECK_OPEN_URL
 
 test.skip(process.env.MERDECK_TEST_AGENTS !== 'true', 'Set MERDECK_TEST_AGENTS=true to run the fake-provider acceptance.')
 
@@ -72,6 +74,46 @@ test('an approved agent edit changes exact bytes and rerenders live', async ({ p
     await editor.getByLabel('Agent instruction', { exact: true }).fill('Start a recovery turn.')
     await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
     expect(await readFile(path, 'utf8')).toBe(updated)
+  }
+  finally {
+    await rm(path, { force: true })
+  }
+})
+
+test('open access runs a provider edit without a token or CSRF credential', async ({ page }) => {
+  test.skip(!openRoot || !openUrl, 'An open-access service and disposable root are required.')
+  const path = join(openRoot!, 'agent-live.mmd')
+  const initial = 'flowchart LR\nA[Open]-->B[Before]\n'
+  const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
+  await writeFile(path, initial, { flag: 'wx' })
+  try {
+    await page.goto(openUrl!)
+    await expect(page.getByText('Open access', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+    await choose(page, 'agent-live.mmd')
+    await live(page)
+    await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+    const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+    await expect(editor).toBeVisible()
+    await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('codex')
+    await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('browser-model')
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the open-access diagram.')
+    const createRequest = page.waitForRequest(request => request.method() === 'POST' && new URL(request.url()).pathname === '/api/agents/conversations')
+    await editor.getByRole('button', { name: 'Send', exact: true }).click()
+    const request = await createRequest
+    const requestHeaders = await request.allHeaders()
+    expect(requestHeaders.origin).toBe(openUrl)
+    expect(requestHeaders['x-csrf-token']).toBeUndefined()
+    await expect(editor.getByRole('region', { name: 'Agent approval request', exact: true })).toContainText('Update agent-live.mmd')
+    await editor.getByRole('button', { name: 'Approve', exact: true }).click()
+    const source = page.getByLabel('Mermaid source', { exact: true })
+    await expect(source).toHaveValue(updated, { timeout: 15000 })
+    await expect(page.locator('.diagram-graphic svg')).toContainText('AI')
+    await expect(page.locator('.diagram-graphic svg')).toContainText('Live')
+    expect(await readFile(path, 'utf8')).toBe(updated)
+    expect(await page.context().cookies()).toEqual([])
   }
   finally {
     await rm(path, { force: true })

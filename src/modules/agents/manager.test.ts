@@ -56,6 +56,16 @@ function fixture(options: Partial<ConstructorParameters<typeof AgentManager>[0]>
 }
 
 describe('agent manager', () => {
+  test('does not let a later request extend the stored principal expiry', async () => {
+    let now = 1000
+    const { manager, owner } = fixture({ clock: () => now })
+    const expiring = { ...owner, expiresAt: now + 1000 }
+    const conversation = await manager.create('codex', 'default', expiring)
+    now += 1001
+    expect(() => manager.listen(conversation.id, { ...expiring, expiresAt: now + 1000 }, 0, () => {})).toThrow(AppError)
+    await manager.close()
+  })
+
   test('binds conversations to a principal and normalizes a complete turn', async () => {
     const { manager, sessions, owner } = fixture()
     expect(await manager.capabilities()).toEqual({ enabled: true, providers: [{ id: 'codex', label: 'Test provider', models: [{ id: 'default', label: 'Provider default', description: 'Use the model configured by the provider.', isDefault: true }] }] })

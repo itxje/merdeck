@@ -275,7 +275,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
               <span className="control-divider" aria-hidden="true" />
             </>
           )}
-          {state.session?.access === 'token' && (
+          {state.session && (
             <Tooltip>
               <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => setAgentOpen(value => !value)} />}>
                 <Bot />
@@ -486,9 +486,9 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                         </div>
                       )}
                 </main>
-                {state.session.access === 'token' && (
+                {state.session && (
                   <AgentChat
-                    key={state.session.csrfToken}
+                    key={state.session.access === 'token' ? state.session.csrfToken : 'open'}
                     session={state.session}
                     open={agentOpen}
                     blockedReason={agentBlockedReason}

@@ -333,7 +333,7 @@ export class AgentManager {
     const conversation = this.conversations.get(id)
     if (!conversation || conversation.closed || !this.sameOwner(conversation, owner))
       throw new AppError('not_found')
-    if (owner.expiresAt <= this.clock()) {
+    if (owner.expiresAt <= this.clock() || conversation.owner.expiresAt <= this.clock()) {
       void this.remove(id)
       throw new AppError('unauthorized')
     }
