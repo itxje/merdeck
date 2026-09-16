@@ -202,7 +202,7 @@ it('renders offscreen inline diagrams only after intersection while selected dia
   await screen.findAllByRole('button', { name: /Select Diagram/ })
   const figures = [...view.container.querySelectorAll<HTMLElement>('figure.document-diagram')]
   expect(renderDiagram).not.toHaveBeenCalled()
-  expect(intersections).toHaveLength(2)
+  await waitFor(() => expect(intersections).toHaveLength(2))
   await act(async () => intersections[0]?.trigger(figures[0]!))
   await waitFor(() => expect(renderDiagram).toHaveBeenCalledTimes(1))
   view.rerender(<DocumentView path="docs/guide.md" {...document} sources={document.blocks.map(block => block.source)} selected={1} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
