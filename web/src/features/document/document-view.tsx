@@ -417,7 +417,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const resource = (url: string, children: React.ReactNode, key: string): React.ReactNode => {
     const fragment = followFragment(url)
     if (fragment)
-      return <button key={key} type="button" className="document-link" onClick={() => headingMapRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
+      return <button key={key} type="button" className="document-link" onClick={() => headingMapRef.current.get(fragment)?.scrollIntoView({ block: 'nearest' })}>{children}</button>
     const project = resolveProjectLink(path, url)
     if (project)
       return <button key={key} type="button" className="document-link" onClick={() => followDocumentLink(project)}>{children}</button>
