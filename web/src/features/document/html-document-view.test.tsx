@@ -63,6 +63,7 @@ it('uses a module Worker and renders only the inert application vocabulary', asy
   expect(open).toHaveBeenCalledWith('docs/next.htm')
   fireEvent.click(screen.getByRole('button', { name: 'Top' }))
   expect(scroll).toHaveBeenCalledTimes(1)
+  expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
   expect(workers[0]?.terminated).toBe(true)
 })
 

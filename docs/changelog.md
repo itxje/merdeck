@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-16 14:20 [fix]
+
+Improved HTML document preview layout, sidebar table of contents, typography, and anchor scrolling:
+- Retained semantic container elements (`<nav>`, `<main>`, `<aside>`, `<section>`, `<article>`, `<header>`, `<footer>`, `<div>`) in the safe HTML allowlist with strict DOM/attribute security boundaries.
+- Authored tables of contents (such as `<nav id="toc">`) now render as a sticky sidebar on wide displays rather than being dumped as unstyled links at the top of the article.
+- Anchor links scroll targets to the top of the viewport with responsive top margin (`scroll-margin-top: 5rem`) instead of aligning at the footer (`block: 'start'`).
+- Document font size increased from 13px to 15px with proportional line-height (1.7) for improved readability.
+- Widened document reading layout from 760px to 980px+ and eliminated excessive empty gutters on desktop displays.
+See [20260916-1415-improve-html-document-rendering](task/20260916-1415-improve-html-document-rendering.md).
+
 ## 2026-09-16 14:00 [feature]
 
 Added support for the Antigravity (`agy`) CLI engine in AI chat alongside Codex and Claude Code. Configured via `MERDECK_AGY_PATH`, it supports model discovery via `agy models`, interactive NDJSON streaming (`stream-json`), assistant delta streaming, tool events and direct file mutation notifications. See [20260916-1346-support-agy-agent-provider](task/20260916-1346-support-agy-agent-provider.md).

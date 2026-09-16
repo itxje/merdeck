@@ -146,7 +146,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
         try {
           const fragment = decodeURIComponent(href.slice(1))
           if (knownIds.has(fragment))
-            return <button key={key} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'nearest' })}>{children}</button>
+            return <button key={key} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
         }
         catch { /* Malformed fragments stay inert. */ }
       }

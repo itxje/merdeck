@@ -105,3 +105,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `P1`
 - [x] [**20260916-1346-support-agy-agent-provider Add Antigravity (agy) AI agent provider**](20260916-1346-support-agy-agent-provider.md) `P1`
 - [-] [**20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider**](20260916-1405-release-agy-agent-provider.md) `P1`
+- [-] [**20260916-1415-improve-html-document-rendering Improve HTML document rendering and layout**](20260916-1415-improve-html-document-rendering.md) `P1`

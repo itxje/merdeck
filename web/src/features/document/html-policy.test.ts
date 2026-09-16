@@ -80,3 +80,12 @@ it('bounds depth, node count, text and URL materialization with a visible trunca
   expect(result.stats.textCharacters).toBeLessThanOrEqual(10)
   expect(serialized(result)).not.toContain('"href"')
 })
+
+it('preserves semantic layout containers with source identifiers', () => {
+  const source = '<nav id="toc"><ul id="list"><li><a href="#intro">Intro</a></li></ul></nav><main id="content"><article><section>Text</section></article></main>'
+  const result = projectHtml(source)
+  expect(result.children).toEqual([
+    expect.objectContaining({ type: 'element', tag: 'nav', sourceId: 'toc' }),
+    expect.objectContaining({ type: 'element', tag: 'main', sourceId: 'content' }),
+  ])
+})

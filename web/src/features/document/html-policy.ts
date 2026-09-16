@@ -8,6 +8,7 @@ export type HtmlElementTag
     | 'em' | 'strong' | 'del' | 'ul' | 'ol' | 'li'
     | 'dl' | 'dt' | 'dd' | 'table' | 'thead' | 'tbody' | 'tfoot' | 'tr' | 'th' | 'td' | 'caption'
     | 'mark' | 'sub' | 'sup' | 'time' | 'abbr' | 'kbd' | 'samp' | 'var' | 'q' | 'cite' | 'small' | 'a'
+    | 'nav' | 'main' | 'aside' | 'section' | 'article' | 'header' | 'footer' | 'div'
 
 export type HtmlRenderNode
   = | { type: 'text', value: string, chunks?: string[] }
@@ -87,6 +88,14 @@ const allowed = new Set<HtmlElementTag>([
   'cite',
   'small',
   'a',
+  'nav',
+  'main',
+  'aside',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'div',
 ])
 
 export function isHtmlElementTag(value: unknown): value is HtmlElementTag {
