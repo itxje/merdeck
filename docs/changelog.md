@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-16 15:15 [release]
+
+Published [v0.14.0](https://github.com/itxje/merdeck/releases/tag/v0.14.0) with support for the Antigravity (`agy`) CLI engine in AI chat and HTML document rendering improvements (semantic container layout, sticky sidebar TOC, comfortable 15px typography, top-aligned anchor scrolling and widened responsive margins). Exact commit `e6feda6b2feefa91de7bb5d647bf415b45dedb7a` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35111679279), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35113027330) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260916-1405-release-agy-agent-provider](task/20260916-1405-release-agy-agent-provider.md).
+
 ## 2026-09-16 14:20 [fix]
 
 Improved HTML document preview layout, sidebar table of contents, typography, and anchor scrolling:

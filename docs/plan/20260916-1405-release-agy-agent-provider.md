@@ -1,6 +1,6 @@
 # 20260916-1405-release-agy-agent-provider Release Antigravity (agy) agent provider
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 14:05
 - **approvedAt**: 2026-09-16 14:05 UTC
 - **relatedTask**: 20260916-1405-release-agy-agent-provider
