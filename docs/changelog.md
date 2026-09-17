@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-17 01:50 [fix]
+
+Fixed HTML document preview template mobile topbar display and element ID attribute binding:
+- Restored and enforced `.html-document-view #topbar, .html-document-view #overlay, .html-document-view #resizer { display: none !important; }` in CSS, suppressing standalone template mobile navigation bars and unwrapped button text.
+- Passed validated `id` attributes to rendered DOM elements in `html-document-view.tsx`, enabling authored in-document ID styles (e.g. `#topbar`, `#content`) and CSS selectors to match correctly.
+See [20260917-0148-fix-html-topbar-and-ids](task/20260917-0148-fix-html-topbar-and-ids.md).
+
 ## 2026-09-16 20:38 [release]
 
 Published [v0.14.1](https://github.com/itxje/merdeck/releases/tag/v0.14.1) delivering rich media and scoped style rendering in HTML documents, responsive full-width layout, and Google Antigravity engine enhancements. Exact commit `3622a4727075fb3b6dafb960b05303ffa2cf71e6` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35145625156), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35146714603) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260916-2030-release-v0.14.1](task/20260916-2030-release-v0.14.1.md).

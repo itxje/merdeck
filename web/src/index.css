@@ -418,6 +418,7 @@ button:disabled { cursor: default; }
 .html-document-view nav a:hover { color: var(--primary); text-decoration: underline; }
 .html-document-view main, .html-document-view main#content { flex: 1 1 0%; min-width: 0; width: 100%; }
 .html-document-view img, .html-document-view video, .html-document-view audio { max-width: 100%; height: auto; }
+.html-document-view #topbar, .html-document-view #overlay, .html-document-view #resizer { display: none !important; }
 .html-document-view dl { margin: 0 0 1em; }.html-document-view dt { font-weight: 600; }.html-document-view dd { margin: 0 0 .75em 1.5em; }
 @media (max-width: 900px) {
   .html-document-view:has(nav) { display: block; padding: 20px 16px; }

@@ -52,7 +52,9 @@ it('uses a module Worker and renders only the inert application vocabulary', asy
       ],
     },
   } } as MessageEvent)
-  expect(await screen.findByRole('heading', { name: 'Safe title' })).toBeVisible()
+  const heading = await screen.findByRole('heading', { name: 'Safe title' })
+  expect(heading).toBeVisible()
+  expect(heading).toHaveAttribute('id', 'top')
   expect(screen.queryByText('pwned')).toBeNull()
   expect(globalThis.document.querySelector('script,iframe,object,embed,form,input,button[formaction],svg,math,custom-element')).toBeNull()
   const chartImg = screen.getByRole('img', { name: 'Chart' })
@@ -116,5 +118,24 @@ it('renders void elements like hr and br without children', async () => {
   } } as MessageEvent)
   expect(await screen.findByText(/Before/)).toBeVisible()
   expect(globalThis.document.querySelector('br')).not.toBeNull()
-  expect(globalThis.document.querySelector('hr')).not.toBeNull()
+  expect(globalThis.document.querySelector('hr#divider')).not.toBeNull()
+})
+
+it('attaches sourceId to rendered elements including container and media tags', async () => {
+  vi.stubGlobal('Worker', FakeWorker)
+  render(<HtmlDocumentView path="docs/page.html" text="sample" onOpenFile={vi.fn()} />)
+  workers[0]?.onmessage?.({ data: {
+    id: 1,
+    projection: {
+      truncated: false,
+      stats: { visitedNodes: 4, textCharacters: 5 },
+      children: [
+        { type: 'element', tag: 'div', sourceId: 'topbar', children: [{ type: 'text', value: 'Title' }] },
+        { type: 'element', tag: 'video', sourceId: 'player', src: 'https://example.test/v.mp4', children: [] },
+      ],
+    },
+  } } as MessageEvent)
+  expect(await screen.findByText('Title')).toBeVisible()
+  expect(globalThis.document.querySelector('div#topbar')).not.toBeNull()
+  expect(globalThis.document.querySelector('video#player')).not.toBeNull()
 })

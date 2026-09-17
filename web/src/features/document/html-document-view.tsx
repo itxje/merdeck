@@ -136,7 +136,8 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     }
     if (node.type !== 'element' || !isHtmlElementTag(node.tag) || !Array.isArray(node.children))
       return null
-    const ref = mountSourceId(typeof node.sourceId === 'string' ? node.sourceId : undefined)
+    const id = typeof node.sourceId === 'string' ? node.sourceId : undefined
+    const ref = mountSourceId(id)
     const style = node.style
     if (node.tag === 'img') {
       const src = typeof node.src === 'string' ? node.src : undefined
@@ -147,6 +148,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
       return (
         <img
           key={key}
+          id={id}
           ref={ref as React.Ref<HTMLImageElement>}
           src={src}
           alt={alt}
@@ -161,16 +163,16 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     if (node.tag === 'video' || node.tag === 'audio') {
       const src = typeof node.src === 'string' ? node.src : undefined
       const children = node.children.map((child, index) => render(child, `${key}-${index}`))
-      return React.createElement(node.tag, { key, ref, controls: true, src, style }, children)
+      return React.createElement(node.tag, { key, id, ref, controls: true, src, style }, children)
     }
     if (node.tag === 'source') {
       const src = typeof node.src === 'string' ? node.src : undefined
       const type = typeof node.sourceType === 'string' ? node.sourceType : undefined
-      return <source key={key} src={src} type={type} />
+      return <source key={key} id={id} src={src} type={type} />
     }
     if (node.tag === 'track') {
       const src = typeof node.src === 'string' ? node.src : undefined
-      return <track key={key} src={src} />
+      return <track key={key} id={id} src={src} />
     }
     if (node.tag === 'style') {
       const css = node.children
@@ -180,7 +182,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
       return <style key={key}>{css}</style>
     }
     if (node.tag === 'hr' || node.tag === 'br')
-      return React.createElement(node.tag, { key, ref, style })
+      return React.createElement(node.tag, { key, id, ref, style })
     const children = node.children.map((child, index) => render(child, `${key}-${index}`))
     if (node.tag === 'a') {
       const href = typeof node.href === 'string' ? node.href : ''
@@ -188,18 +190,18 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
         try {
           const fragment = decodeURIComponent(href.slice(1))
           if (knownIds.has(fragment))
-            return <button key={key} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
+            return <button key={key} id={id} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
         }
         catch { /* Malformed fragments stay inert. */ }
       }
       const project = resolveProjectLink(path, href)
       if (project)
-        return <button key={key} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => followProjectLink(project)}>{children}</button>
+        return <button key={key} id={id} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => followProjectLink(project)}>{children}</button>
       if (isExternalLink(href))
-        return <a key={key} ref={ref as React.Ref<HTMLAnchorElement>} href={href} style={style} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{children}</a>
-      return <span key={key} ref={ref} style={style}>{children}</span>
+        return <a key={key} id={id} ref={ref as React.Ref<HTMLAnchorElement>} href={href} style={style} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">{children}</a>
+      return <span key={key} id={id} ref={ref} style={style}>{children}</span>
     }
-    return React.createElement(node.tag, { key, ref, style }, children)
+    return React.createElement(node.tag, { key, id, ref, style }, children)
   }
   if (state.error) {
     return (
