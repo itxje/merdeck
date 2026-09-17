@@ -67,3 +67,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260916-1945-remove-html-preview-restrictions Remove HTML preview restrictions and notice banner**](20260916-1945-remove-html-preview-restrictions.md) `2026-09-16`
 - [x] [**20260916-2030-release-v0.14.1 Release v0.14.1**](20260916-2030-release-v0.14.1.md) `2026-09-16`
 - [x] [**20260917-0148-fix-html-topbar-and-ids Hide standalone template topbar and bind HTML element IDs**](20260917-0148-fix-html-topbar-and-ids.md) `2026-09-17`
+- [x] [**20260917-0150-release-v0.14.2 Release v0.14.2**](20260917-0150-release-v0.14.2.md) `2026-09-17`

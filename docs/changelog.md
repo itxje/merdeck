@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-17 02:11 [release]
+
+Published [v0.14.2](https://github.com/itxje/merdeck/releases/tag/v0.14.2) delivering standalone template mobile topbar suppression and element ID attribute binding in HTML document preview. Exact commit `f5d284de7e18349502febdc703a689955c5a4fc2` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35172035254), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35172755629) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260917-0150-release-v0.14.2](task/20260917-0150-release-v0.14.2.md).
+
 ## 2026-09-17 01:50 [fix]
 
 Fixed HTML document preview template mobile topbar display and element ID attribute binding:
