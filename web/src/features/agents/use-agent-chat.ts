@@ -94,7 +94,14 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     for (const type of eventTypes)
       source.addEventListener(type, receive)
     const opened = () => setConnection('connected')
-    const failed = () => setConnection('reconnecting')
+    // The browser retries a dropped stream on its own; CLOSED means the service no longer holds this
+    // conversation, so the panel settles instead of reporting an endless reconnect.
+    const failed = () => {
+      if (source.readyState === EventSource.CLOSED)
+        abandonConversation()
+      else
+        setConnection('reconnecting')
+    }
     source.addEventListener('open', opened)
     source.addEventListener('error', failed)
     return () => {
@@ -196,7 +203,6 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     pending,
     answering,
     connection,
-    providerLocked: conversation !== null,
     blocked,
     send,
     cancel,

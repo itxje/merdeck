@@ -9,16 +9,28 @@ import { agentApi } from './api'
 
 class FakeEventSource extends EventTarget {
   static instances: FakeEventSource[] = []
+  static readonly CONNECTING = 0
+  static readonly OPEN = 1
+  static readonly CLOSED = 2
   readonly withCredentials = true
+  readyState = FakeEventSource.OPEN
   constructor(readonly url: string) {
     super()
     FakeEventSource.instances.push(this)
   }
 
-  close() {}
+  close() {
+    this.readyState = FakeEventSource.CLOSED
+  }
 
   emit(event: AgentEvent) {
     this.dispatchEvent(new MessageEvent(event.type, { data: JSON.stringify(event) }))
+  }
+
+  // The browser retries a dropped stream on its own and only reports CLOSED once it gives up.
+  fail(state: number) {
+    this.readyState = state
+    this.dispatchEvent(new Event('error'))
   }
 }
 
@@ -135,7 +147,7 @@ it('sends open-access turns without manufacturing a CSRF token', async () => {
   client.clear()
 })
 
-it('switches engine catalogues, sends the selected pair and locks it within a conversation', async () => {
+it('switches engine catalogues, sends the selected pair and locks it for the running turn', async () => {
   vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider, claudeProvider] })
   vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'd'.repeat(48), provider: 'claude', model: 'haiku' })
   vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
@@ -206,5 +218,65 @@ it('abandons a failed provider session and accepts events from a replacement con
   FakeEventSource.instances[1]!.emit({ id: 2, type: 'assistant.delta', text: 'Recovered' })
   expect(await screen.findByText('Recovered')).toBeVisible()
   expect(agentApi.create).toHaveBeenCalledTimes(2)
+  client.clear()
+})
+
+it('reopens the engine and model once a turn settles and sends the replacement pair', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  const create = vi.spyOn(agentApi, 'create')
+    .mockResolvedValueOnce({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+    .mockResolvedValueOnce({ id: 'b'.repeat(48), provider: 'codex', model: 'gpt-fast' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  const user = userEvent.setup()
+  const prompt = await screen.findByLabelText('Agent instruction')
+  const engine = screen.getByLabelText('Engine')
+  const model = screen.getByLabelText('Model')
+  await screen.findByRole('option', { name: 'GPT Fast' })
+  await user.type(prompt, 'First turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  FakeEventSource.instances[0]!.emit({ id: 1, type: 'turn.started', turnId: 'c'.repeat(48) })
+  await waitFor(() => expect(model).toBeDisabled())
+  expect(engine).toBeDisabled()
+  FakeEventSource.instances[0]!.emit({ id: 2, type: 'turn.completed' })
+  await waitFor(() => expect(model).toBeEnabled())
+  expect(engine).toBeEnabled()
+  await user.selectOptions(model, 'gpt-fast')
+  await user.type(prompt, 'Second turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(create).toHaveBeenLastCalledWith('codex', 'gpt-fast', 'csrf'))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('b'.repeat(48), 'Second turn', 'csrf'))
+  client.clear()
+})
+
+it('reports a retrying stream and settles the panel when the stream is dropped for good', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  const user = userEvent.setup()
+  await user.type(await screen.findByLabelText('Agent instruction'), 'Only turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  const source = FakeEventSource.instances[0]!
+  source.emit({ id: 1, type: 'turn.started', turnId: 'c'.repeat(48) })
+  source.emit({ id: 2, type: 'turn.completed' })
+  source.fail(FakeEventSource.CONNECTING)
+  expect(await screen.findByText('Reconnecting…')).toBeVisible()
+  // The service drops an expired conversation, so the retry cannot succeed and the panel must settle.
+  source.fail(FakeEventSource.CLOSED)
+  expect(await screen.findByText('Direct local CLI session')).toBeVisible()
+  await waitFor(() => expect(screen.getByLabelText('Model')).toBeEnabled())
   client.clear()
 })

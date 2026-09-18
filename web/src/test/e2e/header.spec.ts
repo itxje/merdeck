@@ -28,13 +28,17 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   await expect(header.getByRole('heading', { level: 1 })).toHaveCount(0)
 
   if (process.env.MERDECK_TEST_AGENTS !== 'true') {
+    // The suite stores a closed panel; workspace.test.tsx covers the shipped open-by-default preference.
+    await expect(agent).toHaveAttribute('aria-pressed', 'false')
     await agent.click()
     const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+    await expect(agent).toHaveAttribute('aria-pressed', 'true')
     await expect(editor.getByText('No provider is configured. Set an approved executable path on the service and restart it.', { exact: true })).toBeVisible()
     await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('')
     await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('')
     await editor.getByRole('button', { name: 'Close AI file editor', exact: true }).click()
     await expect(editor).not.toBeVisible()
+    await expect(agent).toHaveAttribute('aria-pressed', 'false')
   }
 
   // Icon controls share one height and render their icons at the design-system size.

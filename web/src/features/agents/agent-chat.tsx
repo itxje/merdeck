@@ -99,7 +99,7 @@ export function AgentChat({ session, open, blockedReason, onClose, onActiveChang
           id="agent-provider"
           aria-label="Engine"
           value={chat.provider ?? ''}
-          disabled={chat.active || chat.pending || chat.providerLocked || unavailable}
+          disabled={chat.active || chat.pending || unavailable}
           onChange={event => chat.setProvider(event.target.value as AgentProvider)}
         >
           {!chat.providers.length && <option value="">Not configured</option>}
@@ -112,7 +112,7 @@ export function AgentChat({ session, open, blockedReason, onClose, onActiveChang
           id="agent-model"
           aria-label="Model"
           value={chat.model ?? ''}
-          disabled={chat.active || chat.pending || chat.providerLocked || unavailable || !chat.models.length}
+          disabled={chat.active || chat.pending || unavailable || !chat.models.length}
           onChange={event => chat.setModel(event.target.value)}
         >
           {!chat.models.length && <option value="">Not available</option>}

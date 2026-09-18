@@ -69,3 +69,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260917-0148-fix-html-topbar-and-ids Hide standalone template topbar and bind HTML element IDs**](20260917-0148-fix-html-topbar-and-ids.md) `2026-09-17`
 - [x] [**20260917-0150-release-v0.14.2 Release v0.14.2**](20260917-0150-release-v0.14.2.md) `2026-09-17`
 - [x] [**20260918-1426-agent-engine-list-and-html-layout Restore the agent engine list and rework the HTML preview layout**](20260918-1426-agent-engine-list-and-html-layout.md) `2026-09-18`
+- [x] [**20260918-1524-agent-panel-dock-and-model-switch Keep the agent panel usable after a turn and enlarge document type**](20260918-1524-agent-panel-dock-and-model-switch.md) `2026-09-18`

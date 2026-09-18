@@ -407,21 +407,21 @@ button:disabled { cursor: default; }
 .document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
 /* The preview owns HTML document layout: standalone templates target a whole window, so the app
    supplies the reading measure, the contents sidebar and the table, code and typography defaults. */
-.html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 52rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: 15px; line-height: 1.7; }
+.html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 52rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: 17px; line-height: 1.7; }
 .html-document-view [id], .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { scroll-margin-top: 1rem; }
 .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { color: var(--foreground); line-height: 1.25; margin: 1.8em 0 .6em; font-weight: 600; }
-.html-document-view h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -.03em; }
-.html-document-view h2 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; }
-.html-document-view h3 { font-size: 1.3rem; font-weight: 650; letter-spacing: -.01em; }
-.html-document-view h4 { font-size: 1.15rem; font-weight: 650; }
-.html-document-view h5 { font-size: 1.05rem; }
-.html-document-view h6 { font-size: .95rem; }
+.html-document-view h1 { font-size: 1.85em; font-weight: 700; letter-spacing: -.03em; }
+.html-document-view h2 { font-size: 1.55em; font-weight: 700; letter-spacing: -.02em; }
+.html-document-view h3 { font-size: 1.3em; font-weight: 650; letter-spacing: -.01em; }
+.html-document-view h4 { font-size: 1.15em; font-weight: 650; }
+.html-document-view h5 { font-size: 1.05em; }
+.html-document-view h6 { font-size: .95em; }
 .html-document-view :is(main, section, article, div) > :first-child, .html-document-view hr + :is(h1, h2, h3, h4, h5, h6) { margin-top: 0; }
 .html-document-view:has(> nav) { grid-template-columns: var(--html-doc-toc) minmax(0, var(--html-doc-measure)); }
 /* The body takes the last column: the only one without a contents list, the second one with it. */
 .html-document-view > .html-document-body { grid-column: -2; min-width: 0; }
 /* The body column is one grid item, so the contents list stays sticky beside the whole document. */
-.html-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 13px; line-height: 1.45; }
+.html-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 14px; line-height: 1.45; }
 .html-document-view > nav ul { list-style: none; margin: 0; padding-left: 0; }
 .html-document-view > nav ul ul { margin: 2px 0 2px 9px; padding-left: 9px; border-left: 1px solid var(--border); }
 .html-document-view > nav li { margin: 0; }
@@ -433,7 +433,7 @@ button:disabled { cursor: default; }
 .html-document-view dd { margin: 0 0 .75em 1.5em; }
 .html-document-view hr { margin: 2em 0; border: 0; border-top: 1px solid var(--border); }
 .html-document-view blockquote { padding-left: 1em; border-left: 3px solid var(--border); color: var(--muted-foreground); }
-.html-document-view pre { margin: 0 0 1.2em; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); font-size: 13px; line-height: 1.55; max-width: 100%; overflow-x: auto; }
+.html-document-view pre { margin: 0 0 1.2em; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); font-size: 14px; line-height: 1.55; max-width: 100%; overflow-x: auto; }
 .html-document-view :not(pre) > code { padding: .1em .28em; border-radius: var(--radius-sm); background: var(--muted); font-size: .9em; overflow-wrap: break-word; }
 .html-document-view :is(td, th) code { padding: 0; background: none; }
 /* A wide table scrolls inside its own frame instead of stretching the document. */

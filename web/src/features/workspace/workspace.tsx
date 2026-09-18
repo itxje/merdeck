@@ -30,7 +30,12 @@ const introduction = 'Browse, edit and preview diagrams in your project files.'
 const collapsedSourceWidth = 40
 
 export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
-  const [agentOpen, setAgentOpen] = React.useState(false)
+  // The AI file editor is docked open by default; an operator who closes it keeps it closed across reloads.
+  const [agentOpen, setAgentOpen] = React.useState(() => localStorage.getItem('merdeck-agent-open') !== 'false')
+  const showAgent = React.useCallback((open: boolean) => {
+    localStorage.setItem('merdeck-agent-open', String(open))
+    setAgentOpen(open)
+  }, [])
   const [agentActive, setAgentActive] = React.useState(false)
   const agentActiveRef = React.useRef(false)
   const updateAgentActive = React.useCallback((active: boolean) => {
@@ -277,7 +282,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
           )}
           {state.session && (
             <Tooltip>
-              <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => setAgentOpen(value => !value)} />}>
+              <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => showAgent(!agentOpen)} />}>
                 <Bot />
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">AI file editor</TooltipContent>
@@ -492,7 +497,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     session={state.session}
                     open={agentOpen}
                     blockedReason={agentBlockedReason}
-                    onClose={() => setAgentOpen(false)}
+                    onClose={() => showAgent(false)}
                     onActiveChange={updateAgentActive}
                     onFileChanged={state.reconcileAgentChange}
                     onSettled={state.reconcileAgentChange}

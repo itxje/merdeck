@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-18 15:24 [fix]
+
+Kept the AI file editor usable after a turn, docked it open by default, and enlarged HTML document type:
+- Removed the conversation-scoped lock on the engine and model selects. A conversation outlived `turn.completed`, so after one successful turn neither control could be operated again; `send` already replaces the conversation when the selection changes, and a running turn keeps its own guard.
+- Settled the panel when the event stream is dropped for good. An expired conversation ends the stream, the browser reconnects into a conversation the service no longer holds, and the header stayed on "Reconnecting…" while the stale conversation kept both selects disabled.
+- Docked the panel open by default and stored the operator's choice in `merdeck-agent-open`.
+- Raised the HTML document preview base type to 17px with a 14px contents sidebar and `pre`, and scaled headings with the document type instead of the root size.
+See [20260918-1524-agent-panel-dock-and-model-switch](task/20260918-1524-agent-panel-dock-and-model-switch.md).
+
 ## 2026-09-18 14:26 [fix]
 
 Restored the AI file editor engine list and reworked the HTML document preview layout:

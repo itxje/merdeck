@@ -11,6 +11,10 @@ export const test = base.extend<{ audit: Audit }>({
     const errors: string[] = []
     const allowed = new Set<string>()
     const audit: Audit = { allowHttp: (status, path) => allowed.add(`${status} ${path}`), offline: false }
+    // The workspace docks the AI file editor open, which narrows the editor pane and asks the service for
+    // agent capabilities. Specs assume the wider pane and no such request, so store the closed preference
+    // before the first navigation; workspace.test.tsx covers the shipped open-by-default value.
+    await page.addInitScript(() => localStorage.setItem('merdeck-agent-open', 'false'))
     const origins = [process.env.MERDECK_TEST_URL, process.env.MERDECK_UNSUPPORTED_URL, process.env.MERDECK_OPEN_URL]
     page.on('pageerror', error => errors.push(`Page error: ${error.name}`))
     page.on('dialog', async (dialog) => {
