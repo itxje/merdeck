@@ -1,6 +1,6 @@
 import type { AgentProvider } from '../../../../src/shared/contracts'
 import type { Session } from '@/features/workspace/api'
-import { Bot, Check, FilePenLine, LoaderCircle, Send, ShieldAlert, Square, Wrench, X } from 'lucide-react'
+import { Bot, Check, FilePenLine, LoaderCircle, Paperclip, Send, Square, Wrench, X } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
@@ -10,6 +10,7 @@ interface AgentChatProps {
   session: Session
   open: boolean
   blockedReason: string | undefined
+  activePath: string | undefined
   onClose: () => void
   onActiveChange: (active: boolean) => void
   onFileChanged: (path: string) => void
@@ -19,9 +20,9 @@ interface AgentChatProps {
 const minimumWidth = 300
 const maximumWidth = 560
 
-export function AgentChat({ session, open, blockedReason, onClose, onActiveChange, onFileChanged, onSettled }: AgentChatProps) {
+export function AgentChat({ session, open, blockedReason, activePath, onClose, onActiveChange, onFileChanged, onSettled }: AgentChatProps) {
   const blocked = blockedReason !== undefined
-  const chat = useAgentChat({ session, open, blocked, onActiveChange, onFileChanged, onSettled })
+  const chat = useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled })
   const [prompt, setPrompt] = React.useState('')
   const [width, setWidth] = React.useState(() => {
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
@@ -89,12 +90,8 @@ export function AgentChat({ session, open, blockedReason, onClose, onActiveChang
         </div>
         <Button variant="ghost" size="icon-sm" aria-label="Close AI file editor" onClick={onClose}><X /></Button>
       </header>
-      <div className="agent-boundary" role="note">
-        <ShieldAlert aria-hidden="true" />
-        <span>Prompts and selected project context are sent to the chosen provider. Provider edits write directly to this project; review every approval request.</span>
-      </div>
       <div className="agent-provider-row">
-        <label htmlFor="agent-provider">Engine</label>
+        <label className="sr-only" htmlFor="agent-provider">Engine</label>
         <select
           id="agent-provider"
           aria-label="Engine"
@@ -105,9 +102,7 @@ export function AgentChat({ session, open, blockedReason, onClose, onActiveChang
           {!chat.providers.length && <option value="">Not configured</option>}
           {chat.providers.map(provider => <option key={provider.id} value={provider.id}>{provider.label}</option>)}
         </select>
-      </div>
-      <div className="agent-provider-row">
-        <label htmlFor="agent-model">Model</label>
+        <label className="sr-only" htmlFor="agent-model">Model</label>
         <select
           id="agent-model"
           aria-label="Model"
@@ -196,6 +191,13 @@ export function AgentChat({ session, open, blockedReason, onClose, onActiveChang
       </div>
       <div className="agent-composer">
         {blockedReason && <p role="status">{blockedReason}</p>}
+        {chat.attached && (
+          <p className="agent-attachment" aria-label="Attached file">
+            <Paperclip />
+            {' '}
+            <code>{chat.attached}</code>
+          </p>
+        )}
         <label className="sr-only" htmlFor="agent-prompt">Agent instruction</label>
         <Textarea
           id="agent-prompt"

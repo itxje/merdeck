@@ -35,7 +35,11 @@ export const loginRequestSchema = z.strictObject({ token: z.string().min(32).max
 export const agentProviderSchema = z.enum(['codex', 'claude', 'agy'])
 export const agentModelIdSchema = z.string().min(1).max(100).regex(/^[a-z\d][\w.:[\]-]*$/i)
 export const createAgentConversationRequestSchema = z.strictObject({ provider: agentProviderSchema, model: agentModelIdSchema })
-export const agentTurnRequestSchema = z.strictObject({ prompt: z.string().trim().min(1).max(16000) })
+export const agentTurnContextSchema = z.strictObject({ path: relativePathSchema })
+export const agentTurnRequestSchema = z.strictObject({
+  prompt: z.string().trim().min(1).max(16000),
+  context: agentTurnContextSchema.optional(),
+})
 export const agentApprovalRequestSchema = z.strictObject({ decision: z.enum(['approve', 'deny']) })
 export const agentOpaqueIdSchema = z.string().regex(/^[a-f0-9]{48}$/)
 
@@ -50,6 +54,7 @@ export type DeleteEntryRequest = z.infer<typeof deleteEntryRequestSchema>
 export type LoginRequest = z.infer<typeof loginRequestSchema>
 export type AgentProvider = z.infer<typeof agentProviderSchema>
 export type CreateAgentConversationRequest = z.infer<typeof createAgentConversationRequestSchema>
+export type AgentTurnContext = z.infer<typeof agentTurnContextSchema>
 export type AgentTurnRequest = z.infer<typeof agentTurnRequestSchema>
 export type AgentApprovalRequest = z.infer<typeof agentApprovalRequestSchema>
 export type FileKind = 'mermaid' | 'markdown' | 'html'

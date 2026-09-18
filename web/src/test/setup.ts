@@ -7,5 +7,6 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
   localStorage.clear()
+  sessionStorage.clear()
   document.documentElement.classList.remove('dark')
 })

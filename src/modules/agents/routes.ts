@@ -60,7 +60,7 @@ export function agentRoutes(diagrams: DiagramService, sessions: Sessions | undef
     if (!(await diagrams.storageStatus()).writable)
       throw new AppError('filesystem_unsupported')
     const id = validateId(c.req.param('id'))
-    return c.json({ success: true as const, data: await agents.startTurn(id, owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs), request.prompt) })
+    return c.json({ success: true as const, data: await agents.startTurn(id, owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs), request.prompt, request.context) })
   })
 
   router.post('/agents/conversations/:id/approvals/:approvalId', async (c) => {

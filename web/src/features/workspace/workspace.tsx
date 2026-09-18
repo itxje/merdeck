@@ -497,6 +497,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     session={state.session}
                     open={agentOpen}
                     blockedReason={agentBlockedReason}
+                    activePath={path || undefined}
                     onClose={() => showAgent(false)}
                     onActiveChange={updateAgentActive}
                     onFileChanged={state.reconcileAgentChange}

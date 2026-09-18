@@ -97,6 +97,14 @@ describe('agent manager', () => {
     expect(sessions[0]?.closed).toBe(1)
   })
 
+  test('prefixes the turn with the previewed file when the panel sends one', async () => {
+    const { manager, sessions, owner } = fixture()
+    const conversation = await manager.create('codex', 'default', owner)
+    await manager.startTurn(conversation.id, owner, 'Rename the node', { path: 'docs/flow.md' })
+    expect(sessions[0]?.prompts).toEqual(['Current file: docs/flow.md\n\nRename the node'])
+    await manager.close()
+  })
+
   test('discovers models once and refuses engine/model mismatches', async () => {
     let probes = 0
     const opened: Array<string | undefined> = []

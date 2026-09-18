@@ -5,10 +5,6 @@ import { AppError } from '../../shared/errors'
 import { opaqueId, providerPath, safeLabel } from './paths'
 import { boundedText, drain, readJsonLines, record, spawnProvider, terminate, writeJsonLine } from './process'
 
-interface ClaudeApproval {
-  providerId: string
-  input: Record<string, unknown>
-}
 interface ClaudeRequest {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
@@ -21,7 +17,6 @@ const pathRequiredTools = new Set(['Read', 'Edit', 'Write'])
 
 class ClaudeSession implements AgentProviderSession {
   private readonly process: Bun.PipedSubprocess
-  private readonly approvals = new Map<string, ClaudeApproval>()
   private readonly requests = new Map<string, ClaudeRequest>()
   private readonly changedTools = new Map<string, { path: ReturnType<typeof providerPath>, change: 'add' | 'update' }>()
   private turnActive = false
@@ -121,28 +116,15 @@ class ClaudeSession implements AgentProviderSession {
     }
   }
 
-  async approve(approvalId: string, decision: 'approve' | 'deny'): Promise<void> {
-    const pending = this.approvals.get(approvalId)
-    if (!pending)
-      throw new AppError('not_found')
-    this.approvals.delete(approvalId)
-    await writeJsonLine(this.process, {
-      type: 'control_response',
-      response: {
-        subtype: 'success',
-        request_id: pending.providerId,
-        response: decision === 'approve'
-          ? { behavior: 'allow', updatedInput: pending.input }
-          : { behavior: 'deny', message: 'Denied by the user.' },
-      },
-    })
+  async approve(): Promise<void> {
+    // File tools inside the project run without approval, so nothing is ever pending here.
+    throw new AppError('not_found')
   }
 
   async cancel(): Promise<void> {
     if (!this.turnActive)
       return
     this.turnActive = false
-    this.approvals.clear()
     this.changedTools.clear()
     await this.control('interrupt').catch(() => undefined)
   }
@@ -152,7 +134,6 @@ class ClaudeSession implements AgentProviderSession {
       return
     this.closed = true
     this.turnActive = false
-    this.approvals.clear()
     this.changedTools.clear()
     for (const pending of this.requests.values()) {
       clearTimeout(pending.timer)
@@ -193,21 +174,12 @@ class ClaudeSession implements AgentProviderSession {
       this.controlResponse(record(message.response))
       return
     }
-    if (type === 'control_cancel_request') {
-      const providerId = boundedText(message.request_id, 200)
-      if (providerId) {
-        for (const [id, approval] of this.approvals) {
-          if (approval.providerId === providerId)
-            this.approvals.delete(id)
-        }
-      }
+    if (type === 'control_cancel_request')
       return
-    }
     if (type === 'result') {
       if (!this.turnActive)
         return
       this.turnActive = false
-      this.approvals.clear()
       this.changedTools.clear()
       if (message.is_error === false || message.subtype === 'success')
         this.context.emit({ type: 'turn.completed' })
@@ -243,7 +215,10 @@ class ClaudeSession implements AgentProviderSession {
       const input = record(block.input)
       if (!name || !allowedTools.has(name))
         continue
-      this.context.emit({ type: 'tool.started', label: safeLabel(name, 'File tool', 100) })
+      // Naming the target turns an opaque list of tool names into a readable account of the turn.
+      const target = input ? providerPath(this.context.projectRoot, input.file_path ?? input.path) : undefined
+      const label = safeLabel(name, 'File tool', 100)
+      this.context.emit({ type: 'tool.started', label: target ? `${label} ${target}` : label })
       if (id && input && changingTools.has(name)) {
         const path = providerPath(this.context.projectRoot, input.file_path)
         if (path)
@@ -288,20 +263,11 @@ class ClaudeSession implements AgentProviderSession {
       void this.permissionResponse(providerId, { behavior: 'deny', message: 'This tool requires a project file path.' })
       return
     }
-    const path = rawPath === undefined ? undefined : providerPath(this.context.projectRoot, rawPath)
-    if (rawPath !== undefined && !path) {
+    if (rawPath !== undefined && !providerPath(this.context.projectRoot, rawPath)) {
       void this.permissionResponse(providerId, { behavior: 'deny', message: 'The path is outside the project.' })
       return
     }
-    const approvalId = opaqueId()
-    this.approvals.set(approvalId, { providerId, input })
-    const target = path ? ` on ${path}` : ''
-    this.context.emit({
-      type: 'approval.requested',
-      approvalId,
-      kind: changingTools.has(name) ? 'file_change' : 'file_access',
-      summary: `Allow ${safeLabel(name, 'file access', 100)}${target}?`,
-    })
+    void this.permissionResponse(providerId, { behavior: 'allow', updatedInput: input })
   }
 
   private permissionResponse(providerId: string, response: Record<string, unknown>): Promise<void> {
@@ -365,7 +331,6 @@ class ClaudeSession implements AgentProviderSession {
     this.failed = true
     const active = this.turnActive
     this.turnActive = false
-    this.approvals.clear()
     this.changedTools.clear()
     for (const pending of this.requests.values()) {
       clearTimeout(pending.timer)

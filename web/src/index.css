@@ -211,11 +211,8 @@ button:disabled { cursor: default; }
 .agent-header > div > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .agent-header strong { font-size: 12px; }
 .agent-header span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted-foreground); font-size: 10px; }
-.agent-boundary { margin: 12px 12px 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); color: var(--muted-foreground); display: flex; align-items: flex-start; gap: 8px; font-size: 10px; line-height: 1.5; }
-.agent-boundary svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
-.agent-provider-row { padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--border); }
-.agent-provider-row label { font-size: 11px; font-weight: 600; }
-.agent-provider-row select { min-width: 145px; height: 32px; padding: 0 28px 0 9px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--foreground); font-size: 11px; }
+.agent-provider-row { padding: 10px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.agent-provider-row select { flex: 1; min-width: 0; height: 32px; padding: 0 28px 0 9px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--foreground); font-size: 11px; }
 .agent-transcript { flex: 1; min-height: 0; overflow: auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 10px; }
 .agent-empty { margin: auto; max-width: 260px; color: var(--muted-foreground); text-align: center; line-height: 1.6; }
 .agent-empty svg { width: 14px; vertical-align: -2px; }
@@ -242,6 +239,9 @@ button:disabled { cursor: default; }
 .agent-composer textarea { min-height: 78px; max-height: 180px; resize: vertical; font-size: 12px; }
 .agent-composer > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .agent-composer > div > span { color: var(--muted-foreground); font-size: 9px; }
+.agent-composer > .agent-attachment { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted-foreground); }
+.agent-attachment svg { flex: none; width: 12px; }
+.agent-attachment code { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .header-file h1 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.25px; }
 .header-file > svg { width: 18px; color: var(--muted-foreground); }
 .save-status { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; }

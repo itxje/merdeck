@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-18 16:27 [feature]
+
+Attached the previewed file to every agent turn and removed the approval step from file work:
+- `agentTurnRequestSchema` gained an optional `context` naming one root-relative path, validated by the shared relative-path contract. `AgentManager.startTurn` composes it into a single leading `Current file: <path>` line, so the provider starts from the open document instead of being told which file to edit in every instruction.
+- The panel names the attached file above the composer and sends it with each message; with no file open the turn carries the prompt alone.
+- The Claude Code adapter now answers its own host permission prompts: an allow-listed tool whose path stays beneath the project root is allowed, while an unknown tool, a missing required path or a path outside the root is still denied. The Codex adapter accepts file-change approvals itself and keeps forwarding command approvals to the operator.
+- The tool allow-list, the root containment check and Codex's writable-root sandbox remain the enforced boundary. No confirmation stands between a configured provider and a project file, which matters most under open access.
+- A reload no longer opens an empty conversation. The panel keeps its transcript and the opaque conversation
+  handle in per-tab session storage, restores them on mount and resumes the stream from the last event it saw;
+  a conversation the service no longer holds is dropped while the transcript stays readable.
+- Each Claude Code file tool now names its target, so the transcript reads `Edit docs/architecture.html`
+  instead of a bare `Edit`.
+- Merged the engine and model selectors into one row and removed the provider notice above them.
+See [20260918-1627-agent-current-file-context](task/20260918-1627-agent-current-file-context.md).
+
 ## 2026-09-18 16:26 [release]
 
 Published [v0.14.4](https://github.com/itxje/merdeck/releases/tag/v0.14.4) delivering an engine and model that stay selectable after a turn, a panel that settles when its event stream is dropped, the AI file editor docked open by default, and a larger HTML document preview type scale. Exact commit `1a4985906a797206a263a2f957345b21083785c1` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35365581159), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35366550282) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS` after one rerun of an infrastructure flake. See [20260918-1558-release-v0.14.4](task/20260918-1558-release-v0.14.4.md).

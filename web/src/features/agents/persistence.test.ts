@@ -1,0 +1,47 @@
+import { expect, it } from 'vitest'
+import { emptyAgentSession, readAgentSession, writeAgentSession } from './persistence'
+
+const conversation = { id: 'a'.repeat(48), provider: 'claude' as const, model: 'sonnet' }
+const items = [
+  { key: 'user:1', kind: 'user' as const, text: 'Rename the node' },
+  { key: 'event:2', kind: 'tool' as const, label: 'Edit docs/flow.md' },
+  { key: 'event:3', kind: 'file' as const, path: 'docs/flow.md', change: 'update' as const },
+  { key: 'event:4', kind: 'approval' as const, approvalId: 'b'.repeat(48), approvalKind: 'command' as const, summary: 'bun test', answered: 'deny' as const },
+]
+
+it('restores one tab transcript and conversation, always idle', () => {
+  writeAgentSession({ conversation, state: { active: true, lastEventId: 4, items } })
+  expect(readAgentSession()).toEqual({ conversation, state: { active: false, lastEventId: 4, items } })
+})
+
+it('keeps the transcript after the conversation is abandoned and clears an empty panel', () => {
+  writeAgentSession({ conversation: null, state: { active: false, lastEventId: 0, items: items.slice(0, 1) } })
+  expect(readAgentSession().conversation).toBeNull()
+  expect(readAgentSession().state.items).toHaveLength(1)
+  writeAgentSession({ conversation: null, state: { active: false, lastEventId: 0, items: [] } })
+  expect(sessionStorage.getItem('merdeck-agent-session')).toBeNull()
+})
+
+it('refuses malformed, foreign or oversized stored state instead of rendering it', () => {
+  for (const raw of [
+    'not json',
+    JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'script', text: 'x' }] } }),
+    JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'file', path: '../escape.md', change: 'update' }] } }),
+    JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'approval', approvalId: 'short', approvalKind: 'command', summary: 's' }] } }),
+    JSON.stringify({ state: { active: false, lastEventId: -1, items: [] } }),
+    JSON.stringify({ state: { active: false, lastEventId: 1 } }),
+    JSON.stringify({ state: null }),
+  ]) {
+    sessionStorage.setItem('merdeck-agent-session', raw)
+    expect(readAgentSession()).toEqual(emptyAgentSession)
+  }
+})
+
+it('drops a conversation handle that is not an advertised engine and opaque ID', () => {
+  for (const candidate of [{ id: 'short', provider: 'codex', model: 'gpt' }, { id: 'a'.repeat(48), provider: 'other', model: 'gpt' }, { id: 'a'.repeat(48), provider: 'codex' }]) {
+    sessionStorage.setItem('merdeck-agent-session', JSON.stringify({ conversation: candidate, state: { active: false, lastEventId: 2, items: [] } }))
+    const restored = readAgentSession()
+    expect(restored.conversation).toBeNull()
+    expect(restored.state.lastEventId).toBe(2)
+  }
+})

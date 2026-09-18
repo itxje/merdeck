@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { agentModelIdSchema, closeDirectoryRequestSchema, contentVersionSchema, createAgentConversationRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, directorySearchRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
+import { agentModelIdSchema, agentTurnRequestSchema, closeDirectoryRequestSchema, contentVersionSchema, createAgentConversationRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, directorySearchRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
 import { AppError, errorStatus, safeError } from './errors'
 
 const version = 'a'.repeat(64)
@@ -33,6 +33,15 @@ describe('transport boundaries', () => {
       expect(agentModelIdSchema.safeParse(model).success).toBe(false)
     expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex' }).success).toBe(false)
     expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex', model: 'default', extra: true }).success).toBe(false)
+  })
+  test('carries an optional previewed file with an agent turn', () => {
+    expect(agentTurnRequestSchema.parse({ prompt: 'Rename the node' })).toEqual({ prompt: 'Rename the node' })
+    expect(agentTurnRequestSchema.parse({ prompt: 'Rename the node', context: { path: 'docs/flow.md' } }))
+      .toEqual({ prompt: 'Rename the node', context: { path: 'docs/flow.md' } })
+    for (const path of ['', '../escape.md', '/etc/passwd', 'a\0.md'])
+      expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: { path } }).success).toBe(false)
+    expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: { path: 'flow.mmd', line: 3 } }).success).toBe(false)
+    expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: {} }).success).toBe(false)
   })
   test('maps conflicts/deletions and redacts unexpected errors', () => {
     expect(errorStatus.conflict).toBe(409)

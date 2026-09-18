@@ -71,7 +71,7 @@ beforeEach(() => {
 it('defers provider discovery until the editor is opened', async () => {
   const capabilities = vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
   const client = createQueryClient()
-  const props = { session, blockedReason: undefined, onClose: vi.fn(), onActiveChange: vi.fn(), onFileChanged: vi.fn(), onSettled: vi.fn() }
+  const props = { session, blockedReason: undefined, activePath: undefined, onClose: vi.fn(), onActiveChange: vi.fn(), onFileChanged: vi.fn(), onSettled: vi.fn() }
   const view = render(
     <QueryClientProvider client={client}>
       <AgentChat {...props} open={false} />
@@ -98,7 +98,7 @@ it('sends a turn, renders hostile provider text inertly, routes approval and rep
   const client = createQueryClient()
   const view = render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={active} onFileChanged={changed} onSettled={settled} />
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={active} onFileChanged={changed} onSettled={settled} />
     </QueryClientProvider>,
   )
   const prompt = await screen.findByLabelText('Agent instruction')
@@ -108,7 +108,7 @@ it('sends a turn, renders hostile provider text inertly, routes approval and rep
   await userEvent.setup().type(prompt, 'Update flow.mmd')
   await userEvent.setup().click(screen.getByRole('button', { name: 'Send' }))
   await waitFor(() => expect(agentApi.create).toHaveBeenCalledWith('codex', 'gpt-fast', 'csrf'))
-  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('a'.repeat(48), 'Update flow.mmd', 'csrf'))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('a'.repeat(48), 'Update flow.mmd', { path: 'docs/flow.md' }, 'csrf'))
   await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
   const source = FakeEventSource.instances[0]!
   source.emit({ id: 1, type: 'turn.started', turnId: 'b'.repeat(48) })
@@ -135,14 +135,14 @@ it('sends open-access turns without manufacturing a CSRF token', async () => {
   const client = createQueryClient()
   const view = render(
     <QueryClientProvider client={client}>
-      <AgentChat session={openSession} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={openSession} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const user = userEvent.setup()
   await user.type(await screen.findByLabelText('Agent instruction'), 'Edit in open access')
   await user.click(screen.getByRole('button', { name: 'Send' }))
   await waitFor(() => expect(agentApi.create).toHaveBeenCalledWith('codex', 'gpt-safe', undefined))
-  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('e'.repeat(48), 'Edit in open access', undefined))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('e'.repeat(48), 'Edit in open access', { path: 'docs/flow.md' }, undefined))
   view.unmount()
   client.clear()
 })
@@ -154,7 +154,7 @@ it('switches engine catalogues, sends the selected pair and locks it for the run
   const client = createQueryClient()
   const view = render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const user = userEvent.setup()
@@ -168,7 +168,7 @@ it('switches engine catalogues, sends the selected pair and locks it for the run
   await user.type(screen.getByLabelText('Agent instruction'), 'Edit with Claude')
   await user.click(screen.getByRole('button', { name: 'Send' }))
   await waitFor(() => expect(agentApi.create).toHaveBeenCalledWith('claude', 'haiku', 'csrf'))
-  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('d'.repeat(48), 'Edit with Claude', 'csrf'))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('d'.repeat(48), 'Edit with Claude', { path: 'docs/flow.md' }, 'csrf'))
   expect(engine).toBeDisabled()
   expect(model).toBeDisabled()
   view.unmount()
@@ -180,7 +180,7 @@ it('blocks a new turn while browser drafts exist', async () => {
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason="Save or discard browser drafts before starting an agent turn." onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={session} open blockedReason="Save or discard browser drafts before starting an agent turn." activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const prompt = await screen.findByLabelText('Agent instruction')
@@ -199,7 +199,7 @@ it('abandons a failed provider session and accepts events from a replacement con
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const prompt = await screen.findByLabelText('Agent instruction')
@@ -230,7 +230,7 @@ it('reopens the engine and model once a turn settles and sends the replacement p
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const user = userEvent.setup()
@@ -251,7 +251,7 @@ it('reopens the engine and model once a turn settles and sends the replacement p
   await user.type(prompt, 'Second turn')
   await user.click(screen.getByRole('button', { name: 'Send' }))
   await waitFor(() => expect(create).toHaveBeenLastCalledWith('codex', 'gpt-fast', 'csrf'))
-  await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('b'.repeat(48), 'Second turn', 'csrf'))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('b'.repeat(48), 'Second turn', { path: 'docs/flow.md' }, 'csrf'))
   client.clear()
 })
 
@@ -262,7 +262,7 @@ it('reports a retrying stream and settles the panel when the stream is dropped f
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
-      <AgentChat session={session} open blockedReason={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
     </QueryClientProvider>,
   )
   const user = userEvent.setup()
@@ -278,5 +278,59 @@ it('reports a retrying stream and settles the panel when the stream is dropped f
   source.fail(FakeEventSource.CLOSED)
   expect(await screen.findByText('Direct local CLI session')).toBeVisible()
   await waitFor(() => expect(screen.getByLabelText('Model')).toBeEnabled())
+  client.clear()
+})
+
+it('names the previewed file above the composer and omits it while nothing is open', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'f'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  const props = { session, open: true, blockedReason: undefined, onClose: vi.fn(), onActiveChange: vi.fn(), onFileChanged: vi.fn(), onSettled: vi.fn() }
+  const view = render(
+    <QueryClientProvider client={client}>
+      <AgentChat {...props} activePath="docs/flow.md" />
+    </QueryClientProvider>,
+  )
+  expect(await screen.findByLabelText('Attached file')).toHaveTextContent('docs/flow.md')
+  view.rerender(
+    <QueryClientProvider client={client}>
+      <AgentChat {...props} activePath={undefined} />
+    </QueryClientProvider>,
+  )
+  expect(screen.queryByLabelText('Attached file')).toBeNull()
+  const user = userEvent.setup()
+  await user.type(await screen.findByLabelText('Agent instruction'), 'Edit without an open file')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenCalledWith('f'.repeat(48), 'Edit without an open file', undefined, 'csrf'))
+  view.unmount()
+  client.clear()
+})
+
+it('restores the transcript and resumes the stored conversation stream after a reload', async () => {
+  sessionStorage.setItem('merdeck-agent-session', JSON.stringify({
+    conversation: { id: 'b'.repeat(48), provider: 'codex', model: 'gpt-fast' },
+    state: { active: true, lastEventId: 7, items: [{ key: 'user:1', kind: 'user', text: 'Rename the node' }, { key: 'event:2', kind: 'tool', label: 'Edit docs/flow.md' }] },
+  }))
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  const create = vi.spyOn(agentApi, 'create')
+  const client = createQueryClient()
+  const view = render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={session} open blockedReason={undefined} activePath="docs/flow.md" onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  expect(await screen.findByText('Rename the node')).toBeVisible()
+  expect(screen.getByText('Edit docs/flow.md')).toBeVisible()
+  // The stream resumes after the last stored event instead of replaying the whole window.
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  expect(FakeEventSource.instances[0]!.url).toContain('after=7')
+  expect(create).not.toHaveBeenCalled()
+  await waitFor(() => expect(screen.getByLabelText('Model')).toHaveValue('gpt-fast'))
+  // A conversation the service no longer holds is dropped, and the transcript stays readable.
+  FakeEventSource.instances[0]!.fail(FakeEventSource.CLOSED)
+  await waitFor(() => expect(JSON.parse(sessionStorage.getItem('merdeck-agent-session') ?? '{}').conversation).toBeNull())
+  expect(screen.getByText('Rename the node')).toBeVisible()
+  view.unmount()
   client.clear()
 })

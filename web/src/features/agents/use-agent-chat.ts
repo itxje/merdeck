@@ -1,11 +1,13 @@
 import type { AgentEvent, AgentProvider } from '../../../../src/shared/contracts'
+import type { AgentConversationHandle } from './persistence'
 import type { Session } from '@/features/workspace/api'
 import { useQuery } from '@tanstack/react-query'
 import * as React from 'react'
-import { sessionCsrf } from '@/features/workspace/api'
+import { sessionCsrf, validPath } from '@/features/workspace/api'
 import { HttpError } from '@/shared/lib/http'
 import { agentApi, decodeAgentEvent } from './api'
-import { agentChatReducer, initialAgentChatState } from './state'
+import { readAgentSession, writeAgentSession } from './persistence'
+import { agentChatReducer } from './state'
 
 const eventTypes: AgentEvent['type'][] = [
   'conversation.started',
@@ -27,21 +29,23 @@ interface AgentChatOptions {
   session: Session
   open: boolean
   blocked: boolean
+  activePath: string | undefined
   onActiveChange: (active: boolean) => void
   onFileChanged: (path: string) => void
   onSettled: () => void
 }
 
-export function useAgentChat({ session, open, blocked, onActiveChange, onFileChanged, onSettled }: AgentChatOptions) {
-  const [state, dispatch] = React.useReducer(agentChatReducer, initialAgentChatState)
-  const [provider, setProvider] = React.useState<AgentProvider>('codex')
-  const [model, setModel] = React.useState('default')
-  const [conversation, setConversation] = React.useState<{ id: string, provider: AgentProvider, model: string } | null>(null)
+export function useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled }: AgentChatOptions) {
+  const [restored] = React.useState(readAgentSession)
+  const [state, dispatch] = React.useReducer(agentChatReducer, restored.state)
+  const [provider, setProvider] = React.useState<AgentProvider>(restored.conversation?.provider ?? 'codex')
+  const [model, setModel] = React.useState(restored.conversation?.model ?? 'default')
+  const [conversation, setConversation] = React.useState<AgentConversationHandle | null>(restored.conversation)
   const [pending, setPending] = React.useState(false)
   const [answering, setAnswering] = React.useState<Set<string>>(() => new Set())
   const [connection, setConnection] = React.useState<'idle' | 'connected' | 'reconnecting'>('idle')
   const activeRef = React.useRef(false)
-  const lastEventRef = React.useRef(0)
+  const lastEventRef = React.useRef(restored.state.lastEventId)
   const csrfToken = sessionCsrf(session)
   const capabilities = useQuery({
     queryKey: ['agents', 'capabilities'],
@@ -60,6 +64,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     activeRef.current = active
     onActiveChange(active)
   }, [onActiveChange])
+  const attached = activePath && validPath(activePath) ? activePath : undefined
   const abandonConversation = React.useCallback(() => {
     lastEventRef.current = 0
     setConversation(null)
@@ -113,6 +118,10 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     }
   }, [conversation, onFileChanged, onSettled, setActive, abandonConversation])
 
+  React.useEffect(() => {
+    writeAgentSession({ conversation, state })
+  }, [conversation, state])
+
   React.useEffect(() => () => {
     if (activeRef.current)
       onActiveChange(false)
@@ -132,7 +141,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
         lastEventRef.current = 0
         setConversation(target)
       }
-      await agentApi.turn(target.id, trimmed, csrfToken)
+      await agentApi.turn(target.id, trimmed, attached ? { path: attached } : undefined, csrfToken)
       return true
     }
     catch (error) {
@@ -146,7 +155,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
     finally {
       setPending(false)
     }
-  }, [blocked, pending, effectiveProvider, effectiveModel, conversation, csrfToken, setActive, onSettled, abandonConversation])
+  }, [blocked, pending, effectiveProvider, effectiveModel, conversation, csrfToken, attached, setActive, onSettled, abandonConversation])
 
   const cancel = React.useCallback(async () => {
     if (!conversation || !activeRef.current || pending)
@@ -193,6 +202,7 @@ export function useAgentChat({ session, open, blocked, onActiveChange, onFileCha
   return {
     ...state,
     active: activeRef.current,
+    attached,
     capabilities,
     providers,
     provider: effectiveProvider,

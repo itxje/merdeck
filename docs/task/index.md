@@ -113,3 +113,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260918-1426-agent-engine-list-and-html-layout Restore the agent engine list and rework the HTML preview layout**](20260918-1426-agent-engine-list-and-html-layout.md) `P1`
 - [x] [**20260918-1524-agent-panel-dock-and-model-switch Keep the agent panel usable after a turn and enlarge document type**](20260918-1524-agent-panel-dock-and-model-switch.md) `P1`
 - [x] [**20260918-1558-release-v0.14.4 Release v0.14.4**](20260918-1558-release-v0.14.4.md) `P1`
+- [x] [**20260918-1627-agent-current-file-context Attach the previewed file to agent turns**](20260918-1627-agent-current-file-context.md) `P1`

@@ -1,5 +1,5 @@
 import type { AppConfig } from '../../config'
-import type { AgentCapabilities, AgentConversation, AgentEvent, AgentModel, AgentProvider } from '../../shared/contracts'
+import type { AgentCapabilities, AgentConversation, AgentEvent, AgentModel, AgentProvider, AgentTurnContext } from '../../shared/contracts'
 import type { AgentAdapterEvent, AgentProviderAdapter, AgentProviderSession } from './types'
 import { Buffer } from 'node:buffer'
 import { agentModelIdSchema } from '../../shared/contracts'
@@ -178,7 +178,7 @@ export class AgentManager {
     }
   }
 
-  async startTurn(id: string, owner: AgentPrincipal, prompt: string): Promise<{ accepted: true }> {
+  async startTurn(id: string, owner: AgentPrincipal, prompt: string, context?: AgentTurnContext): Promise<{ accepted: true }> {
     const conversation = this.owned(id, owner)
     if (conversation.terminal)
       throw new AppError('unavailable')
@@ -197,7 +197,8 @@ export class AgentManager {
       void this.stopAndTerminate(conversation, 'The turn timed out.')
     }, this.turnTimeoutMs)
     try {
-      await conversation.session.startTurn(prompt)
+      // The path is schema-validated, so the service composes the context line the provider sees.
+      await conversation.session.startTurn(context ? `Current file: ${context.path}\n\n${prompt}` : prompt)
       if (conversation.terminal)
         throw new AppError('unavailable')
       return { accepted: true }

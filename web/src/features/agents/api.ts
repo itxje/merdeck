@@ -1,4 +1,4 @@
-import type { AgentCapabilities, AgentConversation, AgentEvent, AgentProvider } from '../../../../src/shared/contracts'
+import type { AgentCapabilities, AgentConversation, AgentEvent, AgentProvider, AgentTurnContext } from '../../../../src/shared/contracts'
 import { validPath } from '@/features/workspace/api'
 import { HttpError, requestApi } from '@/shared/lib/http'
 
@@ -130,7 +130,7 @@ function cancelled(value: unknown): { cancelled: boolean } {
 export const agentApi = {
   capabilities: (signal?: AbortSignal) => requestApi('/agents/capabilities', decodeAgentCapabilities, signal ? { signal } : {}),
   create: (provider: AgentProvider, model: string, csrfToken?: string) => requestApi('/agents/conversations', decodeAgentConversation, { method: 'POST', body: { provider, model: modelId(model) }, csrfToken }),
-  turn: (conversationId: string, prompt: string, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/turns`, accepted, { method: 'POST', body: { prompt }, csrfToken }),
+  turn: (conversationId: string, prompt: string, context: AgentTurnContext | undefined, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/turns`, accepted, { method: 'POST', body: context ? { prompt, context } : { prompt }, csrfToken }),
   approve: (conversationId: string, approvalId: string, decision: 'approve' | 'deny', csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/approvals/${opaqueId(approvalId)}`, accepted, { method: 'POST', body: { decision }, csrfToken }),
   cancel: (conversationId: string, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/cancel`, cancelled, { method: 'POST', body: {}, csrfToken }),
   eventsUrl: (conversationId: string, after: number) => `/api/agents/conversations/${opaqueId(conversationId)}/events?after=${encodeURIComponent(String(after))}`,

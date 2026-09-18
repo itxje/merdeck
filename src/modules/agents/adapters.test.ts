@@ -64,6 +64,7 @@ for await (const chunk of Bun.stdin.stream()) {
         { path: 'flow.mmd', kind: { type: 'update', move_path: null }, diff: 'safe' },
         { path: '/etc/passwd', kind: { type: 'update', move_path: null }, diff: 'unsafe' }
       ] } }))
+      console.log(JSON.stringify({ id: 'provider-file-approval', method: 'item/fileChange/requestApproval', params: { threadId: 'thread-1', turnId: 'turn-1', itemId: 'change-1', startedAtMs: 1, reason: 'Update flow.mmd' } }))
       console.log(JSON.stringify({ id: 'provider-approval', method: 'item/commandExecution/requestApproval', params: { threadId: 'thread-1', turnId: 'turn-1', itemId: 'command-1', startedAtMs: 1, command: 'bun test' } }))
     }
     else if (message.id === 'provider-approval')
@@ -90,6 +91,8 @@ for await (const chunk of Bun.stdin.stream()) {
     expect(events.some(event => event.type === 'file.changed' && event.path.includes('passwd'))).toBe(false)
     const requests = JSON.parse(await readFile(`${root}/codex-requests.json`, 'utf8')) as Array<Record<string, unknown>>
     expect(requests).toContainEqual({ id: 'provider-approval', result: { decision: 'accept' } })
+    expect(requests).toContainEqual({ id: 'provider-file-approval', result: { decision: 'accept' } })
+    expect(events.some(event => event.type === 'approval.requested' && event.kind === 'file_change')).toBe(false)
     expect(requests.find(request => request.method === 'thread/start')).toMatchObject({ params: { model: 'gpt-test' } })
     expect(requests.find(request => request.method === 'turn/start')).toMatchObject({ params: { model: 'gpt-test', sandboxPolicy: { type: 'workspaceWrite', writableRoots: [root], networkAccess: false } } })
     expect(JSON.parse(await readFile(`${root}/codex-launch.json`, 'utf8'))).toMatchObject({ argv: ['app-server', '--listen', 'stdio://'] })
@@ -195,7 +198,7 @@ for await (const chunk of Bun.stdin.stream()) {
     await session.close()
   })
 
-  test('Claude uses restricted file tools and answers host permission prompts', async () => {
+  test('Claude uses restricted file tools and allows in-project work without approvals', async () => {
     const root = await fixture()
     const fake = await executable(root, 'fake-claude', String.raw`
 const inputs = []
@@ -257,13 +260,10 @@ for await (const chunk of Bun.stdin.stream()) {
     const events: AgentAdapterEvent[] = []
     const session = await claudeAdapter.open({ executable: fake, projectRoot: root, model: 'sonnet', emit: event => events.push(event) })
     await session.startTurn('Edit the file')
-    await waitFor(() => events.some(event => event.type === 'approval.requested'))
-    const approval = events.find(event => event.type === 'approval.requested')
-    expect(approval).toMatchObject({ kind: 'file_change', summary: 'Allow Edit on flow.mmd?' })
-    if (approval?.type === 'approval.requested')
-      await session.approve(approval.approvalId, 'approve')
     await waitFor(() => events.some(event => event.type === 'turn.completed'))
+    expect(events.some(event => event.type === 'approval.requested')).toBe(false)
     expect(events).toContainEqual({ type: 'assistant.delta', text: '<img src=x onerror=alert(1)>' })
+    expect(events).toContainEqual({ type: 'tool.started', label: 'Edit flow.mmd' })
     expect(events).toContainEqual({ type: 'file.changed', path: 'flow.mmd', change: 'update' })
     const launch = JSON.parse(await readFile(`${root}/claude-launch.json`, 'utf8')) as { argv: string[] }
     expect(launch.argv).toContain('--restricted')
