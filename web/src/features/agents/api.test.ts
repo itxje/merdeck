@@ -13,6 +13,17 @@ describe('agent response decoding', () => {
     expect(decodeAgentEvent({ id: 3, type: 'approval.requested', approvalId: 'b'.repeat(48), kind: 'command', summary: 'bun test' })).toMatchObject({ type: 'approval.requested' })
   })
 
+  it('accepts every configured provider in one capability response', () => {
+    const models = [{ id: 'default', label: 'Provider default', description: '', isDefault: true }]
+    const providers = [
+      { id: 'codex', label: 'Codex', models },
+      { id: 'claude', label: 'Claude Code', models },
+      { id: 'agy', label: 'Google Antigravity', models },
+    ]
+    expect(decodeAgentCapabilities({ enabled: true, providers }).providers.map(entry => entry.id)).toEqual(['codex', 'claude', 'agy'])
+    expect(() => decodeAgentCapabilities({ enabled: true, providers: [...providers, { id: 'codex', label: 'Codex', models }] })).toThrow(HttpError)
+  })
+
   it('rejects extra fields, mismatched capability flags and hostile paths', () => {
     for (const value of [
       { enabled: false, providers: [{ id: 'codex', label: 'Codex' }] },

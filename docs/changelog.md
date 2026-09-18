@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-18 14:26 [fix]
+
+Restored the AI file editor engine list and reworked the HTML document preview layout:
+- Fixed the capability decoder, which rejected any response naming more than two providers; a service configured with Codex, Claude Code and Google Antigravity failed validation, so the panel showed "Engine: Not configured", "Model: Not available" and "The agent capability check failed.".
+- Documented `MERDECK_AGY_PATH` in `README.md` and `.env.example` beside the other provider paths.
+- Replaced the preview's flex layout with a centred grid of a sticky contents sidebar and a bounded reading measure, so documents that leave content beside the contents list no longer split every element into its own column.
+- Restyled the contents list for same-document anchors, which render as buttons; restored list markers removed by the CSS reset; left-aligned table headers; gave wide tables their own scroll frame; and refined `code`, `pre`, rule, quotation and heading rhythm.
+See [20260918-1426-agent-engine-list-and-html-layout](task/20260918-1426-agent-engine-list-and-html-layout.md).
+
 ## 2026-09-17 02:11 [release]
 
 Published [v0.14.2](https://github.com/itxje/merdeck/releases/tag/v0.14.2) delivering standalone template mobile topbar suppression and element ID attribute binding in HTML document preview. Exact commit `f5d284de7e18349502febdc703a689955c5a4fc2` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35172035254), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35172755629) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS`. See [20260917-0150-release-v0.14.2](task/20260917-0150-release-v0.14.2.md).

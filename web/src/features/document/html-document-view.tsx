@@ -55,6 +55,10 @@ function useHtmlProjection(text: string) {
   return state.text === text ? state : { text, projection: null, error: null }
 }
 
+function isRenderElement(candidate: unknown): candidate is HtmlRenderNode & { type: 'element' } {
+  return !!candidate && typeof candidate === 'object' && (candidate as { type?: unknown }).type === 'element'
+}
+
 function sourceIds(nodes: HtmlRenderNode[]): Set<string> {
   const ids = new Set<string>()
   const visit = (node: HtmlRenderNode) => {
@@ -184,6 +188,14 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     if (node.tag === 'hr' || node.tag === 'br')
       return React.createElement(node.tag, { key, id, ref, style })
     const children = node.children.map((child, index) => render(child, `${key}-${index}`))
+    if (node.tag === 'table') {
+      // A wide table scrolls inside its own frame and keeps its table role for assistive technology.
+      return (
+        <div key={key} className="html-document-table">
+          <table id={id} ref={ref as React.Ref<HTMLTableElement>} style={style}>{children}</table>
+        </div>
+      )
+    }
     if (node.tag === 'a') {
       const href = typeof node.href === 'string' ? node.href : ''
       if (href.startsWith('#') && href.length > 1) {
@@ -217,11 +229,18 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
       </article>
     )
   }
+  // The contents list becomes the sidebar and everything else stays in one body column, so the
+  // layout is the same whether a document nests its content or leaves it beside the contents list.
+  const nodes = state.projection.children
+  const sidebarIndex = nodes.findIndex(node => isRenderElement(node) && node.tag === 'nav')
   return (
     <article className="document-view html-document-view" aria-label="HTML document">
-      {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
-      {state.projection.truncated && <p className="document-mismatch" role="status">Preview truncated to stay within safe rendering limits.</p>}
-      {state.projection.children.map((node, index) => render(node, `root-${index}`))}
+      {sidebarIndex >= 0 && render(nodes[sidebarIndex], 'sidebar')}
+      <div className="html-document-body">
+        {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
+        {state.projection.truncated && <p className="document-mismatch" role="status">Preview truncated to stay within safe rendering limits.</p>}
+        {nodes.map((node, index) => index === sidebarIndex ? null : render(node, `root-${index}`))}
+      </div>
     </article>
   )
 }

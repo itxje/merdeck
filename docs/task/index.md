@@ -110,3 +110,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260916-2030-release-v0.14.1 Release v0.14.1**](20260916-2030-release-v0.14.1.md) `P1`
 - [x] [**20260917-0148-fix-html-topbar-and-ids Hide standalone template topbar and bind HTML element IDs**](20260917-0148-fix-html-topbar-and-ids.md) `P1`
 - [x] [**20260917-0150-release-v0.14.2 Release v0.14.2**](20260917-0150-release-v0.14.2.md) `P1`
+- [x] [**20260918-1426-agent-engine-list-and-html-layout Restore the agent engine list and rework the HTML preview layout**](20260918-1426-agent-engine-list-and-html-layout.md) `P1`

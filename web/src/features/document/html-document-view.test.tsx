@@ -139,3 +139,37 @@ it('attaches sourceId to rendered elements including container and media tags', 
   expect(globalThis.document.querySelector('div#topbar')).not.toBeNull()
   expect(globalThis.document.querySelector('video#player')).not.toBeNull()
 })
+
+it('lifts the contents list beside one body column and frames tables for scrolling', async () => {
+  vi.stubGlobal('Worker', FakeWorker)
+  render(<HtmlDocumentView path="docs/page.html" text="contents" onOpenFile={vi.fn()} />)
+  workers[0]?.onmessage?.({ data: {
+    id: 1,
+    projection: {
+      truncated: false,
+      stats: { visitedNodes: 9, textCharacters: 20 },
+      children: [
+        { type: 'element', tag: 'h1', sourceId: 'alpha', children: [{ type: 'text', value: 'Alpha' }] },
+        { type: 'element', tag: 'table', children: [
+          { type: 'element', tag: 'tbody', children: [
+            { type: 'element', tag: 'tr', children: [{ type: 'element', tag: 'td', children: [{ type: 'text', value: 'Cell' }] }] },
+          ] },
+        ] },
+        { type: 'element', tag: 'nav', sourceId: 'toc', children: [
+          { type: 'element', tag: 'ul', children: [
+            { type: 'element', tag: 'li', children: [{ type: 'element', tag: 'a', href: '#alpha', children: [{ type: 'text', value: 'Alpha' }] }] },
+          ] },
+        ] },
+      ],
+    },
+  } } as MessageEvent)
+  const article = await screen.findByRole('article', { name: 'HTML document' })
+  // The contents list leads the article, and every other node shares the body column.
+  expect([...article.children].map(child => child.tagName.toLowerCase())).toEqual(['nav', 'div'])
+  expect(article.querySelector('nav#toc')).not.toBeNull()
+  const body = article.querySelector('.html-document-body')
+  expect(body?.querySelector('h1#alpha')).not.toBeNull()
+  expect(body?.querySelector('.html-document-table > table')).not.toBeNull()
+  expect(screen.getByRole('table')).toBeVisible()
+  expect(screen.getAllByRole('button', { name: 'Alpha' })).toHaveLength(1)
+})

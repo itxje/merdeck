@@ -391,6 +391,11 @@ button:disabled { cursor: default; }
 .document-view h5 { font-size: 1rem; }
 .document-view h6 { font-size: .875rem; }
 .document-view p, .document-view ul, .document-view ol, .document-view blockquote { margin: 0 0 1em; }
+/* Tailwind preflight drops list markers; document content restores them. */
+.document-view ul { list-style: disc; padding-left: 1.5em; }
+.document-view ol { list-style: decimal; padding-left: 1.5em; }
+.document-view ul ul { list-style: circle; }
+.document-view li { margin: .3em 0; }
 .document-text-chunk { display: inline; }
 .document-view pre { overflow: auto; padding: 12px; background: var(--muted); border-radius: var(--radius-md); }
 .document-view table { border: 1px solid var(--border); border-collapse: collapse; margin: 1em 0; }
@@ -400,30 +405,48 @@ button:disabled { cursor: default; }
 .document-image, .document-mismatch { display: block; padding: 10px; border: 1px solid var(--border); color: var(--muted-foreground); }
 .document-link { color: var(--primary); text-decoration: underline; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
-.html-document-view { padding: 24px 36px; width: 100%; box-sizing: border-box; font-size: 15px; line-height: 1.7; }
-.html-document-view [id], .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { scroll-margin-top: 5rem; }
-.html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { color: var(--foreground); line-height: 1.25; margin: 1.6em 0 .6em; font-weight: 600; }
+/* The preview owns HTML document layout: standalone templates target a whole window, so the app
+   supplies the reading measure, the contents sidebar and the table, code and typography defaults. */
+.html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 52rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: 15px; line-height: 1.7; }
+.html-document-view [id], .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { scroll-margin-top: 1rem; }
+.html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { color: var(--foreground); line-height: 1.25; margin: 1.8em 0 .6em; font-weight: 600; }
 .html-document-view h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -.03em; }
 .html-document-view h2 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.02em; }
 .html-document-view h3 { font-size: 1.3rem; font-weight: 650; letter-spacing: -.01em; }
 .html-document-view h4 { font-size: 1.15rem; font-weight: 650; }
 .html-document-view h5 { font-size: 1.05rem; }
 .html-document-view h6 { font-size: .95rem; }
-.html-document-view:has(nav) { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 32px; width: 100%; }
-.html-document-view nav, .html-document-view nav#toc { flex: 0 0 280px; width: 280px; max-width: 320px; position: sticky; top: 64px; max-height: calc(100dvh - 120px); overflow-y: auto; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 13.5px; line-height: 1.5; }
-.html-document-view nav ul { list-style: none; margin: 0; padding-left: 0; }
-.html-document-view nav ul ul { padding-left: 1.25em; margin-top: 0.25em; }
-.html-document-view nav li { margin: 0.35em 0; }
-.html-document-view nav a { text-decoration: none; color: var(--foreground); }
-.html-document-view nav a:hover { color: var(--primary); text-decoration: underline; }
-.html-document-view main, .html-document-view main#content { flex: 1 1 0%; min-width: 0; width: 100%; }
+.html-document-view :is(main, section, article, div) > :first-child, .html-document-view hr + :is(h1, h2, h3, h4, h5, h6) { margin-top: 0; }
+.html-document-view:has(> nav) { grid-template-columns: var(--html-doc-toc) minmax(0, var(--html-doc-measure)); }
+/* The body takes the last column: the only one without a contents list, the second one with it. */
+.html-document-view > .html-document-body { grid-column: -2; min-width: 0; }
+/* The body column is one grid item, so the contents list stays sticky beside the whole document. */
+.html-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 13px; line-height: 1.45; }
+.html-document-view > nav ul { list-style: none; margin: 0; padding-left: 0; }
+.html-document-view > nav ul ul { margin: 2px 0 2px 9px; padding-left: 9px; border-left: 1px solid var(--border); }
+.html-document-view > nav li { margin: 0; }
+.html-document-view > nav :is(a, .document-link) { display: block; width: 100%; box-sizing: border-box; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; }
+.html-document-view > nav :is(a, .document-link):hover { background: var(--accent); color: var(--foreground); }
+.html-document-view > nav > ul > li > :is(a, .document-link) { color: var(--foreground); font-weight: 600; }
+.html-document-view p, .html-document-view ul, .html-document-view ol, .html-document-view blockquote, .html-document-view dl, .html-document-view figure { margin: 0 0 1.1em; }
+.html-document-view dt { font-weight: 600; }
+.html-document-view dd { margin: 0 0 .75em 1.5em; }
+.html-document-view hr { margin: 2em 0; border: 0; border-top: 1px solid var(--border); }
+.html-document-view blockquote { padding-left: 1em; border-left: 3px solid var(--border); color: var(--muted-foreground); }
+.html-document-view pre { margin: 0 0 1.2em; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--muted); font-size: 13px; line-height: 1.55; max-width: 100%; overflow-x: auto; }
+.html-document-view :not(pre) > code { padding: .1em .28em; border-radius: var(--radius-sm); background: var(--muted); font-size: .9em; overflow-wrap: break-word; }
+.html-document-view :is(td, th) code { padding: 0; background: none; }
+/* A wide table scrolls inside its own frame instead of stretching the document. */
+.html-document-view .html-document-table { margin: 0 0 1.2em; max-width: 100%; overflow-x: auto; }
+.html-document-view table { margin: 0; }
+.html-document-view th, .html-document-view td { padding: 8px 12px; vertical-align: top; overflow-wrap: break-word; }
+.html-document-view th { background: var(--muted); font-weight: 600; text-align: left; }
 .html-document-view img, .html-document-view video, .html-document-view audio { max-width: 100%; height: auto; }
 .html-document-view #topbar, .html-document-view #overlay, .html-document-view #resizer { display: none !important; }
-.html-document-view dl { margin: 0 0 1em; }.html-document-view dt { font-weight: 600; }.html-document-view dd { margin: 0 0 .75em 1.5em; }
 @media (max-width: 900px) {
-  .html-document-view:has(nav) { display: block; padding: 20px 16px; }
-  .html-document-view nav, .html-document-view nav#toc { position: static; width: 100%; max-width: 100%; max-height: 360px; margin-bottom: 24px; }
-  .html-document-view main, .html-document-view main#content { max-width: 100%; }
+  .html-document-view { padding: 20px 16px 56px; }
+  .html-document-view:has(> nav) { grid-template-columns: minmax(0, 1fr); }
+  .html-document-view > nav { position: static; max-height: none; overflow: visible; margin-bottom: 20px; }
 }
 .diagram-space { margin: auto; }
 .render-scratch { position: fixed; left: -100000px; top: 0; width: 1600px; visibility: hidden; pointer-events: none; }

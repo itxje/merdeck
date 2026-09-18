@@ -22,8 +22,10 @@ function exact(value: Record<string, unknown>, fields: string[]): void {
   if (Object.keys(value).length !== fields.length || fields.some(field => !(field in value)))
     invalid()
 }
+// Every provider the service can enable; a capability response may name each one once.
+const agentProviders = ['codex', 'claude', 'agy'] as const satisfies readonly AgentProvider[]
 function provider(value: unknown): AgentProvider {
-  return value === 'codex' || value === 'claude' || value === 'agy' ? value : invalid()
+  return agentProviders.includes(value as AgentProvider) ? value as AgentProvider : invalid()
 }
 function modelId(value: unknown): string {
   return typeof value === 'string' && value.length <= 100 && /^[a-z\d][\w.:[\]-]*$/i.test(value) ? value : invalid()
@@ -38,7 +40,7 @@ function eventId(value: unknown): number {
 export function decodeAgentCapabilities(value: unknown): AgentCapabilities {
   const item = object(value)
   exact(item, ['enabled', 'providers'])
-  if (typeof item.enabled !== 'boolean' || !Array.isArray(item.providers) || item.providers.length > 2)
+  if (typeof item.enabled !== 'boolean' || !Array.isArray(item.providers) || item.providers.length > agentProviders.length)
     return invalid()
   const providers = item.providers.map((raw) => {
     const entry = object(raw)
