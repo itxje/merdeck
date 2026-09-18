@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-18 17:23 [release]
+
+Published [v0.15.0](https://github.com/itxje/merdeck/releases/tag/v0.15.0) delivering the previewed file
+attached to every agent turn, file work that runs without an approval prompt, a transcript that survives a
+reload, file tools that name their target, and one engine/model selector row. Exact commit `e13c194` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35371867211), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35372987770) repeated acceptance and published
+`merdeck.tar.gz` (1382811 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded archive.
+See [20260918-1701-release-v0.15.0](task/20260918-1701-release-v0.15.0.md).
+
 ## 2026-09-18 16:27 [feature]
 
 Attached the previewed file to every agent turn and removed the approval step from file work:
