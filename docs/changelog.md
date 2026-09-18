@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-18 16:26 [release]
+
+Published [v0.14.4](https://github.com/itxje/merdeck/releases/tag/v0.14.4) delivering an engine and model that stay selectable after a turn, a panel that settles when its event stream is dropped, the AI file editor docked open by default, and a larger HTML document preview type scale. Exact commit `1a4985906a797206a263a2f957345b21083785c1` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35365581159), and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35366550282) repeated acceptance and published `merdeck.tar.gz` and `SHA256SUMS` after one rerun of an infrastructure flake. See [20260918-1558-release-v0.14.4](task/20260918-1558-release-v0.14.4.md).
+
 ## 2026-09-18 15:24 [fix]
 
 Kept the AI file editor usable after a turn, docked it open by default, and enlarged HTML document type:
