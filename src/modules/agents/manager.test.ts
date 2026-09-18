@@ -247,6 +247,36 @@ describe('agent manager', () => {
     await manager.close()
   })
 
+  test('spends one event on a run of streamed text but still bounds its bytes', async () => {
+    const { manager, sessions, owner } = fixture({ maximumEvents: 3, maximumEventBytes: 4096 })
+    const streamed = await manager.create('codex', 'default', owner)
+    const received: AgentEvent[] = []
+    manager.listen(streamed.id, owner, 0, (event) => {
+      if (event)
+        received.push(event)
+    })
+    await manager.startTurn(streamed.id, owner, 'stream')
+    for (let index = 0; index < 64; index++)
+      sessions[0]?.emit({ type: 'assistant.delta', text: 'word ' })
+    sessions[0]?.emit({ type: 'tool.started', label: 'Edit flow.mmd' })
+    sessions[0]?.emit({ type: 'turn.completed' })
+    await waitFor(() => received.some(event => event.type === 'turn.completed'))
+    expect(received.some(event => event.type === 'turn.failed')).toBe(false)
+    expect(sessions[0]?.closed).toBe(0)
+
+    const flooded = await manager.create('codex', 'default', owner)
+    manager.listen(flooded.id, owner, 0, (event) => {
+      if (event)
+        received.push(event)
+    })
+    await manager.startTurn(flooded.id, owner, 'stream too much')
+    for (let index = 0; index < 200; index++)
+      sessions[1]?.emit({ type: 'assistant.delta', text: 'word ' })
+    await waitFor(() => sessions[1]?.closed === 1)
+    expect(received.at(-1)).toMatchObject({ type: 'turn.failed', message: 'The provider output limit was exceeded.' })
+    await manager.close()
+  })
+
   test('closes all conversations for a logged-out principal', async () => {
     const { manager, sessions, owner } = fixture()
     const conversation = await manager.create('codex', 'default', owner)

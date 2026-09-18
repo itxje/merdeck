@@ -40,6 +40,7 @@ interface ConversationRecord {
   active: boolean
   turnOutputBytes: number
   turnEventCount: number
+  turnLastEvent?: AgentAdapterEvent['type'] | undefined
   turnTimer?: ReturnType<typeof setTimeout>
   terminalTimer?: ReturnType<typeof setTimeout>
   expiryTimer: ReturnType<typeof setTimeout>
@@ -189,6 +190,7 @@ export class AgentManager {
     conversation.active = true
     conversation.turnOutputBytes = 0
     conversation.turnEventCount = 0
+    conversation.turnLastEvent = undefined
     this.activeTurns++
     this.append(conversation, { type: 'turn.started', turnId: opaqueId() })
     conversation.turnTimer = setTimeout(() => {
@@ -281,7 +283,12 @@ export class AgentManager {
     }
     if (!conversation.active)
       return
-    conversation.turnEventCount++
+    // Streaming text arrives one fragment per token and the browser merges consecutive deltas into a single
+    // message, so a run of them costs one event and the byte bound stays the real guard on assistant output.
+    const continuesText = event.type === 'assistant.delta' && conversation.turnLastEvent === 'assistant.delta'
+    conversation.turnLastEvent = event.type
+    if (!continuesText)
+      conversation.turnEventCount++
     conversation.turnOutputBytes += Buffer.byteLength(JSON.stringify(event))
     if (conversation.turnEventCount > this.maximumEvents || conversation.turnOutputBytes > this.maximumEventBytes) {
       void this.stopAndTerminate(conversation, 'The provider output limit was exceeded.')

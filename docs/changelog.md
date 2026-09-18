@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-18 17:41 [fix]
+
+Stopped a normal streamed answer from exhausting the agent turn budget. `AgentManager.receive` counted one
+event per streamed text fragment, and a provider started with partial messages emits one per token, so a turn
+of a few paragraphs passed the 256-event budget and the panel reported "The provider output limit was
+exceeded." long before the 1 MiB byte bound. A run of consecutive `assistant.delta` events now costs one event,
+matching the way the browser merges them into a single message; tool, file, approval and terminal events keep
+costing one each, and the byte bound is unchanged.
+See [20260918-1741-agent-stream-event-budget](task/20260918-1741-agent-stream-event-budget.md).
+
 ## 2026-09-18 17:23 [release]
 
 Published [v0.15.0](https://github.com/itxje/merdeck/releases/tag/v0.15.0) delivering the previewed file

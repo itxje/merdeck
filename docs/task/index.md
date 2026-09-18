@@ -115,3 +115,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260918-1558-release-v0.14.4 Release v0.14.4**](20260918-1558-release-v0.14.4.md) `P1`
 - [x] [**20260918-1627-agent-current-file-context Attach the previewed file to agent turns**](20260918-1627-agent-current-file-context.md) `P1`
 - [x] [**20260918-1701-release-v0.15.0 Release v0.15.0**](20260918-1701-release-v0.15.0.md) `P1`
+- [x] [**20260918-1741-agent-stream-event-budget Count streamed text once against the turn budget**](20260918-1741-agent-stream-event-budget.md) `P1`
