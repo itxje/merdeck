@@ -424,6 +424,11 @@ button:disabled { cursor: default; }
 .markdown-document-view > nav .document-contents-depth-1 > .document-link { color: var(--foreground); font-weight: 600; }
 .markdown-document-view > nav .document-contents-depth-2 > .document-link { padding-left: 17px; }
 .markdown-document-view > nav .document-contents-depth-3 > .document-link { padding-left: 26px; }
+@media (max-width: 900px) {
+  .markdown-document-view { padding: 20px 16px 56px; }
+  .markdown-document-view:has(> nav) { grid-template-columns: minmax(0, 1fr); }
+  .markdown-document-view > nav { position: static; max-height: none; overflow: visible; margin-bottom: 20px; }
+}
 /* The preview owns HTML document layout: standalone templates target a whole window, so the app
    supplies the reading measure, the contents sidebar and the table, code and typography defaults. */
 .html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: 17px; line-height: 1.7; }

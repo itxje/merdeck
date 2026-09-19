@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-19 17:27 [fix]
+
+The Markdown preview's contents list was not adapted for mobile browsers: `.html-document-view` carries an
+`@media (max-width: 900px)` rule that collapses its sidebar contents list to a single column with a static,
+non-sticky nav, but the Markdown contents list added in v0.16.0 shared that same two-column layout without the
+matching breakpoint. Added the same media query to `.markdown-document-view`. See
+[20260919-1727-markdown-contents-mobile-layout](task/20260919-1727-markdown-contents-mobile-layout.md).
+
 ## 2026-09-19 09:19 [release]
 
 Published [v0.16.0](https://github.com/itxje/merdeck/releases/tag/v0.16.0) delivering the Markdown preview's
