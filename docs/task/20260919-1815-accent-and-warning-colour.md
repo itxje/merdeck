@@ -290,3 +290,74 @@ doing or a flake) required reading the fake-provider mechanism itself, which sur
   path mismatch against the provider's fixed write target on every run, not intermittently). Neither is a
   flake unrelated to this branch. The corrected lock-based fix addresses the root cause of both: it keeps the
   literal path the provider requires and only serialises the specific cases that must share it.
+
+### Review correction 4: a real diagnosis supersedes both prior guesses (2026-09-19)
+
+An independent diagnosis found the actual mechanism behind the fixture failure, which was neither the
+scheduling theory (correction 1) nor the write-path theory (correction 3): the browser suite runs with a
+single Playwright worker (`web/src/test/e2e/playwright.config.ts:9`), so nothing in it is ever concurrent, and
+the deterministic provider fixture always writes the literal relative path `agent-live.mmd` in its working
+directory (`scripts/test-e2e.ts:84`, cwd = the service's project root per `src/modules/agents/codex.ts:48`) on
+every *auto-accepted* file-change approval (`src/modules/agents/codex.ts:270`). `accent-contrast.spec.ts`'s
+chat-bubble cases send a real turn but only ever owned their own uuid-named fixture, so each left
+`<openRoot>/agent-live.mmd` behind afterwards; the next case that exclusive-creates that exact path then fails
+immediately (~30ms), not from any race.
+
+- **Applied the diagnosed fix exactly as directed.** Synced with `feat/ui-refresh` (already current) and
+  `git cherry-pick d6230b2` (clean, no conflicts) — the fix commit, touching only
+  `web/src/test/e2e/accent-contrast.spec.ts`. Did **not** cherry-pick its parent `34008e2` (the repro), which
+  lives partly under `src/modules/agents/` and asserts a property of the out-of-scope fixture; confirmed its
+  changes to `agent-editing.spec.ts`/`type-scale.spec.ts` are byte-identical to the untouched
+  `feat/ui-refresh` versions of those files, so restoring those two files to that pristine state (`git checkout
+  8a2b529 -- ...`, committed separately) reaches the same "integration-branch shape" without importing the
+  out-of-scope commit.
+- **Confirmed the resulting shape matches what was asked:** `accent-contrast.spec.ts`'s chat-bubble case now
+  holds both paths (its own uuid fixture and the root-level `agent-live.mmd` the provider always produces),
+  waits for the reported file-change target in the conversation log before leaving the case (the provider
+  writes before it reports, so this puts clean-up after the write rather than in a race with it), and removes
+  both in its `finally`. The `withAgentLiveLock` helper is gone from all three spec files.
+  `agent-editing.spec.ts` and `type-scale.spec.ts` are back to the literal path and plain exclusive-create,
+  unchanged from `feat/ui-refresh`, so a future leftover fails loudly again instead of being masked by a lock.
+- **Item 7 (flake vs. regression), asked again with corrected framing:** with the real mechanism now known,
+  both of this task's own prior attempts (the worker-distribution theory and the write-path theory) were
+  wrong guesses, not confirmed causes — this is recorded plainly rather than restated as settled.
+- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+  && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
+  coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+
+**Item 3 investigation (the open-but-unselected marker, `accent-contrast.spec.ts:199`).** Instructed to
+establish, before changing anything, whether `fillContrast(page, openMarker, openRow)` measuring 1.0726:1
+(light) / 1.2467:1 (dark) is a locator reaching into the selected row, or a genuine `web/src/index.css` defect
+where the accent-foreground override applies to a row without `aria-current="true"`. No source file was
+changed for this item pending that determination.
+
+- Read `web/src/index.css:214-218` (the two `.dirty-dot` rules) and the `.tree-row[aria-current="true"]`
+  selector's specificity against the plain `.dirty-dot { background: var(--warning); }` rule: both are
+  unlayered (outside the file's one `@layer base {}` block, verified by counting braces), so ordinary
+  specificity applies — `(0,4,0)` for the attribute-scoped rule beats `(0,1,0)` for the plain one only when
+  both could match, and the attribute selector `[aria-current="true"]` cannot match an element whose
+  `aria-current` value is the literal string `"false"`. No `!important`, no duplicate `.dirty-dot` or
+  `--warning`/`--sidebar` definition, no cascade-layer mismatch found anywhere in the file (grepped and
+  read the relevant regions directly rather than assuming).
+  - Confirmed the risk this reasoning depends on — that React might omit rather than stringify
+    `aria-current={false}` — is not real: `renderToStaticMarkup` on a plain `<button aria-current={false}>`
+    element (using the project's own React) prints `aria-current="false"` (verified by running it, not
+    assumed).
+  - Rendered the real `FileTree` component (not a rewritten stand-in) with the project's own Vitest/RTL
+    harness twice — once with `path='welcome.mmd'` (selected) and once with `path='sequence.mermaid'`
+    (welcome.mmd open-but-unselected), both with an identical dirty draft for `welcome.mmd` — and diffed the
+    two renders' `welcome.mmd` row `outerHTML` byte-for-byte. The two are **identical except for the
+    `aria-current` attribute value** (`"true"` vs `"false"`); same classes, same single `.dirty-dot` child, no
+    stray element, no different marker.
+- This evidence does not support "the locator is reaching a marker inside the selected row": the row and its
+  marker are the correct, uniquely-identified element for the unselected state, structurally indistinguishable
+  from the selected case except for the one attribute the CSS selector keys on. It also does not, by itself,
+  reveal a mechanism for "the override genuinely applies to rows without aria-current" — the selector text is
+  unambiguous and, read literally, cannot match here.
+- **Could not reach a certain determination.** Every static and component-level check available in this
+  sandbox (no live browser to run the actual Playwright suite, an unchanged limitation throughout this task)
+  shows the source, as written, should not produce this pairing. Rather than guess a defensive CSS change
+  against an unconfirmed mechanism — which the instruction for this item explicitly rules out — this is left
+  unfixed, reported honestly as inconclusive from available tools, pending either a live run's DevTools
+  "computed style" inspection of the actual marker (which would show which rule wins and settle this
+  directly) or further direction.
