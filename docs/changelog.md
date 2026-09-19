@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-19 08:16 [feature]
+
+Gave the Markdown preview a contents list and the same type scale as the HTML preview:
+- A sticky contents list built from the document's own headings down to the third level, sharing the heading
+  anchors the in-document links already use, shown only when a document has more than one listed heading.
+- One 64rem reading measure beside the 16rem contents column, matching the HTML document layout.
+- A 17px body with headings scaled in `em` rather than root-relative `rem`, so every level stays larger than
+  the body it introduces, plus framed `pre` at 14px and an inline `code` treatment.
+See [20260919-0816-markdown-contents-and-type](task/20260919-0816-markdown-contents-and-type.md).
+
 ## 2026-09-19 01:57 [release]
 
 Published [v0.15.2](https://github.com/itxje/merdeck/releases/tag/v0.15.2) delivering commit `4eb7898`: the AI

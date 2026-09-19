@@ -65,6 +65,8 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     await expect(article.getByRole('link', { name: 'bad', exact: true })).toHaveCount(0)
     await expect(article.getByRole('link', { name: 'escape', exact: true })).toHaveCount(0)
     await expect(article.getByRole('link', { name: 'encoded', exact: true })).toHaveCount(0)
+    // Diagrams render as they approach the viewport, so the second one is reached before counting both.
+    await article.locator('.document-diagram').nth(1).scrollIntoViewIfNeeded()
     await expect(article.locator('.document-diagram svg')).toHaveCount(2)
     await expect(article.locator('.document-diagram svg marker')).not.toHaveCount(0)
     expect(await article.locator('.document-diagram').evaluateAll((figures) => {

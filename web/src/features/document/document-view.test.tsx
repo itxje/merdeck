@@ -336,7 +336,7 @@ it('renders approved Markdown semantics, definitions, images, footnotes, and lit
   expect(screen.getByText('strong').tagName).toBe('STRONG')
   expect(screen.getByText('gone').tagName).toBe('DEL')
   expect(screen.getByRole('article').querySelector('br')).not.toBeNull()
-  expect(screen.getAllByRole('list')[0]).toHaveAttribute('start', '3')
+  expect(screen.getByRole('article').querySelector('.markdown-document-body ol')).toHaveAttribute('start', '3')
   expect(screen.getByRole('checkbox', { name: 'Completed task' })).toBeChecked()
   expect(screen.getByRole('table').querySelector('thead th')).toHaveStyle({ textAlign: 'left' })
   expect(screen.getByRole('table').querySelector('tbody td:last-child')).toHaveStyle({ textAlign: 'right' })
@@ -470,4 +470,22 @@ it('places an empty closed top-level Mermaid fence while retaining the exact mis
   expect(await screen.findByRole('alert')).toHaveTextContent('Diagram placement could not be verified')
   expect(screen.queryByRole('button', { name: 'Select Diagram 1' })).toBeNull()
   expect(screen.getByRole('code')).toHaveTextContent('')
+})
+
+it('lists the document headings beside the body and scrolls to the chosen one', async () => {
+  const scrollIntoView = vi.fn()
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView })
+  const text = '# Guide\n\nIntro.\n\n## Install\n\nSteps.\n\n### Details\n\nMore.\n\n#### Skipped\n\nDeep.\n'
+  render(<DocumentView path="docs/guide.md" text={text} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  const contents = await screen.findByRole('navigation', { name: 'Contents' })
+  // Headings deeper than the third level would crowd the list, so they stay out of it.
+  expect([...contents.querySelectorAll('button')].map(item => item.textContent)).toEqual(['Guide', 'Install', 'Details'])
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Install' }))
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+})
+
+it('omits the contents list from a document with fewer than two listed headings', async () => {
+  render(<DocumentView path="docs/short.md" text={'# Only\n\nBody.\n\n#### Deep\n'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  expect(await screen.findByRole('heading', { name: 'Only' })).toBeVisible()
+  expect(screen.queryByRole('navigation', { name: 'Contents' })).toBeNull()
 })

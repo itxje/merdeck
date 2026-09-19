@@ -382,14 +382,16 @@ button:disabled { cursor: default; }
 .label-editor [data-slot="textarea"] { resize: none; padding: 6px 10px; text-align: center; font: 14px/1.4 ui-sans-serif, system-ui, sans-serif; background: var(--background); box-shadow: 0 4px 16px var(--overlay); }
 .label-editor p { margin: 0; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--destructive); font-size: 11px; line-height: 1.5; }
 .preview-note { border-bottom: 1px solid var(--border); padding: 8px 18px; color: var(--muted-foreground); font-size: 11px; }
-.document-view { overflow: auto; padding: 32px max(20px, calc((100% - 920px) / 2)); line-height: 1.65; }
-.document-view h1, .document-view h2, .document-view h3, .document-view h4, .document-view h5, .document-view h6 { color: var(--foreground); line-height: 1.2; margin: 1.5em 0 .6em; font-weight: 600; }
-.document-view h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.03em; }
-.document-view h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
-.document-view h3 { font-size: 1.25rem; font-weight: 650; letter-spacing: -.01em; }
-.document-view h4 { font-size: 1.125rem; font-weight: 650; }
-.document-view h5 { font-size: 1rem; }
-.document-view h6 { font-size: .875rem; }
+.document-view { overflow: auto; padding: 32px max(20px, calc((100% - 920px) / 2)); font-size: 17px; line-height: 1.7; }
+/* Headings scale with the document type rather than the shell, so both previews read the same. */
+.document-view h1, .document-view h2, .document-view h3, .document-view h4, .document-view h5, .document-view h6 { color: var(--foreground); line-height: 1.25; margin: 1.8em 0 .6em; font-weight: 600; }
+.document-view h1 { font-size: 1.85em; font-weight: 700; letter-spacing: -.03em; }
+.document-view h2 { font-size: 1.55em; font-weight: 700; letter-spacing: -.02em; }
+.document-view h3 { font-size: 1.3em; font-weight: 650; letter-spacing: -.01em; }
+.document-view h4 { font-size: 1.2em; font-weight: 650; }
+.document-view h5 { font-size: 1.1em; }
+/* Every heading stays larger than the body it introduces, so the sixth level sits just above 1em. */
+.document-view h6 { font-size: 1.05em; }
 .document-view p, .document-view ul, .document-view ol, .document-view blockquote { margin: 0 0 1em; }
 /* Tailwind preflight drops list markers; document content restores them. */
 .document-view ul { list-style: disc; padding-left: 1.5em; }
@@ -397,7 +399,9 @@ button:disabled { cursor: default; }
 .document-view ul ul { list-style: circle; }
 .document-view li { margin: .3em 0; }
 .document-text-chunk { display: inline; }
-.document-view pre { overflow: auto; padding: 12px; background: var(--muted); border-radius: var(--radius-md); }
+.document-view pre { overflow: auto; padding: 14px 16px; border: 1px solid var(--border); background: var(--muted); border-radius: var(--radius-md); font-size: 14px; line-height: 1.55; }
+.document-view :not(pre) > code { padding: .1em .28em; border-radius: var(--radius-sm); background: var(--muted); font-size: .9em; overflow-wrap: break-word; }
+.document-view :is(td, th) code { padding: 0; background: none; }
 .document-view table { border: 1px solid var(--border); border-collapse: collapse; margin: 1em 0; }
 .document-view thead { border: 1px solid var(--border); }
 .document-view th, .document-view td { border: 1px solid var(--border); padding: 6px 10px; }
@@ -405,6 +409,21 @@ button:disabled { cursor: default; }
 .document-image, .document-mismatch { display: block; padding: 10px; border: 1px solid var(--border); color: var(--muted-foreground); }
 .document-link { color: var(--primary); text-decoration: underline; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
+/* The Markdown preview derives its contents list from the document's own headings and lays it out
+   beside one reading measure, matching the HTML preview. */
+.markdown-document-view { --markdown-doc-toc: 16rem; --markdown-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, var(--markdown-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; }
+.markdown-document-view:has(> nav) { grid-template-columns: var(--markdown-doc-toc) minmax(0, var(--markdown-doc-measure)); }
+.markdown-document-view > .markdown-document-body { grid-column: -2; min-width: 0; }
+.markdown-document-view > .markdown-document-body > :first-child { margin-top: 0; }
+/* The body column is one grid item, so the contents list stays sticky beside the whole document. */
+.markdown-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 14px; line-height: 1.45; }
+.markdown-document-view > nav ul { list-style: none; margin: 0; padding-left: 0; }
+.markdown-document-view > nav li { margin: 0; }
+.markdown-document-view > nav .document-link { display: block; width: 100%; box-sizing: border-box; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
+.markdown-document-view > nav .document-link:hover { background: var(--accent); color: var(--foreground); }
+.markdown-document-view > nav .document-contents-depth-1 > .document-link { color: var(--foreground); font-weight: 600; }
+.markdown-document-view > nav .document-contents-depth-2 > .document-link { padding-left: 17px; }
+.markdown-document-view > nav .document-contents-depth-3 > .document-link { padding-left: 26px; }
 /* The preview owns HTML document layout: standalone templates target a whole window, so the app
    supplies the reading measure, the contents sidebar and the table, code and typography defaults. */
 .html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: 17px; line-height: 1.7; }

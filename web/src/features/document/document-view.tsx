@@ -389,6 +389,12 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     const slugger = new GithubSlugger()
     return new Map(metadata.headings.map(node => [node, slugger.slug(phrasingText(node.children))]))
   }, [metadata])
+  // The contents list is built from the document's own headings and shares the heading anchors, so a
+  // reader gets the same navigation the HTML preview offers.
+  const contents = React.useMemo(() => metadata.headings
+    .filter(node => node.depth <= 3)
+    .map(node => ({ slug: headingSlugs.get(node) ?? '', depth: node.depth, text: phrasingText(node.children).trim() }))
+    .filter(item => !!item.slug && !!item.text), [metadata, headingSlugs])
   const placementOk = blocks.every(block => tree?.children.some((node): boolean => node.type === 'code' && node.lang === 'mermaid' && codePlacementKey(node) === blockPlacementKey(block)))
   const image = (alt: string | null | undefined, url: string | undefined, key: string) => (
     <span key={key} className="document-image">
@@ -554,14 +560,27 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     return <React.Fragment key={key}>{children}</React.Fragment>
   }
   if (parsed.error)
-    return <article className="document-view" aria-label="Markdown document"><p role="alert">{parsed.error}</p></article>
+    return <article className="document-view markdown-document-view" aria-label="Markdown document"><p role="alert">{parsed.error}</p></article>
   if (!parsed.tree)
-    return <article className="document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
+    return <article className="document-view markdown-document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
   return (
-    <article ref={articleRef} className="document-view" aria-label="Markdown document">
-      {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
-      {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
-      {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
+    <article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document">
+      {contents.length > 1 && (
+        <nav aria-label="Contents">
+          <ul>
+            {contents.map(item => (
+              <li key={item.slug} className={`document-contents-depth-${item.depth}`}>
+                <button type="button" className="document-link" onClick={() => headingMapRef.current.get(item.slug)?.scrollIntoView({ block: 'nearest' })}>{item.text}</button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      <div className="markdown-document-body">
+        {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
+        {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
+        {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
+      </div>
     </article>
   )
 }

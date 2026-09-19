@@ -119,3 +119,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260919-0108-release-v0.15.1 Release v0.15.1**](20260919-0108-release-v0.15.1.md) `P1`
 - [x] [**20260919-0136-agent-selection-persistence-and-html-width Keep the chosen engine and model across a reload, widen the HTML reading measure**](20260919-0136-agent-selection-persistence-and-html-width.md) `P2`
 - [x] [**20260919-0146-release-v0.15.2 Release v0.15.2**](20260919-0146-release-v0.15.2.md) `P1`
+- [x] [**20260919-0816-markdown-contents-and-type Give the Markdown preview a contents list and larger type**](20260919-0816-markdown-contents-and-type.md) `P1`
