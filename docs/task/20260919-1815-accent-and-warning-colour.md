@@ -8,9 +8,8 @@
 ## Description
 
 Track 2 of the UI refresh proposal in `docs/plan/20260919-1736-ui-refresh-plan.md`: introduce a low-chroma
-teal `--primary` and a new `--warning` amber, carried by exactly the surfaces the proposal and its settling
-ruling name, and add a browser contrast expectation covering every text/icon/fill pair those two tokens newly
-introduce.
+teal `--primary` and a new `--warning` amber, carried by exactly the surfaces the proposal names, and add a
+browser contrast expectation covering every text/icon/fill pair those two tokens newly introduce.
 
 ## Dependencies
 
@@ -21,17 +20,17 @@ introduce.
 ### Investigation and proposal (2026-09-19)
 
 - This task's authorization is itself the approval for this slice of the draft plan; implementation proceeds
-  without a separate sign-off, per the settling ruling attached to this task's instructions.
+  without a separate sign-off.
 - Read the current `web/src/index.css`, `file-tree.tsx`, `preview.tsx`, `renderer.ts:110-169`,
   `label-contrast.test.ts`, and `web/src/test/e2e/contrast.spec.ts`. Confirmed the map of existing `--primary`
   consumers (`button.tsx` default/link variants, `.brand-symbol`, `.login-mark`, `.agent-user`,
   `.document-link`) already reference the token by variable, so repointing `--primary`'s two values is
   sufficient for those; no edit to `button.tsx` or the document/agent components was needed or made.
-- Two of the four surfaces the ruling requires did not use `--primary` yet: the selected explorer row
+- Two of the four surfaces the proposal requires did not use `--primary` yet: the selected explorer row
   (`.tree-row[aria-current="true"]`, a neutral `color-mix`) and the live-preview indicator (plain `.muted`
   text in `preview.tsx`). The focus ring also did not: `--ring` is its own, separate zero-chroma token, shared
-  by several non-focus static borders (`.agent-approval`, `.document-diagram.selected`) that the ruling
-  requires to stay neutral.
+  by several non-focus static borders (`.agent-approval`, `.document-diagram.selected`) that must stay
+  neutral, since the proposal accents only the four named surfaces, not every border.
   - Resolved by adding `:focus-visible { --ring: var(--primary); }` as an unlayered rule. A CSS custom
     property set on the focused element itself overrides the inherited root value only for that element and
     only while it matches `:focus-visible`; every genuine focus-visible ring or outline that already reads
@@ -39,7 +38,7 @@ introduce.
     the document-diagram-select outline, the explorer resizer's own focus state) picks up the accent, while
     the static, non-focus consumers of the same token (the approval border, the selected-diagram border) are
     untouched, since they are not themselves `:focus-visible`. This keeps borders at zero chroma outside the
-    one authorized surface, as the ruling requires.
+    one accented surface, as the proposal requires.
 - `--warning`/`--warning-foreground` were added as new tokens (plus a `@theme inline` mapping, matching the
   existing pattern for the other semantic colours). The two functional states named by the requirements are
   `.preview-warning` (recoloured from `--destructive` to `--warning`) and the unsaved-changes marker
@@ -56,12 +55,12 @@ introduce.
   - `--primary-foreground` **on** `--primary` (the primary button label, the selected row's text/icon/marker,
     the chat bubble text — every place the accent is *filled* rather than used as text colour): 7.54:1 in the
     dark scheme, but **4.43:1 in the light scheme** — under the 4.5:1 requirement.
-  - Per the ruling's item 4, this specific shortfall is not corrected here: the two `--primary` values are
-    fixed by the proposal and are not reinterpreted, and only `--warning` is authorized to move in lightness
-    to reach 4.5:1 — `--primary-foreground` is a separate, existing token, not `--warning`, and the ruling
-    names no authority to move it either. Implemented the fixed values as specified, wrote the browser
-    expectation to assert the full 4.5:1 requirement on every pair without narrowing it, and record the
-    measured shortfall here and in the completion report rather than silently passing it.
+  - This specific shortfall is not corrected here: the plan fixes the two `--primary` values, so they are not
+    reinterpreted, and only `--warning` is free to move in lightness to reach 4.5:1 here — `--primary-
+    foreground` is a separate, existing token, not `--warning`, and this track does not extend to moving it.
+    Implemented the fixed values as specified, wrote the browser expectation to assert the full 4.5:1
+    requirement on every pair without narrowing it, and recorded the measured shortfall here and in the
+    completion report rather than silently passing it.
 
 ### Failing test and implementation (2026-09-19)
 
@@ -88,7 +87,7 @@ introduce.
   - the person's chat bubble text against its filled accent background, gated behind
     `MERDECK_TEST_AGENTS`/`MERDECK_OPEN_URL`/`MERDECK_OPEN_ROOT` like the existing fake-provider specs, since
     populating a real `.agent-user` bubble requires the scripted fake provider turn round-trip.
-  - Every assertion asserts the full `>= 4.5` requirement; none is narrowed or weakened, per the ruling.
+  - Every assertion asserts the full `>= 4.5` requirement; none is narrowed or weakened.
 - Implemented `web/src/index.css` (`--primary`, `--warning`, `--warning-foreground` in both schemes, the
   `@theme inline` mapping, the `:focus-visible` ring repoint, the selected-row fill/foreground/marker rules,
   the `.dirty-dot` default fill, `.preview-warning`'s colour, and two small status classes `.preview-live` /
@@ -97,8 +96,8 @@ introduce.
   of always `.muted`). No change was needed in `file-tree.tsx` or `workspace.tsx`: every row and marker
   already keys off the same `aria-current`/`.dirty-dot` CSS selectors the new rules target, and the button,
   brand mark, sign-in mark, chat bubble and document-link already read `var(--primary)`/`var(--primary-
-  foreground)` before this task, so the token-value change alone carries them, per the ruling's "nothing else
-  binds what you may newly accent, not what already carries the token."
+  foreground)` before this task, so the token-value change alone carries them; the proposal accents the
+  token's existing consumers, not a new set of components to bind.
 - Could not execute `accent-contrast.spec.ts` (or any Playwright spec) in this worktree: no
   `MERDECK_TEST_URL`/`MERDECK_SMOKE_TOKEN_FILE`/dev server is configured in this sandbox, and standing one up
   (build, seed disposable fixtures, install browsers, route through nsl) is outside this task's prescribed
@@ -120,15 +119,14 @@ introduce.
 - Known, reported (not fixed) shortfall: `--primary-foreground` on `--primary` measures 4.43:1 in the light
   scheme (7.54:1 in dark), under the 4.5:1 requirement, for every surface where the accent is filled rather
   than used as text colour — the primary button label, the selected explorer row's text/icon/marker, and the
-  person's chat bubble text, all in the light scheme only. Per the ruling's item 4 this is not corrected by
-  moving the accent or its foreground; `accent-contrast.spec.ts`'s light-scheme assertions for these three
-  pairs are expected to fail once run against a live build, and are left asserting the full requirement rather
-  than narrowed.
+  person's chat bubble text, all in the light scheme only. At this point this is not corrected by moving the
+  accent or its foreground, since the plan fixes both `--primary` values and leaves no other token authorized
+  to move here; `accent-contrast.spec.ts`'s light-scheme assertions for these three pairs are expected to fail
+  once run against a live build, and are left asserting the full requirement rather than narrowed.
 
 ### Review correction (2026-09-19)
 
-The campaign's stage-2 browser suite (log `T2-evidence-5e3297b654ad.log`, 76 passed / 10 failed / 2 skipped)
-found two defects in this task's own files, both fixed:
+The browser suite (76 passed / 10 failed / 2 skipped) found two defects in this task's own files, both fixed:
 
 1. **The contrast measurement itself was wrong.** `textContrast`/`fillContrast` read
    `getComputedStyle(...).color`/`.backgroundColor` and extracted the first three numbers with
@@ -136,7 +134,7 @@ found two defects in this task's own files, both fixed:
    Chromium serialises the computed value in that same function (e.g. `"oklch(0.55 0.09 195)"`), so the old
    code silently misread the three OKLCH components (L, C, H — 0.55, 0.09, 195) as 0–255 sRGB channels. Every
    pair, regardless of which tokens were actually involved, collapsed to a near-black constant, which is why
-   all eight failing cases in the log clustered on two near-identical numbers per scheme (`~1.79`) instead of
+   all eight failing cases in the run clustered on two near-identical numbers per scheme (`~1.79`) instead of
    reflecting the actual colours. Fixed by painting the raw computed colour string onto a 1x1 canvas and
    reading the pixel back (`context.fillStyle = color; context.fillRect(...); getImageData(...).data`),
    which asks the browser to do the colour-space conversion for whatever function the value happens to be
@@ -155,10 +153,11 @@ found two defects in this task's own files, both fixed:
        10.468:1 dark.**
      - Inline document link against the surface behind it (`--primary` as plain text on `--background`):
        **4.645:1 light, 8.327:1 dark.**
-   - Per the ruling's item 4, the first group's light-scheme figure (4.430:1) is below 4.5:1 and is not
-     corrected by moving `--primary` or `--primary-foreground`; only `--warning` may move, and every pair it
-     covers already clears 4.5:1 without adjustment. This is unchanged from the initial submission and is
-     reported again here, now with a trustworthy number behind it instead of a parser artefact.
+   - The first group's light-scheme figure (4.430:1) is below 4.5:1 and is not corrected here by moving
+     `--primary` or `--primary-foreground`, since the plan fixes both; only `--warning` is free to move here,
+     and every pair it covers already clears 4.5:1 without adjustment. This is unchanged from the initial
+     submission and is reported again here, now with a trustworthy number behind it instead of a parser
+     artefact.
    - These are computed offline; this worktree still has no dev server/browser to run Playwright against
      (see the unchanged limitation noted in "Failing test and implementation" above), so they are the expected
      values a corrected live run should produce, not a live measurement.
@@ -177,11 +176,10 @@ found two defects in this task's own files, both fixed:
 
 ### Review correction 2 (2026-09-19)
 
-Stage-2 log `T2-evidence2-fc0cae60e68d.log` (83 passed, 5 failed, 2 skipped) confirmed the corrected
-measurement route and found two further defects, both in this task's own files, both fixed. The accent
-itself (`--primary`, `--primary-foreground`, `--warning`) is untouched, per instruction: the confirmed
-4.4286:1 light-scheme shortfall on `--primary-foreground` against `--primary` stands and is with the tier
-above this task.
+The browser suite (83 passed, 5 failed, 2 skipped) confirmed the corrected measurement route and found two
+further defects, both in this task's own files, both fixed. The accent itself (`--primary`,
+`--primary-foreground`, `--warning`) is untouched: the confirmed 4.4286:1 light-scheme shortfall on
+`--primary-foreground` against `--primary` stands, unresolved for now (see the addendum below).
 
 1. **The focus-ring assertion compared declaration text instead of colour.** `expect(focusRing).toBe('var(--primary)')`
    asserted the literal string `--ring` was declared with, but `getComputedStyle(...).getPropertyValue('--ring')`
@@ -210,32 +208,32 @@ above this task.
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
-- Expected next stage-2 result, reasoned from the two fixes above plus the confirmed-and-untouched shortfall:
-  only two failures remain, both attributable to the same confirmed 4.4286:1 light-scheme shortfall and
-  neither a new defect — `accent-contrast.spec.ts`'s light-scheme "the accent-filled surfaces meet 4.5:1
+- Expected next browser-suite result, reasoned from the two fixes above plus the confirmed-and-untouched
+  shortfall: only two failures remain, both attributable to the same confirmed 4.4286:1 light-scheme shortfall
+  and neither a new defect — `accent-contrast.spec.ts`'s light-scheme "the accent-filled surfaces meet 4.5:1
   contrast" case (fails at the selected row's text/icon/marker assertions) and, if the environment runs it
   (`MERDECK_TEST_AGENTS`/`MERDECK_OPEN_URL`/`MERDECK_OPEN_ROOT` set), its light-scheme chat-bubble case. Every
   other case, including both previously-masked dark-scheme accent assertions and both de-collided fake-provider
   cases, is expected to pass.
 
-### Review addendum: the light-scheme shortfall is ruled, one token moves (2026-09-19)
+### Review addendum: the light-scheme shortfall is resolved, one token moves (2026-09-19)
 
-The tier above this task ruled on the confirmed 4.4286:1 shortfall: `--primary-foreground` in the light scheme
-only may move toward pure white to satisfy the fixed `--primary` value, since the proposal fixes the two accent
-values but never gives the foreground one — moving the free token to satisfy the fixed requirement enforces the
-proposal rather than amending it. `--primary` (both schemes), `--warning` (both schemes, already passing as
-specified) and the dark scheme's `--primary-foreground` are explicitly out of this ruling and are unchanged.
+Resolved the confirmed 4.4286:1 shortfall: `--primary-foreground` in the light scheme only moves toward pure
+white to satisfy the fixed `--primary` value, since the proposal fixes the two accent values but never gives
+the foreground one — moving the free token to satisfy the fixed requirement enforces the proposal rather than
+amending it. `--primary` (both schemes), `--warning` (both schemes, already passing as specified) and the dark
+scheme's `--primary-foreground` are explicitly out of scope here and are unchanged.
 
 - Changed `web/src/index.css` `:root`'s `--primary-foreground` from `oklch(0.985 0 0)` to `oklch(1 0 0)` (pure
-  white, zero chroma, satisfying the zero-chroma rule as instructed). The `.dark` value
-  (`oklch(0.205 0 0)`) is untouched. No other token, and no other file, changed for this ruling.
+  white, zero chroma, satisfying the zero-chroma rule the rest of the palette already follows). The `.dark`
+  value (`oklch(0.205 0 0)`) is untouched. No other token, and no other file, changed for this fix.
 - Analytically recomputed (same OKLCH → linear-sRGB → WCAG maths as before, not yet a live measurement — this
   worktree still has no dev server/browser, per the unchanged limitation noted above): pure white on
   `--primary` (light) now measures **4.6445:1**, clearing 4.5:1. The dark-scheme pairing
-  (`--primary-foreground` unchanged) remains **7.5361:1**, also unchanged. Per instruction, the assertions in
-  `accent-contrast.spec.ts` are unweakened and still assert the full `>= 4.5` requirement; if the real,
-  browser-measured number lands under 4.5:1 despite this analysis, no further token is to move and the
-  measured number is reported and left to the tier above, per the same ruling as before.
+  (`--primary-foreground` unchanged) remains **7.5361:1**, also unchanged. The assertions in
+  `accent-contrast.spec.ts` remain unweakened and still assert the full `>= 4.5` requirement; if the real,
+  browser-measured number lands under 4.5:1 despite this analysis, no further token moves — the measured
+  number is reported as-is, on the same basis as before.
 - Added a `reportRatio` helper to `accent-contrast.spec.ts` that logs the measured ratio for each of the five
   required pairs sharing this token (primary button label, selected row text, selected row icon, selected row
   unsaved marker, chat bubble text) under a distinct, greppable label per colour scheme, regardless of whether
@@ -245,9 +243,9 @@ specified) and the dark scheme's `--primary-foreground` are explicitly out of th
 
 ### Review correction 3: the directory de-collision was wrong; two more fixes (2026-09-19)
 
-Investigating "item 7" (whether the fake-provider timeout on `type-scale.spec.ts`'s case was this task's
-doing or a flake) required reading the fake-provider mechanism itself, which surfaced that review correction
-1's directory-based de-collision (round 3) was built on a wrong assumption and needed reverting.
+Investigating whether the fake-provider timeout on `type-scale.spec.ts`'s case was this task's doing or a
+flake required reading the fake-provider mechanism itself, which surfaced that the first correction's
+directory-based de-collision was built on a wrong assumption and needed reverting.
 
 - **The fake provider's write path does not follow the open file.** Read `src/modules/agents/process.ts`
   (`spawnProvider`, `cwd: projectRoot`) and `scripts/test-e2e.ts`'s embedded fake-provider script (both
@@ -255,7 +253,7 @@ doing or a flake) required reading the fake-provider mechanism itself, which sur
   open-access service's fixed root as its `cwd`, and on an accepted file-change approval it always runs
   `Bun.write('agent-live.mmd', ...)` — a literal, hard-coded, context-independent relative path. It never
   reads the turn's `context.path` to decide where to write. Placing the browser's open file in a per-spec
-  subdirectory (`<uuid>/agent-live.mmd`, review correction 1's fix) therefore never touched the file the
+  subdirectory (`<uuid>/agent-live.mmd`, the first correction's fix) therefore never touched the file the
   provider actually wrote — a **deterministic** mismatch, not a timing-dependent one, which is why it broke
   both previously-passing cases outright rather than flaking. Established without a live re-run (this sandbox
   still cannot execute Playwright) from the mechanism itself: the write target is fixed regardless of
@@ -280,16 +278,16 @@ doing or a flake) required reading the fake-provider mechanism itself, which sur
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
-- **On whether the type-scale.spec.ts timeout was this task's doing or a flake** (item 7): established by
-  code-level analysis rather than a live isolated re-run, which this sandbox cannot perform. Two distinct
-  failures, two distinct answers: the *original* round-1 collision was contingent on scheduling (this task's
-  own doing in the sense the reviewer already established — adding a third spec file changed worker
-  distribution enough to let two pre-existing, previously-never-concurrent cases collide — not a pre-existing
-  flake independent of this branch, and not inherent to either test in isolation). The *subsequent* round-2/3
-  failures were this task's doing outright and deterministically (the renamed/relocated fixture guaranteed a
-  path mismatch against the provider's fixed write target on every run, not intermittently). Neither is a
-  flake unrelated to this branch. The corrected lock-based fix addresses the root cause of both: it keeps the
-  literal path the provider requires and only serialises the specific cases that must share it.
+- **On whether the type-scale.spec.ts timeout was this task's doing or a flake:** established by code-level
+  analysis rather than a live isolated re-run, which this sandbox cannot perform. Two distinct failures, two
+  distinct answers: the *original* collision was contingent on scheduling (this task's own doing in the sense
+  already established above — adding a third spec file changed worker distribution enough to let two
+  pre-existing, previously-never-concurrent cases collide — not a pre-existing flake independent of this
+  branch, and not inherent to either test in isolation). The *subsequent* renamed-path failures were this
+  task's doing outright and deterministically (the renamed/relocated fixture guaranteed a path mismatch
+  against the provider's fixed write target on every run, not intermittently). Neither is a flake unrelated to
+  this branch. The corrected lock-based fix addresses the root cause of both: it keeps the literal path the
+  provider requires and only serialises the specific cases that must share it.
 
 ### Review correction 4: a real diagnosis supersedes both prior guesses (2026-09-19)
 
@@ -303,33 +301,33 @@ chat-bubble cases send a real turn but only ever owned their own uuid-named fixt
 `<openRoot>/agent-live.mmd` behind afterwards; the next case that exclusive-creates that exact path then fails
 immediately (~30ms), not from any race.
 
-- **Applied the diagnosed fix exactly as directed.** Synced with `feat/ui-refresh` (already current) and
+- **Applied the diagnosed fix.** Synced with `feat/ui-refresh` (already current) and
   `git cherry-pick d6230b2` (clean, no conflicts) — the fix commit, touching only
   `web/src/test/e2e/accent-contrast.spec.ts`. Did **not** cherry-pick its parent `34008e2` (the repro), which
   lives partly under `src/modules/agents/` and asserts a property of the out-of-scope fixture; confirmed its
   changes to `agent-editing.spec.ts`/`type-scale.spec.ts` are byte-identical to the untouched
   `feat/ui-refresh` versions of those files, so restoring those two files to that pristine state (`git checkout
-  8a2b529 -- ...`, committed separately) reaches the same "integration-branch shape" without importing the
+  8a2b529 -- ...`, committed separately) reaches the same shape as the merged branch without importing the
   out-of-scope commit.
-- **Confirmed the resulting shape matches what was asked:** `accent-contrast.spec.ts`'s chat-bubble case now
-  holds both paths (its own uuid fixture and the root-level `agent-live.mmd` the provider always produces),
-  waits for the reported file-change target in the conversation log before leaving the case (the provider
-  writes before it reports, so this puts clean-up after the write rather than in a race with it), and removes
-  both in its `finally`. The `withAgentLiveLock` helper is gone from all three spec files.
-  `agent-editing.spec.ts` and `type-scale.spec.ts` are back to the literal path and plain exclusive-create,
-  unchanged from `feat/ui-refresh`, so a future leftover fails loudly again instead of being masked by a lock.
-- **Item 7 (flake vs. regression), asked again with corrected framing:** with the real mechanism now known,
-  both of this task's own prior attempts (the worker-distribution theory and the write-path theory) were
-  wrong guesses, not confirmed causes — this is recorded plainly rather than restated as settled.
+- **Confirmed the resulting shape:** `accent-contrast.spec.ts`'s chat-bubble case now holds both paths (its
+  own uuid fixture and the root-level `agent-live.mmd` the provider always produces), waits for the reported
+  file-change target in the conversation log before leaving the case (the provider writes before it reports,
+  so this puts clean-up after the write rather than in a race with it), and removes both in its `finally`.
+  The `withAgentLiveLock` helper is gone from all three spec files. `agent-editing.spec.ts` and
+  `type-scale.spec.ts` are back to the literal path and plain exclusive-create, unchanged from
+  `feat/ui-refresh`, so a future leftover fails loudly again instead of being masked by a lock.
+- **Flake vs. regression, asked again with corrected framing:** with the real mechanism now known, both of
+  this task's own prior attempts (the worker-distribution theory and the write-path theory) were wrong
+  guesses, not confirmed causes — this is recorded plainly rather than restated as settled.
 - Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
   && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
   coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
 
-**Item 3 investigation (the open-but-unselected marker, `accent-contrast.spec.ts:199`).** Instructed to
-establish, before changing anything, whether `fillContrast(page, openMarker, openRow)` measuring 1.0726:1
-(light) / 1.2467:1 (dark) is a locator reaching into the selected row, or a genuine `web/src/index.css` defect
-where the accent-foreground override applies to a row without `aria-current="true"`. No source file was
-changed for this item pending that determination.
+**Investigating the open-but-unselected marker (`accent-contrast.spec.ts:199`).** The question, established
+before changing anything: whether `fillContrast(page, openMarker, openRow)` measuring 1.0726:1 (light) /
+1.2467:1 (dark) is a locator reaching into the selected row, or a genuine `web/src/index.css` defect where the
+accent-foreground override applies to a row without `aria-current="true"`. No source file was changed pending
+that determination.
 
 - Read `web/src/index.css:214-218` (the two `.dirty-dot` rules) and the `.tree-row[aria-current="true"]`
   selector's specificity against the plain `.dirty-dot { background: var(--warning); }` rule: both are
@@ -357,10 +355,9 @@ changed for this item pending that determination.
 - **Could not reach a certain determination.** Every static and component-level check available in this
   sandbox (no live browser to run the actual Playwright suite, an unchanged limitation throughout this task)
   shows the source, as written, should not produce this pairing. Rather than guess a defensive CSS change
-  against an unconfirmed mechanism — which the instruction for this item explicitly rules out — this is left
-  unfixed, reported honestly as inconclusive from available tools, pending either a live run's DevTools
-  "computed style" inspection of the actual marker (which would show which rule wins and settle this
-  directly) or further direction.
+  against an unconfirmed mechanism, this is left unfixed, reported honestly as inconclusive from available
+  tools, pending either a live run's DevTools "computed style" inspection of the actual marker (which would
+  show which rule wins and settle this directly) or further investigation.
 
 ### Review correction 5: the marker investigation was right, the measurement was not (2026-09-19)
 
@@ -384,8 +381,7 @@ the settled sidebar the same pair measures about 4.75:1 and passes; the colours 
   passes the subject's own colour as the top layer of its own background stack, so translucent ink composites
   the same way. `web/src/test/e2e/marker-fill-measurement.spec.ts` keeps the repro as a permanent pair of
   cases (not a scratch file): one asserts no transition is left running on a measurement handle, the other
-  asserts the marker's contrast against its own row once settled — both already read as ordinary repository
-  text, no task or process vocabulary, nothing further needed there.
+  asserts the marker's contrast against its own row once settled.
 - **The guards this also flagged.** `accent-contrast.spec.ts`'s two "this row isn't accent-filled" guards
   compared `getComputedStyle(...).backgroundColor` strings directly (`.not.toBe(...)`). A translucent,
   mid-fade fill serialises as `oklab(...)` while the settled `--primary` token serialises as `oklch(...)`, so
@@ -403,18 +399,19 @@ the settled sidebar the same pair measures about 4.75:1 and passes; the colours 
 
 ### Review correction 6: the two guards this fixed still bypassed the settle wait (2026-09-19)
 
-The compose check ran the merge onto the integration head: 89 passed, 1 failed, 2 skipped. Everything
-correction 5 addressed was fixed, including both marker cases and the measurement-route pair; the one
-failure was the open-row guard correction 5 had just fixed, failing for the reason that fix was worth making.
+The browser suite, run after merging onto `feat/ui-refresh`, reported 89 passed, 1 failed, 2 skipped.
+Everything correction 5 addressed was fixed, including both marker cases and the measurement-route pair; the
+one failure was the open-row guard correction 5 had just fixed, failing for the reason that fix was worth
+making.
 
 - `accent-contrast.spec.ts`'s open-row and hovered-row guards read `getComputedStyle(...).backgroundColor`
   through a bare `openRow.evaluate(...)`, immediately after `choose(page, 'sequence.mermaid')` and after
   `openRow.hover()` respectively — neither goes through `requireElementHandle`, so neither waited for the
   150ms fade to settle before reading. A read landing inside that fade sees the accent at partial alpha,
-  whose colour channels equal `--primary`'s, which is exactly what `colorBytesEqual` (added last round) then
-  correctly reported as equal — the byte comparison was right; the read feeding it was not settled. Confirmed
-  this is a race rather than a scheme difference: the dark scheme happened to pass in the failing run, which
-  is what an unwaited read does, not evidence the schemes differ.
+  whose colour channels equal `--primary`'s, which is exactly what `colorBytesEqual` (added in the previous
+  correction) then correctly reported as equal — the byte comparison was right; the read feeding it was not
+  settled. Confirmed this is a race rather than a scheme difference: the dark scheme happened to pass in the
+  failing run, which is what an unwaited read does, not evidence the schemes differ.
 - Extracted the wait already inside `requireElementHandle` (the bounded loop over
   `getAnimations({ subtree: true })`, skipping endless animations, already used by every measuring helper)
   into its own `settleTransitions` function, called from `requireElementHandle` and, newly, from both guard
