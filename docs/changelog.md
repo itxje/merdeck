@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-19 23:45 [fix]
+
+The UI refresh plan carried two estimated density figures that the delivered work measured: the
+explorer's chrome above the first file row, stated as 346px and 38% of a 900px viewport, measures
+249px and 28%, and the expected result of the density work, stated as about 150px and roughly nine
+more visible rows, measures between 80 and 105px — 92px as delivered — and six more rows of a
+sixty-file folder. Both places now carry the measured figures and name
+`web/src/test/e2e/explorer-density.spec.ts`, which produces them, so the plan and the task record no
+longer disagree about the same layout. See
+[20260919-2015-design-record-density-figures](task/20260919-2015-design-record-density-figures.md).
+
 ## 2026-09-19 23:30 [progress]
 
 The explorer spends far less of its height on chrome. The heading, the breadcrumb and the tools row

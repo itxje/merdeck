@@ -127,3 +127,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260919-1759-type-ramp-monospace-paths Type ramp and monospace paths**](20260919-1759-type-ramp-monospace-paths.md) `P2`
 - [x] [**20260919-1815-accent-and-warning-colour Accent and warning colour**](20260919-1815-accent-and-warning-colour.md) `P2`
 - [x] [**20260919-1930-explorer-density Explorer density**](20260919-1930-explorer-density.md) `P2`
+- [x] [**20260919-2015-design-record-density-figures Design record density figures**](20260919-2015-design-record-density-figures.md) `P3`
