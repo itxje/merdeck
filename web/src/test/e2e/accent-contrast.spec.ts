@@ -161,6 +161,28 @@ function reportRatio(label: string, colorScheme: string, ratio: number) {
   console.log(`[accent-contrast] ${label} (${colorScheme}): ${ratio.toFixed(4)}:1`)
 }
 
+// Whether two already-fetched colour strings paint the same pixel, compared as colours (through the same
+// canvas conversion the other checks use) rather than as declaration text: a fading fill serialises as
+// oklab(...) while a settled token serialises as oklch(...), so a plain string comparison always reports
+// them as different regardless of whether the colour they actually paint has settled to that token or not.
+async function colorBytesEqual(page: Page, first: string, second: string) {
+  return page.evaluate(({ first, second }) => {
+    const toSrgbBytes = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+      return [red!, green!, blue!]
+    }
+    const firstBytes = toSrgbBytes(first)
+    const secondBytes = toSrgbBytes(second)
+    return firstBytes.every((value, index) => value === secondBytes[index])
+  }, { first, second })
+}
+
 async function customPropertyColor(page: Page, name: string) {
   return page.evaluate((property) => {
     const probe = document.createElement('span')
@@ -232,7 +254,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       openRow.evaluate(element => getComputedStyle(element).backgroundColor),
       customPropertyColor(page, '--primary'),
     ])
-    expect(openBg).not.toBe(selectedBg)
+    expect(await colorBytesEqual(page, openBg, selectedBg)).toBe(false)
     const openMarker = openRow.locator('.dirty-dot')
     await expect(openMarker).toBeVisible()
     expect(await fillContrast(page, openMarker, openRow)).toBeGreaterThanOrEqual(4.5)
@@ -240,7 +262,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // A hovered, unselected row stays on the neutral hover fill, never the accent.
     await openRow.hover()
     const hoveredBg = await openRow.evaluate(element => getComputedStyle(element).backgroundColor)
-    expect(hoveredBg).not.toBe(selectedBg)
+    expect(await colorBytesEqual(page, hoveredBg, selectedBg)).toBe(false)
   })
 
   test(`the live-preview indicator and the last-valid-render warning meet 4.5:1 contrast in the ${colorScheme} scheme, and neither reads in red`, async ({ page }) => {
