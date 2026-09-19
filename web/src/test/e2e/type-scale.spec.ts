@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
-import { rm, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { browse, choose, expect, live, login, test } from './support'
 
@@ -137,24 +137,28 @@ const openRoot = process.env.MERDECK_OPEN_ROOT
 const openUrl = process.env.MERDECK_OPEN_URL
 test('the assistant tool and file-change targets render in the monospace stack', async ({ page }) => {
   test.skip(process.env.MERDECK_TEST_AGENTS !== 'true' || !openRoot || !openUrl, 'Set MERDECK_TEST_AGENTS=true, MERDECK_OPEN_URL and MERDECK_OPEN_ROOT to run the fake-provider acceptance.')
-  const name = `agent-live-${randomUUID()}.mmd`
-  const path = join(openRoot!, name)
+  // The fake provider scripts its edit against the literal name "agent-live.mmd", so de-collide with
+  // agent-editing.spec.ts's identically-named fixture through a unique directory instead of a unique name.
+  const dirName = `type-scale-${randomUUID()}`
+  const dir = join(openRoot!, dirName)
+  const path = join(dir, 'agent-live.mmd')
+  await mkdir(dir)
   await writeFile(path, 'flowchart LR\nA[Before]-->B[Preview]\n', { flag: 'wx' })
   try {
     await page.goto(openUrl!)
     await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-    await choose(page, name)
+    await choose(page, `${dirName}/agent-live.mmd`)
     await live(page)
     await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
     const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
     await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram.')
     await editor.getByRole('button', { name: 'Send', exact: true }).click()
-    const target = editor.getByRole('log', { name: 'AI conversation', exact: true }).locator('code', { hasText: name })
+    const target = editor.getByRole('log', { name: 'AI conversation', exact: true }).locator('code', { hasText: 'agent-live.mmd' })
     await expect(target).toBeVisible({ timeout: 15000 })
     const monospace = await monospaceStack(page)
     expect(await target.evaluate(element => getComputedStyle(element).fontFamily)).toBe(monospace)
   }
   finally {
-    await rm(path, { force: true })
+    await rm(dir, { recursive: true, force: true })
   }
 })

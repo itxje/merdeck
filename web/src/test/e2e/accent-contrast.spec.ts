@@ -93,6 +93,28 @@ async function fillContrast(page: Page, subject: Locator, behind: Locator) {
   }, { subjectNode, behindNode })
 }
 
+// Whether a focused element's locally repointed --ring computes to the same colour as the --primary
+// token, compared as colours (through the same canvas conversion the other checks use) rather than as
+// declaration text: getComputedStyle resolves the var(--primary) reference to a concrete colour function
+// (e.g. "oklch(72% .1 195)"), so asserting the literal string "var(--primary)" always fails.
+async function focusedRingMatchesPrimary(page: Page) {
+  return page.evaluate(() => {
+    const toSrgbBytes = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+      return [red!, green!, blue!]
+    }
+    const ring = toSrgbBytes(getComputedStyle(document.activeElement!).getPropertyValue('--ring').trim())
+    const primary = toSrgbBytes(getComputedStyle(document.documentElement).getPropertyValue('--primary').trim())
+    return ring.every((value, index) => value === primary[index])
+  })
+}
+
 async function customPropertyColor(page: Page, name: string) {
   return page.evaluate((property) => {
     const probe = document.createElement('span')
@@ -134,8 +156,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     // Tabbing to a control repoints the shared focus-ring token to the accent for that element only.
     await page.keyboard.press('Tab')
-    const focusRing = await page.evaluate(() => getComputedStyle(document.activeElement!).getPropertyValue('--ring').trim())
-    expect(focusRing).toBe('var(--primary)')
+    expect(await focusedRingMatchesPrimary(page)).toBe(true)
 
     // Make the open file dirty, so its selected row carries the accent, the accent foreground and the marker together.
     const source = page.getByLabel('Mermaid source', { exact: true })

@@ -174,3 +174,46 @@ found two defects in this task's own files, both fixed:
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+
+### Review correction 2 (2026-09-19)
+
+Stage-2 log `T2-evidence2-fc0cae60e68d.log` (83 passed, 5 failed, 2 skipped) confirmed the corrected
+measurement route and found two further defects, both in this task's own files, both fixed. The accent
+itself (`--primary`, `--primary-foreground`, `--warning`) is untouched, per instruction: the confirmed
+4.4286:1 light-scheme shortfall on `--primary-foreground` against `--primary` stands and is with the tier
+above this task.
+
+1. **The focus-ring assertion compared declaration text instead of colour.** `expect(focusRing).toBe('var(--primary)')`
+   asserted the literal string `--ring` was declared with, but `getComputedStyle(...).getPropertyValue('--ring')`
+   resolves the `var(--primary)` reference to a concrete colour function at read time (e.g. `"oklch(72% .1 195)"`
+   in the dark scheme, the accent already correctly applied) — so the assertion failed on the very behaviour it
+   was meant to confirm, in both schemes, before either scheme's later accent-row assertions ever ran. Replaced
+   with `focusedRingMatchesPrimary`, which reads both `--ring` on the focused element and `--primary` on the
+   root, converts each through the same canvas-based sRGB route the other checks use, and compares the
+   resulting bytes — colour equality, not text equality.
+   - With that fixed, the dark-scheme "accent-filled surfaces" case now runs its accent-row assertions for
+     the first time and passes them (7.536:1, as recorded above). The light-scheme case now also reaches
+     those assertions and fails there — correctly, on the confirmed 4.4286:1 shortfall, not on the earlier
+     unrelated bug.
+2. **The de-collision fix from review correction 1 broke the two cases it was meant to protect.**
+   `agent-editing.spec.ts`'s open-access case and `type-scale.spec.ts`'s fake-provider case both time out
+   waiting for the scripted edit, because `scripts/test-e2e.ts` (outside this task's scope, not edited) scripts
+   its fake-provider edit against the literal file name `agent-live.mmd`; renaming the file to
+   `agent-live-<uuid>.mmd` left the provider with nothing matching to act on. Reverted the file name to the
+   literal `agent-live.mmd` in both specs and de-collided by giving each its own fresh, uniquely-named
+   directory under the open-access root instead (`agent-editing-<uuid>/agent-live.mmd` and
+   `type-scale-<uuid>/agent-live.mmd`), `mkdir`ed before the exclusive-create `writeFile`. `choose()` already
+   browses into a directory component before selecting the file, so no support-file change was needed. Cleanup
+   now removes each test's own directory recursively; the exclusive-create flag is unchanged; the suite is not
+   serialised.
+- Reran the exact prescribed check after both corrections:
+  `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
+  typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
+  (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+- Expected next stage-2 result, reasoned from the two fixes above plus the confirmed-and-untouched shortfall:
+  only two failures remain, both attributable to the same confirmed 4.4286:1 light-scheme shortfall and
+  neither a new defect — `accent-contrast.spec.ts`'s light-scheme "the accent-filled surfaces meet 4.5:1
+  contrast" case (fails at the selected row's text/icon/marker assertions) and, if the environment runs it
+  (`MERDECK_TEST_AGENTS`/`MERDECK_OPEN_URL`/`MERDECK_OPEN_ROOT` set), its light-scheme chat-bubble case. Every
+  other case, including both previously-masked dark-scheme accent assertions and both de-collided fake-provider
+  cases, is expected to pass.

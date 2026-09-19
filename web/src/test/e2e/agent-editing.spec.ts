@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { choose, expect, live, login, test } from './support'
 
@@ -94,10 +94,14 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
 
 test('open access runs a provider edit without a token or CSRF credential', async ({ page }) => {
   test.skip(!openRoot || !openUrl, 'An open-access service and disposable root are required.')
-  const name = `agent-live-${randomUUID()}.mmd`
-  const path = join(openRoot!, name)
+  // The fake provider scripts its edit against the literal name "agent-live.mmd", so de-collide with
+  // type-scale.spec.ts's identically-named fixture through a unique directory instead of a unique name.
+  const dirName = `agent-editing-${randomUUID()}`
+  const dir = join(openRoot!, dirName)
+  const path = join(dir, 'agent-live.mmd')
   const initial = 'flowchart LR\nA[Open]-->B[Before]\n'
   const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
+  await mkdir(dir)
   await writeFile(path, initial, { flag: 'wx' })
   try {
     await page.goto(openUrl!)
@@ -105,7 +109,7 @@ test('open access runs a provider edit without a token or CSRF credential', asyn
     await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-    await choose(page, name)
+    await choose(page, `${dirName}/agent-live.mmd`)
     await live(page)
     await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
     const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
@@ -127,6 +131,6 @@ test('open access runs a provider edit without a token or CSRF credential', asyn
     expect(await page.context().cookies()).toEqual([])
   }
   finally {
-    await rm(path, { force: true })
+    await rm(dir, { recursive: true, force: true })
   }
 })
