@@ -8,8 +8,15 @@ const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
   throw new Error('An explicit disposable sample root is required')
 
-// Mirrors the inline WCAG relative-luminance formula the diagram label check already uses in the browser:
-// each helper below runs entirely inside the browser, since Playwright evaluates it in that context.
+// Mirrors the WCAG relative-luminance formula the diagram label check already uses in the browser, but that
+// check's fills come from diagram source as rgb() literals. These tokens are authored in oklch, and Chromium
+// serialises getComputedStyle().color/.backgroundColor for them in that same function, e.g.
+// "oklch(0.55 0.09 195)" — not rgb(). Regex-extracting the first three numbers and treating them as 0-255
+// sRGB channels silently misreads that as rgb(0.55, 0.09, 195), a near-black constant regardless of the
+// actual colour. Painting the computed colour string onto a canvas and reading the pixel back asks the
+// browser itself to do the colour-space conversion, whatever function the value was serialised in, instead of
+// hand-rolling (and mis-assuming) a parser for it.
+// Each helper below runs entirely inside the browser, since Playwright evaluates it in that context.
 
 async function requireElementHandle(locator: Locator) {
   const node = await locator.elementHandle()
@@ -23,6 +30,21 @@ async function textContrast(page: Page, subject: Locator, behind: Locator = subj
   const subjectNode = await requireElementHandle(subject)
   const behindNode = await requireElementHandle(behind)
   return page.evaluate(({ subjectNode, behindNode }) => {
+    const toSrgbBytes = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+      return [red!, green!, blue!]
+    }
+    const channel = (value: number) => value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4
+    const luminance = (color: string) => {
+      const [red, green, blue] = toSrgbBytes(color)
+      return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+    }
     const paintedBackground = (node: Element) => {
       for (let element: Element | null = node; element; element = element.parentElement) {
         const color = getComputedStyle(element).backgroundColor
@@ -31,11 +53,6 @@ async function textContrast(page: Page, subject: Locator, behind: Locator = subj
           return color
       }
       return getComputedStyle(document.body).backgroundColor
-    }
-    const channel = (value: number) => value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4
-    const luminance = (color: string) => {
-      const [red, green, blue] = color.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? [0, 0, 0]
-      return 0.2126 * channel(red!) + 0.7152 * channel(green!) + 0.0722 * channel(blue!)
     }
     const [light, dark] = [luminance(getComputedStyle(subjectNode).color), luminance(paintedBackground(behindNode))].sort((first, second) => second - first)
     return (light! + 0.05) / (dark! + 0.05)
@@ -47,6 +64,21 @@ async function fillContrast(page: Page, subject: Locator, behind: Locator) {
   const subjectNode = await requireElementHandle(subject)
   const behindNode = await requireElementHandle(behind)
   return page.evaluate(({ subjectNode, behindNode }) => {
+    const toSrgbBytes = (color: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+      return [red!, green!, blue!]
+    }
+    const channel = (value: number) => value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4
+    const luminance = (color: string) => {
+      const [red, green, blue] = toSrgbBytes(color)
+      return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+    }
     const paintedBackground = (node: Element) => {
       for (let element: Element | null = node; element; element = element.parentElement) {
         const color = getComputedStyle(element).backgroundColor
@@ -55,11 +87,6 @@ async function fillContrast(page: Page, subject: Locator, behind: Locator) {
           return color
       }
       return getComputedStyle(document.body).backgroundColor
-    }
-    const channel = (value: number) => value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4
-    const luminance = (color: string) => {
-      const [red, green, blue] = color.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? [0, 0, 0]
-      return 0.2126 * channel(red!) + 0.7152 * channel(green!) + 0.0722 * channel(blue!)
     }
     const [light, dark] = [luminance(paintedBackground(subjectNode)), luminance(paintedBackground(behindNode))].sort((first, second) => second - first)
     return (light! + 0.05) / (dark! + 0.05)
@@ -78,6 +105,16 @@ async function customPropertyColor(page: Page, name: string) {
 }
 
 for (const colorScheme of ['light', 'dark'] as const) {
+  // Confirms the measurement route itself before trusting any accent number: body text on the canvas
+  // against its own background is an independently known, very high ratio (~19.8:1 light, ~19.0:1 dark)
+  // regardless of which CSS colour function getComputedStyle happens to serialise it in.
+  test(`the contrast measurement route is sound in the ${colorScheme} scheme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme })
+    await page.goto('/index.html')
+    const ratio = await textContrast(page, page.locator('body'))
+    expect(ratio).toBeGreaterThanOrEqual(15)
+  })
+
   test(`the accent-filled surfaces meet 4.5:1 contrast in the ${colorScheme} scheme`, async ({ page }) => {
     test.setTimeout(90000)
     await page.emulateMedia({ colorScheme })

@@ -124,3 +124,53 @@ introduce.
   moving the accent or its foreground; `accent-contrast.spec.ts`'s light-scheme assertions for these three
   pairs are expected to fail once run against a live build, and are left asserting the full requirement rather
   than narrowed.
+
+### Review correction (2026-09-19)
+
+The campaign's stage-2 browser suite (log `T2-evidence-5e3297b654ad.log`, 76 passed / 10 failed / 2 skipped)
+found two defects in this task's own files, both fixed:
+
+1. **The contrast measurement itself was wrong.** `textContrast`/`fillContrast` read
+   `getComputedStyle(...).color`/`.backgroundColor` and extracted the first three numbers with
+   `color.match(/[\d.]+/g)`, assuming an `rgb()` serialization. Every token here is authored in `oklch`, and
+   Chromium serialises the computed value in that same function (e.g. `"oklch(0.55 0.09 195)"`), so the old
+   code silently misread the three OKLCH components (L, C, H — 0.55, 0.09, 195) as 0–255 sRGB channels. Every
+   pair, regardless of which tokens were actually involved, collapsed to a near-black constant, which is why
+   all eight failing cases in the log clustered on two near-identical numbers per scheme (`~1.79`) instead of
+   reflecting the actual colours. Fixed by painting the raw computed colour string onto a 1x1 canvas and
+   reading the pixel back (`context.fillStyle = color; context.fillRect(...); getImageData(...).data`),
+   which asks the browser to do the colour-space conversion for whatever function the value happens to be
+   serialised in, rather than hand-parsing it. Added a new first case per scheme, "the contrast measurement
+   route is sound," asserting body text on its own background (an independently known, very high ratio,
+   ~19.8:1 light / ~19.0:1 dark by the same OKLCH → linear-sRGB → WCAG maths used to derive every other number
+   in this record) reads `>= 15`, before any accent-specific pair is trusted.
+   - Analytically recomputed (OKLCH → linear-sRGB → WCAG relative luminance) every required pair with this
+     corrected route, to state in advance what a live run should now report:
+     - Primary button label, selected row text/icon, unsaved marker in a *selected* row, and the chat bubble
+       text (all the same `--primary-foreground`-on-`--primary` pairing): **4.430:1 light, 7.536:1 dark.**
+     - Unsaved marker in an *open-but-unselected* row (`--warning` on the sidebar background):
+       **4.743:1 light, 9.474:1 dark.**
+     - Warning text against the surface behind it (`--warning` on `--background`, both the live-preview
+       indicator's "Last valid preview" state and the `.preview-warning` banner): **4.952:1 light,
+       10.468:1 dark.**
+     - Inline document link against the surface behind it (`--primary` as plain text on `--background`):
+       **4.645:1 light, 8.327:1 dark.**
+   - Per the ruling's item 4, the first group's light-scheme figure (4.430:1) is below 4.5:1 and is not
+     corrected by moving `--primary` or `--primary-foreground`; only `--warning` may move, and every pair it
+     covers already clears 4.5:1 without adjustment. This is unchanged from the initial submission and is
+     reported again here, now with a trustworthy number behind it instead of a parser artefact.
+   - These are computed offline; this worktree still has no dev server/browser to run Playwright against
+     (see the unchanged limitation noted in "Failing test and implementation" above), so they are the expected
+     values a corrected live run should produce, not a live measurement.
+2. **Two disposable-fixture collisions.** `agent-editing.spec.ts`'s open-access case and
+   `type-scale.spec.ts`'s fake-provider case both wrote an exclusive-create (`{ flag: 'wx' }`) fixture named
+   `agent-live.mmd` into the same shared `MERDECK_OPEN_ROOT`; adding a third spec file to the suite changed the
+   worker distribution enough that the two began running concurrently and colliding
+   (`EEXIST: file already exists`). Gave each its own `agent-live-${randomUUID()}.mmd` name, updating every
+   reference to the literal filename in each test (the `choose()` call, and, in `type-scale.spec.ts`, the
+   `hasText` match on the rendered tool target) so each stays internally consistent; left the exclusive-create
+   flag and each test's own cleanup unchanged.
+- Reran the exact prescribed check after both corrections:
+  `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
+  typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
+  (93.08/88.95/92.69/93.29). `git diff --check`: clean.

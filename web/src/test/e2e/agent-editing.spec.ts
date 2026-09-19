@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { choose, expect, live, login, test } from './support'
@@ -93,7 +94,8 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
 
 test('open access runs a provider edit without a token or CSRF credential', async ({ page }) => {
   test.skip(!openRoot || !openUrl, 'An open-access service and disposable root are required.')
-  const path = join(openRoot!, 'agent-live.mmd')
+  const name = `agent-live-${randomUUID()}.mmd`
+  const path = join(openRoot!, name)
   const initial = 'flowchart LR\nA[Open]-->B[Before]\n'
   const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
   await writeFile(path, initial, { flag: 'wx' })
@@ -103,7 +105,7 @@ test('open access runs a provider edit without a token or CSRF credential', asyn
     await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-    await choose(page, 'agent-live.mmd')
+    await choose(page, name)
     await live(page)
     await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
     const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
