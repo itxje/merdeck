@@ -8,33 +8,6 @@ if (!root)
 const openRoot = process.env.MERDECK_OPEN_ROOT
 const openUrl = process.env.MERDECK_OPEN_URL
 
-// The fake provider script (scripts/test-e2e.ts, out of scope) is spawned with the open-access root as
-// its cwd and always writes its edit to the literal relative path "agent-live.mmd", regardless of which
-// file the browser actually has open — so every open-access case that drives a real provider turn against
-// that fixture must use that exact root-level path, and two such cases can only share it by taking turns,
-// never by using a different name or directory for either. This lock file gives them that turn.
-async function withAgentLiveLock<T>(action: () => Promise<T>): Promise<T> {
-  const lock = join(openRoot!, '.agent-live.lock')
-  const deadline = Date.now() + 60000
-  for (;;) {
-    try {
-      await writeFile(lock, String(process.pid), { flag: 'wx' })
-      break
-    }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || Date.now() > deadline)
-        throw error
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
-  }
-  try {
-    return await action()
-  }
-  finally {
-    await rm(lock, { force: true })
-  }
-}
-
 test.skip(process.env.MERDECK_TEST_AGENTS !== 'true', 'Set MERDECK_TEST_AGENTS=true to run the fake-provider acceptance.')
 
 test('an agent edit changes exact bytes and rerenders live', async ({ page }) => {
@@ -120,40 +93,38 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
 
 test('open access runs a provider edit without a token or CSRF credential', async ({ page }) => {
   test.skip(!openRoot || !openUrl, 'An open-access service and disposable root are required.')
-  await withAgentLiveLock(async () => {
-    const path = join(openRoot!, 'agent-live.mmd')
-    const initial = 'flowchart LR\nA[Open]-->B[Before]\n'
-    const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
-    await writeFile(path, initial, { flag: 'wx' })
-    try {
-      await page.goto(openUrl!)
-      await expect(page.getByText('Open access', { exact: true })).toBeVisible()
-      await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
-      await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
-      await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-      await choose(page, 'agent-live.mmd')
-      await live(page)
-      await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
-      const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
-      await expect(editor).toBeVisible()
-      await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('codex')
-      await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('browser-model')
-      await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the open-access diagram.')
-      const createRequest = page.waitForRequest(request => request.method() === 'POST' && new URL(request.url()).pathname === '/api/agents/conversations')
-      await editor.getByRole('button', { name: 'Send', exact: true }).click()
-      const request = await createRequest
-      const requestHeaders = await request.allHeaders()
-      expect(requestHeaders.origin).toBe(openUrl)
-      expect(requestHeaders['x-csrf-token']).toBeUndefined()
-      const source = page.getByLabel('Mermaid source', { exact: true })
-      await expect(source).toHaveValue(updated, { timeout: 15000 })
-      await expect(page.locator('.diagram-graphic svg')).toContainText('AI')
-      await expect(page.locator('.diagram-graphic svg')).toContainText('Live')
-      expect(await readFile(path, 'utf8')).toBe(updated)
-      expect(await page.context().cookies()).toEqual([])
-    }
-    finally {
-      await rm(path, { force: true })
-    }
-  })
+  const path = join(openRoot!, 'agent-live.mmd')
+  const initial = 'flowchart LR\nA[Open]-->B[Before]\n'
+  const updated = 'flowchart LR\nA[AI]-->B[Live]\n'
+  await writeFile(path, initial, { flag: 'wx' })
+  try {
+    await page.goto(openUrl!)
+    await expect(page.getByText('Open access', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Access token', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+    await choose(page, 'agent-live.mmd')
+    await live(page)
+    await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+    const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+    await expect(editor).toBeVisible()
+    await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('codex')
+    await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('browser-model')
+    await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the open-access diagram.')
+    const createRequest = page.waitForRequest(request => request.method() === 'POST' && new URL(request.url()).pathname === '/api/agents/conversations')
+    await editor.getByRole('button', { name: 'Send', exact: true }).click()
+    const request = await createRequest
+    const requestHeaders = await request.allHeaders()
+    expect(requestHeaders.origin).toBe(openUrl)
+    expect(requestHeaders['x-csrf-token']).toBeUndefined()
+    const source = page.getByLabel('Mermaid source', { exact: true })
+    await expect(source).toHaveValue(updated, { timeout: 15000 })
+    await expect(page.locator('.diagram-graphic svg')).toContainText('AI')
+    await expect(page.locator('.diagram-graphic svg')).toContainText('Live')
+    expect(await readFile(path, 'utf8')).toBe(updated)
+    expect(await page.context().cookies()).toEqual([])
+  }
+  finally {
+    await rm(path, { force: true })
+  }
 })
