@@ -86,12 +86,35 @@ name, and collapse the loaded-file count, active file types, page range and list
     documented limitation noted in `20260919-1759-type-ramp-monospace-paths`'s browser evidence and not
     attributable to this change.
 
+### Density measurement (2026-09-19)
+
+- The acceptance line ("about 150px of chrome above the first row, down from the present 346px, and at least
+  nine more visible rows at a 900px viewport height") had no browser assertion pinning it; nothing in the suite
+  would notice a later change putting the chrome back. Measured both figures directly from the elements, the
+  same way `type-scale.spec.ts` measures its regions, rather than inferring them from a sum of rules.
+- Built the pre-change shape (`file-tree.tsx`/`index.css` as of `6ac8d1c`, before this task's commit) and
+  the corrected shape in turn, against the same disposable local service and a folder holding 60 files.
+  Measured, at the default 232px explorer width and a 1440x900 viewport, the vertical distance from the
+  explorer's own top edge to the top of its first row, and, in a folder with 60 files, how many rows have any
+  part inside the file listing's own box at that viewport height:
+  - Pre-change: 249px of chrome (not the plan's estimated 346px — the plan's figure was an estimate, this is
+    the measured one) and 12 of 60 rows visible.
+  - This task's shape: 92px of chrome (a 157px reduction) and 18 of 60 rows visible — six more rows, not the
+    plan's estimated nine. Recorded as measured rather than adjusted to fit the estimate; a decision on
+    whether six is sufficient belongs with whoever owns the plan.
+- Added `web/src/test/e2e/explorer-density.spec.ts` asserting the measured shape: chrome between 80px and
+  105px (a stated tolerance around the 92px reading) and at least 18 rows visible. Confirmed it fails first
+  against the pre-change shape (`chrome` measured 249, exceeding the 105px ceiling) and passes against this
+  task's shape, then reran it alongside `explorer.spec.ts`, `header.spec.ts`, `drawer.spec.ts`, `tree.spec.ts`,
+  `explorer-hierarchy.spec.ts`, `explorer-search.spec.ts`, `directory.spec.ts` and `type-scale.spec.ts`
+  together: 22 passed, 1 skipped (the same fake-provider case), no interaction with the new spec.
+
 ### Completion evidence
 
 - Changed files: `web/src/features/workspace/file-tree.tsx`, `web/src/index.css`,
   `web/src/features/workspace/file-tree.test.tsx`, `web/src/test/e2e/drawer.spec.ts` (its `measureDrawer`
-  helper follows the `.tree-heading`/`.tree-heading-actions` rename to `.tree-rail`/`.tree-rail-actions`), this
-  task record (new).
+  helper follows the `.tree-heading`/`.tree-heading-actions` rename to `.tree-rail`/`.tree-rail-actions`),
+  `web/src/test/e2e/explorer-density.spec.ts` (new), this task record.
 - Required check, executed with the project-local Bun 1.4.2 runtime on PATH: `bun install --frozen-lockfile &&
   bun install --cwd web --frozen-lockfile && bun run lint && bun run typecheck && bun run --cwd web test` —
   exit 0. Root and web installs reported no lockfile changes. Root and web lint/typecheck clean (the same
@@ -100,11 +123,11 @@ name, and collapse the loaded-file count, active file types, page range and list
   92.69% functions / 93.29% lines, unchanged threshold.
 - Browser evidence, gathered the same way as `20260919-1759-type-ramp-monospace-paths`'s (built the project,
   ran it as one disposable, owner-only local service against an ignored `tmp/` fixture root seeded from
-  `examples/project`, stopped and removed afterward): see the failing-then-passing account above; final counts
-  76 passed / 3 skipped / 1 failed (an unrelated setup gap) across every spec exercised.
-- Remaining limitation: the plan's own numeric targets (about 150px of chrome above the first row, down from
-  346px, and roughly nine more visible rows at a 900px viewport height) were not independently measured with a
-  dedicated new browser expectation — the existing `type-scale.spec.ts` region-fit checks and the manual runs
-  above confirm the rail and the drawer still fit at every checked viewport, but no assertion pins the exact
-  before/after pixel delta. A follow-up could add one alongside `type-scale.spec.ts`'s existing `assertFits`
-  pattern.
+  `examples/project`, stopped and removed afterward): the failing-then-passing account above, plus the density
+  measurement account; final counts across every spec exercised: 76 passed / 3 skipped / 1 failed (an
+  unrelated setup gap) from the first full pass, and 22 passed / 1 skipped from the density-focused rerun that
+  included the new spec alongside the explorer/drawer/header/type-scale group.
+- The measured density figures (249px chrome and 12/60 visible rows before this task; 92px chrome and 18/60
+  visible rows after, a 157px reduction and six more rows) differ from the plan's estimate of 346px and nine
+  more rows; recorded as measured, not adjusted to match the estimate. Whether six rows meets the plan's intent
+  is a decision for whoever owns the plan, not settled here.
