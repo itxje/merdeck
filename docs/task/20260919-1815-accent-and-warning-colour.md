@@ -361,3 +361,42 @@ changed for this item pending that determination.
   unfixed, reported honestly as inconclusive from available tools, pending either a live run's DevTools
   "computed style" inspection of the actual marker (which would show which rule wins and settle this
   directly) or further direction.
+
+### Review correction 5: the marker investigation was right, the measurement was not (2026-09-19)
+
+An independent diagnosis confirmed correction 4's investigation on every point — no CSS rule applies the
+accent to an unselected row — and found what it could not: the accent there was never from a rule. Selecting
+another file starts a 150ms fade of the previously-selected row out of `var(--primary)` (the shared button
+primitive carries `transition-all`, unedited, `web/src/shared/components/ui/button.tsx:7`), and the
+measurement route took a handle immediately after the click, mid-fade, then discarded the fill's alpha when
+reading it back — painting one translucent layer alone on an empty canvas and reading the colour channels
+keeps the fade's hue and loses its transparency, so a translucent accent measured as an opaque one. Against
+the settled sidebar the same pair measures about 4.75:1 and passes; the colours were always sound.
+
+- Synced with `feat/ui-refresh` (already current) and applied the diagnosed fix in order:
+  `git cherry-pick fa95597` (the repro, a new permanent spec) then `git cherry-pick a10bfb2` (the fix, editing
+  `accent-contrast.spec.ts` and the new repro spec). Both applied cleanly, no conflicts.
+- Confirmed the resulting shape: `requireElementHandle` now waits for the element's own running transitions
+  (`getAnimations({ subtree: true })`) to finish in a bounded loop before taking a handle, skipping endless
+  animations rather than hanging on them; `paintedBackground` collects every painted layer up to and including
+  the first opaque one instead of returning only the topmost; `toSrgbBytes` paints that stack bottom-up so the
+  canvas composites the layers the way the browser would rather than just converting one; `textContrast`
+  passes the subject's own colour as the top layer of its own background stack, so translucent ink composites
+  the same way. `web/src/test/e2e/marker-fill-measurement.spec.ts` keeps the repro as a permanent pair of
+  cases (not a scratch file): one asserts no transition is left running on a measurement handle, the other
+  asserts the marker's contrast against its own row once settled — both already read as ordinary repository
+  text, no task or process vocabulary, nothing further needed there.
+- **The guards this also flagged.** `accent-contrast.spec.ts`'s two "this row isn't accent-filled" guards
+  compared `getComputedStyle(...).backgroundColor` strings directly (`.not.toBe(...)`). A translucent,
+  mid-fade fill serialises as `oklab(...)` while the settled `--primary` token serialises as `oklch(...)`, so
+  the string comparison always reported them as different regardless of whether the row had actually settled
+  away from the accent — a guard that could not fail was not proving anything. Added `colorBytesEqual`
+  (mirroring `focusedRingMatchesPrimary`'s existing canvas-byte-comparison pattern) and used it for both the
+  open-row and the hovered-row checks, so they compare what the two colours actually paint rather than their
+  declaration text.
+- Changed no colour token: `--primary` (both schemes), `--primary-foreground` (pure white light, unchanged
+  dark) and `--warning` (both schemes) are exactly as the last accepted state left them
+  (`git diff 9c838df -- web/src/index.css` is empty).
+- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+  && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
+  coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
