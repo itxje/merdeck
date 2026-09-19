@@ -38,8 +38,8 @@ interface AgentChatOptions {
 export function useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled }: AgentChatOptions) {
   const [restored] = React.useState(readAgentSession)
   const [state, dispatch] = React.useReducer(agentChatReducer, restored.state)
-  const [provider, setProvider] = React.useState<AgentProvider>(restored.conversation?.provider ?? 'codex')
-  const [model, setModel] = React.useState(restored.conversation?.model ?? 'default')
+  const [provider, setProvider] = React.useState<AgentProvider>(restored.selection?.provider ?? restored.conversation?.provider ?? 'codex')
+  const [model, setModel] = React.useState(restored.selection?.model ?? restored.conversation?.model ?? 'default')
   const [conversation, setConversation] = React.useState<AgentConversationHandle | null>(restored.conversation)
   const [pending, setPending] = React.useState(false)
   const [answering, setAnswering] = React.useState<Set<string>>(() => new Set())
@@ -119,8 +119,8 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
   }, [conversation, onFileChanged, onSettled, setActive, abandonConversation])
 
   React.useEffect(() => {
-    writeAgentSession({ conversation, state })
-  }, [conversation, state])
+    writeAgentSession({ conversation, selection: { provider, model }, state })
+  }, [conversation, provider, model, state])
 
   React.useEffect(() => () => {
     if (activeRef.current)

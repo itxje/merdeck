@@ -18,12 +18,18 @@ export interface AgentConversationHandle {
   model: string
 }
 
+export interface AgentSelection {
+  provider: AgentProvider
+  model: string
+}
+
 export interface StoredAgentSession {
   conversation: AgentConversationHandle | null
+  selection: AgentSelection | null
   state: AgentChatState
 }
 
-export const emptyAgentSession: StoredAgentSession = { conversation: null, state: initialAgentChatState }
+export const emptyAgentSession: StoredAgentSession = { conversation: null, selection: null, state: initialAgentChatState }
 
 function record(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined
@@ -41,6 +47,13 @@ function handle(value: unknown): AgentConversationHandle | null {
   const provider = member(item?.provider, providers)
   const model = text(item?.model, 100)
   return id && opaqueId.test(id) && provider && model ? { id, provider, model } : null
+}
+
+function selection(value: unknown): AgentSelection | null {
+  const item = record(value)
+  const provider = member(item?.provider, providers)
+  const model = text(item?.model, 100)
+  return provider && model ? { provider, model } : null
 }
 
 function item(value: unknown): AgentChatItem | undefined {
@@ -90,7 +103,7 @@ export function readAgentSession(): StoredAgentSession {
       items.push(restored)
     }
     // A turn cannot survive a reload, so the panel always restores idle.
-    return { conversation: handle(stored.conversation), state: { active: false, lastEventId, items } }
+    return { conversation: handle(stored.conversation), selection: selection(stored.selection), state: { active: false, lastEventId, items } }
   }
   catch {
     return emptyAgentSession
@@ -99,7 +112,7 @@ export function readAgentSession(): StoredAgentSession {
 
 export function writeAgentSession(session: StoredAgentSession): void {
   try {
-    if (!session.conversation && !session.state.items.length)
+    if (!session.conversation && !session.selection && !session.state.items.length)
       sessionStorage.removeItem(storageKey)
     else sessionStorage.setItem(storageKey, JSON.stringify(session))
   }

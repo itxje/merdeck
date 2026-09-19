@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { emptyAgentSession, readAgentSession, writeAgentSession } from './persistence'
 
 const conversation = { id: 'a'.repeat(48), provider: 'claude' as const, model: 'sonnet' }
+const selection = { provider: 'claude' as const, model: 'sonnet' }
 const items = [
   { key: 'user:1', kind: 'user' as const, text: 'Rename the node' },
   { key: 'event:2', kind: 'tool' as const, label: 'Edit docs/flow.md' },
@@ -9,16 +10,21 @@ const items = [
   { key: 'event:4', kind: 'approval' as const, approvalId: 'b'.repeat(48), approvalKind: 'command' as const, summary: 'bun test', answered: 'deny' as const },
 ]
 
-it('restores one tab transcript and conversation, always idle', () => {
-  writeAgentSession({ conversation, state: { active: true, lastEventId: 4, items } })
-  expect(readAgentSession()).toEqual({ conversation, state: { active: false, lastEventId: 4, items } })
+it('restores one tab transcript, conversation and engine/model selection, always idle', () => {
+  writeAgentSession({ conversation, selection, state: { active: true, lastEventId: 4, items } })
+  expect(readAgentSession()).toEqual({ conversation, selection, state: { active: false, lastEventId: 4, items } })
+})
+
+it('keeps the last selected engine and model even without a started conversation', () => {
+  writeAgentSession({ conversation: null, selection: { provider: 'codex', model: 'gpt-fast' }, state: { active: false, lastEventId: 0, items: [] } })
+  expect(readAgentSession()).toEqual({ conversation: null, selection: { provider: 'codex', model: 'gpt-fast' }, state: { active: false, lastEventId: 0, items: [] } })
 })
 
 it('keeps the transcript after the conversation is abandoned and clears an empty panel', () => {
-  writeAgentSession({ conversation: null, state: { active: false, lastEventId: 0, items: items.slice(0, 1) } })
+  writeAgentSession({ conversation: null, selection: null, state: { active: false, lastEventId: 0, items: items.slice(0, 1) } })
   expect(readAgentSession().conversation).toBeNull()
   expect(readAgentSession().state.items).toHaveLength(1)
-  writeAgentSession({ conversation: null, state: { active: false, lastEventId: 0, items: [] } })
+  writeAgentSession({ conversation: null, selection: null, state: { active: false, lastEventId: 0, items: [] } })
   expect(sessionStorage.getItem('merdeck-agent-session')).toBeNull()
 })
 
@@ -44,4 +50,9 @@ it('drops a conversation handle that is not an advertised engine and opaque ID',
     expect(restored.conversation).toBeNull()
     expect(restored.state.lastEventId).toBe(2)
   }
+})
+
+it('drops a selection that is not an advertised engine', () => {
+  sessionStorage.setItem('merdeck-agent-session', JSON.stringify({ selection: { provider: 'other', model: 'gpt' }, state: { active: false, lastEventId: 2, items: [] } }))
+  expect(readAgentSession().selection).toBeNull()
 })
