@@ -73,3 +73,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260918-1558-release-v0.14.4 Release v0.14.4**](20260918-1558-release-v0.14.4.md) `2026-09-18`
 - [x] [**20260918-1627-agent-current-file-context Attach the previewed file to agent turns**](20260918-1627-agent-current-file-context.md) `2026-09-18`
 - [x] [**20260918-1701-release-v0.15.0 Release v0.15.0**](20260918-1701-release-v0.15.0.md) `2026-09-18`
+- [x] [**20260919-0108-release-v0.15.1 Release v0.15.1**](20260919-0108-release-v0.15.1.md) `2026-09-19`

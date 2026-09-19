@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-19 01:19 [release]
+
+Published [v0.15.1](https://github.com/itxje/merdeck/releases/tag/v0.15.1) delivering the streamed-turn budget
+fix, so an ordinary multi-paragraph answer no longer reports that the provider output limit was exceeded. Exact
+commit `493b53b` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35376358949),
+and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35411698458) repeated acceptance and
+published `merdeck.tar.gz` (1382891 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded
+archive. See [20260919-0108-release-v0.15.1](task/20260919-0108-release-v0.15.1.md).
+
 ## 2026-09-18 17:41 [fix]
 
 Stopped a normal streamed answer from exhausting the agent turn budget. `AgentManager.receive` counted one
