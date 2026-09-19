@@ -27,6 +27,8 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -58,7 +60,7 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    --primary: oklch(0.55 0.09 195);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
@@ -67,6 +69,8 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
+    --warning: oklch(0.55 0.12 75);
+    --warning-foreground: oklch(0.985 0 0);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
@@ -101,7 +105,7 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
+    --primary: oklch(0.72 0.1 195);
     --primary-foreground: oklch(0.205 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
@@ -110,6 +114,8 @@
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
+    --warning: oklch(0.8 0.13 80);
+    --warning-foreground: oklch(0.145 0 0);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
@@ -146,6 +152,9 @@
 }
 
 :root { --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+/* The shared ring token stays neutral for static borders; a focused element locally repoints it to the
+   accent, which every focus-visible outline and ring already reads through that same token. */
+:focus-visible { --ring: var(--primary); }
 * { box-sizing: border-box; }
 body { margin: 0; font-size: var(--text-base); }
 button, input, textarea { font: inherit; }
@@ -201,9 +210,10 @@ button:disabled { cursor: default; }
 .tree-item .row-actions { position: absolute; top: 50%; right: 3px; translate: 0 -50%; opacity: 0; color: var(--muted-foreground); }
 .tree-item:hover .row-actions, .tree-item:focus-within .row-actions, .tree-item .row-actions[data-popup-open] { opacity: 1; }
 .tree-item .row-actions:hover { color: var(--foreground); }
-/* Only the selected file or diagram is filled; an open Markdown file is marked by weight, and expanded folders stay unfilled. */
-.file-tree .tree-row[aria-current="true"] { background: color-mix(in oklch, var(--foreground) 12%, var(--sidebar)); color: var(--foreground); font-weight: 600; }
-.file-tree .tree-row[aria-current="true"] svg, .file-tree .tree-row[aria-current="true"] .block-number { color: var(--foreground); }
+/* Only the selected file or diagram is filled with the accent; an open Markdown file is marked by weight, and expanded folders stay unfilled. */
+.file-tree .tree-row[aria-current="true"] { background: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+.file-tree .tree-row[aria-current="true"] svg, .file-tree .tree-row[aria-current="true"] .block-number { color: var(--primary-foreground); }
+.file-tree .tree-row[aria-current="true"] .dirty-dot { background: var(--primary-foreground); }
 .file-tree .tree-row[data-open] { color: var(--foreground); font-weight: 600; }
 .file-tree .tree-row:has(.folder-icon):not(:hover) { background: transparent; }
 .tree-row .block-number { font: var(--text-xs) var(--font-mono); color: var(--muted-foreground); }
@@ -255,7 +265,7 @@ button:disabled { cursor: default; }
 .header-file > svg { width: 18px; color: var(--muted-foreground); }
 .save-status { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: var(--text-sm); }
 .save-status svg { width: 13px; height: 13px; }
-.dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--foreground); }
+.dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); }
 .header-actions kbd { opacity: .6; font-size: var(--text-xs); margin-left: 12px; }
 .panes { flex: 1; min-height: 0; }
 .pane-slot { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -280,7 +290,9 @@ button:disabled { cursor: default; }
 .preview-controls output { min-width: 45px; text-align: center; font: var(--text-xs) var(--font-mono); }
 .preview-controls button { font-size: var(--text-base); }
 .control-divider { height: 17px; width: 1px; background: var(--border); margin: 0 3px; }
-.preview-warning { display: flex; flex-direction: column; gap: 3px; color: var(--destructive); border-bottom: 1px solid var(--border); padding: 10px 18px; font-size: var(--text-xs); }
+.preview-warning { display: flex; flex-direction: column; gap: 3px; color: var(--warning); border-bottom: 1px solid var(--border); padding: 10px 18px; font-size: var(--text-xs); }
+.preview-live { color: var(--primary); }
+.preview-stale { color: var(--warning); }
 .status-bar { height: 30px; flex-shrink: 0; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); font-size: var(--text-sm); color: var(--muted-foreground); }
 .status-bar > span { display: flex; gap: 8px; align-items: center; }
 .status-bar svg { width: 12px; height: 12px; }

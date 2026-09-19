@@ -293,11 +293,18 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
     setEditor({ source, site, initial, value: initial, x: (box.left - bounds.left) / scale, y: (box.top - bounds.top) / scale, width: box.width / scale, height: box.height / scale, pending: false, error: '' })
   }
 
+  const previewStatus = rendering || settledSource !== source || settledThemeRevision !== themeRevision
+    ? 'Rendering…'
+    : error
+      ? (svg ? 'Last valid preview' : 'Preview unavailable')
+      : source.trim() ? 'Live preview' : 'Empty source'
+  const previewStatusClass = previewStatus === 'Live preview' ? 'preview-live' : previewStatus === 'Last valid preview' ? 'preview-stale' : 'muted'
+
   return (
     <section className="preview-pane" aria-label="Diagram preview">
       <div className="pane-heading">
         <span>Preview</span>
-        <span className="muted text-xs" role="status">{rendering || settledSource !== source || settledThemeRevision !== themeRevision ? 'Rendering…' : error ? (svg ? 'Last valid preview' : 'Preview unavailable') : source.trim() ? 'Live preview' : 'Empty source'}</span>
+        <span className={`${previewStatusClass} text-xs`} role="status">{previewStatus}</span>
       </div>
       {error && (
         <div className="preview-warning" role="alert">
