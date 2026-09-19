@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-19 18:50 [progress]
+
+The application shell now draws every size from one five-step type ramp declared beside the colour
+tokens: 11px for counters and footers, 12px for explorer rows and the status bar, 13px for controls,
+inputs and selects, 15px for pane titles and the header file name, 17px for page headings and the
+document body. The shared interface primitives are bound to the control step by one unlayered rule
+rather than being edited, and the directory breadcrumb, the assistant's attached-file line and its
+tool and file-change targets now read in the monospace stack. The document reading surfaces keep the
+typography they had. A browser expectation walks the shell at three viewports, asserting every size
+resolves to one of the five steps and that the header, the status bar, the composer and the explorer
+rail fit without clipping. See
+[20260919-1759-type-ramp-monospace-paths](task/20260919-1759-type-ramp-monospace-paths.md).
+
 ## 2026-09-19 17:27 [fix]
 
 The Markdown preview's contents list was not adapted for mobile browsers: `.html-document-view` carries an
