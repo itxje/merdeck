@@ -146,7 +146,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
             return (
               <div key={item.key} className="agent-event">
                 <Wrench />
-                <span>{item.label}</span>
+                <code>{item.label}</code>
               </div>
             )
           }
