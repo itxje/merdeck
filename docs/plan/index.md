@@ -75,3 +75,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260918-1701-release-v0.15.0 Release v0.15.0**](20260918-1701-release-v0.15.0.md) `2026-09-18`
 - [x] [**20260919-0108-release-v0.15.1 Release v0.15.1**](20260919-0108-release-v0.15.1.md) `2026-09-19`
 - [x] [**20260919-0146-release-v0.15.2 Release v0.15.2**](20260919-0146-release-v0.15.2.md) `2026-09-19`
+- [x] [**20260919-0908-release-v0.16.0 Release v0.16.0**](20260919-0908-release-v0.16.0.md) `2026-09-19`

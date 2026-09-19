@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-19 09:19 [release]
+
+Published [v0.16.0](https://github.com/itxje/merdeck/releases/tag/v0.16.0) delivering the Markdown preview's
+contents list, its reading measure and the type scale it now shares with the HTML preview. Exact commit
+`b4783e6` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35431887434), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35433908666) repeated acceptance and published
+`merdeck.tar.gz` (1383568 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded archive.
+See [20260919-0908-release-v0.16.0](task/20260919-0908-release-v0.16.0.md).
+
 ## 2026-09-19 08:16 [feature]
 
 Gave the Markdown preview a contents list and the same type scale as the HTML preview:
