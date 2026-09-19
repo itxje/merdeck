@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-19 22:25 [progress]
+
+The application took on a low-chroma teal accent and a warning amber, both declared beside the
+existing colour tokens. The accent carries the primary button, the selected explorer row, the focus
+ring and the live-preview indicator, and every surface that already read the accent token moves with
+it; the canvas, the surfaces, the borders and the muted text stay neutral. A selected file or
+diagram row is filled with the accent, with its text, icon and unsaved marker on the accent
+foreground, while an open file that is not the selection is still marked by weight alone. The
+warning carries a preview showing its last valid render rather than the current source, and an
+unsaved draft. Red is now reserved for deletion and refusal. A browser expectation measures every
+introduced text and fill pair in both schemes against a 4.5:1 threshold, over settled and composited
+fills, and a second expectation guards that measurement route itself. See
+[20260919-1815-accent-and-warning-colour](task/20260919-1815-accent-and-warning-colour.md).
+
 ## 2026-09-19 18:50 [progress]
 
 The application shell now draws every size from one five-step type ramp declared beside the colour
