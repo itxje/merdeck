@@ -117,3 +117,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260918-1701-release-v0.15.0 Release v0.15.0**](20260918-1701-release-v0.15.0.md) `P1`
 - [x] [**20260918-1741-agent-stream-event-budget Count streamed text once against the turn budget**](20260918-1741-agent-stream-event-budget.md) `P1`
 - [x] [**20260919-0108-release-v0.15.1 Release v0.15.1**](20260919-0108-release-v0.15.1.md) `P1`
+- [x] [**20260919-0136-agent-selection-persistence-and-html-width Keep the chosen engine and model across a reload, widen the HTML reading measure**](20260919-0136-agent-selection-persistence-and-html-width.md) `P2`
+- [x] [**20260919-0146-release-v0.15.2 Release v0.15.2**](20260919-0146-release-v0.15.2.md) `P1`

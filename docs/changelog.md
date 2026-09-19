@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-19 01:57 [release]
+
+Published [v0.15.2](https://github.com/itxje/merdeck/releases/tag/v0.15.2) delivering commit `4eb7898`: the AI
+file editor now keeps the chosen engine and model across a reload even before a conversation starts, and the
+sanitized HTML preview's reading measure widened from `52rem` to `64rem`. Commit `4eb7898` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35413195618), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35413697052) repeated acceptance and published
+`merdeck.tar.gz` (1383266 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded archive. See
+[20260919-0146-release-v0.15.2](task/20260919-0146-release-v0.15.2.md).
+
+## 2026-09-19 01:36 [fix]
+
+The AI file editor forgot the last chosen engine and model on a reload whenever the owner picked them before
+sending a turn: `useAgentChat` only seeded that state from a started conversation, which the session store only
+holds once a turn has actually run. `StoredAgentSession` now carries an independent selection field, written
+whenever the provider or model changes and restored ahead of any conversation handle. Also widened the
+sanitized HTML preview's reading measure from `52rem` to `64rem`. See
+[20260919-0136-agent-selection-persistence-and-html-width](task/20260919-0136-agent-selection-persistence-and-html-width.md).
+
 ## 2026-09-19 01:19 [release]
 
 Published [v0.15.1](https://github.com/itxje/merdeck/releases/tag/v0.15.1) delivering the streamed-turn budget
