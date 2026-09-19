@@ -122,3 +122,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260919-0816-markdown-contents-and-type Give the Markdown preview a contents list and larger type**](20260919-0816-markdown-contents-and-type.md) `P1`
 - [x] [**20260919-0908-release-v0.16.0 Release v0.16.0**](20260919-0908-release-v0.16.0.md) `P1`
 - [x] [**20260919-1727-markdown-contents-mobile-layout Collapse the Markdown contents list on narrow viewports**](20260919-1727-markdown-contents-mobile-layout.md) `P2`
+- [-] [**20260919-1735-release-v0.16.1 Release v0.16.1**](20260919-1735-release-v0.16.1.md) `P1`
+- [-] [**20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile**](20260919-1736-ui-refresh-plan.md) `P2`

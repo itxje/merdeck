@@ -76,3 +76,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260919-0108-release-v0.15.1 Release v0.15.1**](20260919-0108-release-v0.15.1.md) `2026-09-19`
 - [x] [**20260919-0146-release-v0.15.2 Release v0.15.2**](20260919-0146-release-v0.15.2.md) `2026-09-19`
 - [x] [**20260919-0908-release-v0.16.0 Release v0.16.0**](20260919-0908-release-v0.16.0.md) `2026-09-19`
+- [-] [**20260919-1735-release-v0.16.1 Release v0.16.1**](20260919-1735-release-v0.16.1.md) `2026-09-19`
+- [ ] [**20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile**](20260919-1736-ui-refresh-plan.md) `2026-09-19`
