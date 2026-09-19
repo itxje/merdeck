@@ -19,9 +19,10 @@ the surrounding interface are now two unrelated scales.
 `--destructive` and the diagram palette. Nothing carries brand, selection, focus or progress through colour;
 the primary button is near-black and reads the same as a disabled one at a glance.
 
-**Density.** The explorer spends 346px above the first file row (38% of a 900px viewport) on a heading with
-three icon buttons, a two-line breadcrumb, Up/Restart, a search field, a four-way type filter and a sentence of
-explanation. Below the list sit three more lines of counters and pagination prose.
+**Density.** The explorer spends 249px above the first file row (28% of a 900px viewport, measured by
+`web/src/test/e2e/explorer-density.spec.ts` rather than estimated) on a heading with three icon buttons, a
+two-line breadcrumb, Up/Restart, a search field, a four-way type filter and a sentence of explanation. Below the
+list sit three more lines of counters and pagination prose.
 
 **File names.** Rows middle-truncate, so `flow-decisions.mmd`, `flow-decisions_zh.mmd`, `flow-recovery.mmd`,
 `flow-recovery_zh.mmd`, `flow-task.mmd` and `flow-task_zh.mmd` all read as `flow-decisio…` / `flow-recove…` /
@@ -74,7 +75,9 @@ Keep the neutral canvas; introduce one accent and use it consistently:
 - Merge the type filter into the search field as a trailing segmented control.
 - Drop the explanatory sentence and the `Unopened` per-row label; show unopened state as a dot before the name.
 - Collapse the three trailing counter lines into one.
-- Result: about 150px of chrome above the first row instead of 346px, roughly nine more visible rows.
+- Result: between 80px and 105px of chrome above the first row (measured at 92px, as delivered) against the
+  previous layout's 249px, and six more rows of a sixty-file folder visible at a 900px viewport height, per
+  `web/src/test/e2e/explorer-density.spec.ts`.
 
 ### 4. File names
 
