@@ -126,3 +126,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [-] [**20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile**](20260919-1736-ui-refresh-plan.md) `P2`
 - [x] [**20260919-1759-type-ramp-monospace-paths Type ramp and monospace paths**](20260919-1759-type-ramp-monospace-paths.md) `P2`
 - [x] [**20260919-1815-accent-and-warning-colour Accent and warning colour**](20260919-1815-accent-and-warning-colour.md) `P2`
+- [x] [**20260919-1930-explorer-density Explorer density**](20260919-1930-explorer-density.md) `P2`

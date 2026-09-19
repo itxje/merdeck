@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-19 23:30 [progress]
+
+The explorer spends far less of its height on chrome. The heading, the breadcrumb and the tools row
+are now one 40px action rail carrying the breadcrumb on the left and go up, new file, new folder,
+refresh and restart as icon controls on the right, each keeping the name, tooltip and conditions it
+had. The file-type control moved into the search field's frame as a trailing segmented control and
+the sentence below it is gone, its information already carried by the search placeholder. A row's
+unopened state now reads as a small dot before the name instead of a trailing word, with the dot's
+column reserved on every row so names stay aligned. The loaded-file count, the active file types,
+the page range and the listing status are one line, each phrase still its own element. Measured at
+the default explorer width and a 1440x900 viewport, the chrome above the first row falls from 249px
+to 92px and the listing fits six more rows; a browser expectation pins both figures. See
+[20260919-1930-explorer-density](task/20260919-1930-explorer-density.md).
+
 ## 2026-09-19 22:25 [progress]
 
 The application took on a low-chroma teal accent and a warning amber, both declared beside the
