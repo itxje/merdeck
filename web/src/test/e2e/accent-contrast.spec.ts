@@ -264,58 +264,40 @@ for (const colorScheme of ['light', 'dark'] as const) {
 const openRoot = process.env.MERDECK_OPEN_ROOT
 const openUrl = process.env.MERDECK_OPEN_URL
 
-// The fake provider script (scripts/test-e2e.ts, out of scope) is spawned with the open-access root as
-// its cwd and always writes its edit to the literal relative path "agent-live.mmd" on approval-accept,
-// regardless of which file is actually open in the browser — so sending it any turn against the
-// open-access root risks stomping on agent-editing.spec.ts's or type-scale.spec.ts's own fixture at that
-// exact path if either is mid-test. This lock file, shared with both, keeps the turn exclusive.
-async function withAgentLiveLock<T>(action: () => Promise<T>): Promise<T> {
-  const lock = join(openRoot!, '.agent-live.lock')
-  const deadline = Date.now() + 60000
-  for (;;) {
-    try {
-      await writeFile(lock, String(process.pid), { flag: 'wx' })
-      break
-    }
-    catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || Date.now() > deadline)
-        throw error
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
-  }
-  try {
-    return await action()
-  }
-  finally {
-    await rm(lock, { force: true })
-  }
-}
-
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`the person's chat bubble text meets 4.5:1 contrast on its filled accent background in the ${colorScheme} scheme`, async ({ page }) => {
     test.skip(process.env.MERDECK_TEST_AGENTS !== 'true' || !openRoot || !openUrl, 'Set MERDECK_TEST_AGENTS=true, MERDECK_OPEN_URL and MERDECK_OPEN_ROOT to run the fake-provider acceptance.')
     await page.emulateMedia({ colorScheme })
-    await withAgentLiveLock(async () => {
-      const path = join(openRoot!, `accent-chat-${randomUUID()}.mmd`)
-      await writeFile(path, 'flowchart LR\nA[Before]-->B[Preview]\n', { flag: 'wx' })
-      try {
-        await page.goto(openUrl!)
-        await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-        await choose(page, path.split('/').at(-1)!)
-        await live(page)
-        await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
-        const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
-        await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram.')
-        await editor.getByRole('button', { name: 'Send', exact: true }).click()
-        const bubble = editor.getByRole('log', { name: 'AI conversation', exact: true }).locator('.agent-user p')
-        await expect(bubble).toBeVisible({ timeout: 15000 })
-        const bubbleRatio = await textContrast(page, bubble, bubble.locator('..'))
-        reportRatio('chat bubble text', colorScheme, bubbleRatio)
-        expect(bubbleRatio).toBeGreaterThanOrEqual(4.5)
-      }
-      finally {
-        await rm(path, { force: true })
-      }
-    })
+    const path = join(openRoot!, `accent-chat-${randomUUID()}.mmd`)
+    // The deterministic provider used by browser acceptance is spawned with the open-access root as its
+    // working directory and writes every accepted file change to this one relative path, whichever file the
+    // turn actually named. Any case that sends a turn against that root therefore produces this file as
+    // well as its own fixture, and has to remove both: the cases that do own that path exclusive-create it,
+    // so a copy left behind here fails them before they open a page.
+    const provided = join(openRoot!, 'agent-live.mmd')
+    await writeFile(path, 'flowchart LR\nA[Before]-->B[Preview]\n', { flag: 'wx' })
+    try {
+      await page.goto(openUrl!)
+      await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+      await choose(page, path.split('/').at(-1)!)
+      await live(page)
+      await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+      const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+      await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram.')
+      await editor.getByRole('button', { name: 'Send', exact: true }).click()
+      const conversation = editor.getByRole('log', { name: 'AI conversation', exact: true })
+      const bubble = conversation.locator('.agent-user p')
+      await expect(bubble).toBeVisible({ timeout: 15000 })
+      const bubbleRatio = await textContrast(page, bubble, bubble.locator('..'))
+      reportRatio('chat bubble text', colorScheme, bubbleRatio)
+      expect(bubbleRatio).toBeGreaterThanOrEqual(4.5)
+      // The provider writes the file before it reports the change, so waiting for the reported target puts
+      // the clean-up below after that write rather than in a race with it.
+      await expect(conversation.locator('code', { hasText: 'agent-live.mmd' })).toBeVisible({ timeout: 15000 })
+    }
+    finally {
+      await rm(path, { force: true })
+      await rm(provided, { force: true })
+    }
   })
 }
