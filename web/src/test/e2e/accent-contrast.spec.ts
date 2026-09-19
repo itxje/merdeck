@@ -18,12 +18,14 @@ if (!root)
 // hand-rolling (and mis-assuming) a parser for it.
 // Each helper below runs entirely inside the browser, since Playwright evaluates it in that context.
 
-async function requireElementHandle(locator: Locator) {
-  // Shell controls carry `transition-all`, so moving the selection fades a row out of the accent over
-  // 150ms instead of swapping its fill. A handle taken straight after a click would still point at the
-  // outgoing colour, so every transition on the element and its contents is allowed to finish first.
-  // Endless animations never settle and never decide a fill, so they are left running; a transition
-  // replaced part-way through rejects and is simply re-read on the next pass.
+// Shell controls carry `transition-all`, so moving the selection fades a row out of the accent over
+// 150ms instead of swapping its fill. Reading a painted colour straight after a click can still land on
+// the outgoing colour, so every transition on the element and its contents is allowed to finish first.
+// Endless animations never settle and never decide a fill, so they are left running; a transition
+// replaced part-way through rejects and is simply re-read on the next pass. Every site that reads a
+// painted colour — taking a measurement handle or reading computed style directly — goes through this
+// one wait rather than each keeping its own copy of the loop.
+async function settleTransitions(locator: Locator) {
   await locator.evaluate(async (element) => {
     for (let pass = 0; pass < 10; pass++) {
       const running = element.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running' && animation.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
@@ -32,6 +34,10 @@ async function requireElementHandle(locator: Locator) {
       await Promise.all(running.map(animation => animation.finished.catch(() => undefined)))
     }
   })
+}
+
+async function requireElementHandle(locator: Locator) {
+  await settleTransitions(locator)
   const node = await locator.elementHandle()
   if (!node)
     throw new Error('No element found for a contrast measurement.')
@@ -250,6 +256,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await choose(page, 'sequence.mermaid')
     const openRow = page.getByRole('button', { name: /^welcome\.mmd(?: Unsaved changes)?$/ })
     await expect(openRow).not.toHaveAttribute('aria-current', 'true')
+    await settleTransitions(openRow)
     const [openBg, selectedBg] = await Promise.all([
       openRow.evaluate(element => getComputedStyle(element).backgroundColor),
       customPropertyColor(page, '--primary'),
@@ -261,6 +268,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     // A hovered, unselected row stays on the neutral hover fill, never the accent.
     await openRow.hover()
+    await settleTransitions(openRow)
     const hoveredBg = await openRow.evaluate(element => getComputedStyle(element).backgroundColor)
     expect(await colorBytesEqual(page, hoveredBg, selectedBg)).toBe(false)
   })
