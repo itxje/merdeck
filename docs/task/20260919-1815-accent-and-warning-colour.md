@@ -217,3 +217,76 @@ above this task.
   (`MERDECK_TEST_AGENTS`/`MERDECK_OPEN_URL`/`MERDECK_OPEN_ROOT` set), its light-scheme chat-bubble case. Every
   other case, including both previously-masked dark-scheme accent assertions and both de-collided fake-provider
   cases, is expected to pass.
+
+### Review addendum: the light-scheme shortfall is ruled, one token moves (2026-09-19)
+
+The tier above this task ruled on the confirmed 4.4286:1 shortfall: `--primary-foreground` in the light scheme
+only may move toward pure white to satisfy the fixed `--primary` value, since the proposal fixes the two accent
+values but never gives the foreground one — moving the free token to satisfy the fixed requirement enforces the
+proposal rather than amending it. `--primary` (both schemes), `--warning` (both schemes, already passing as
+specified) and the dark scheme's `--primary-foreground` are explicitly out of this ruling and are unchanged.
+
+- Changed `web/src/index.css` `:root`'s `--primary-foreground` from `oklch(0.985 0 0)` to `oklch(1 0 0)` (pure
+  white, zero chroma, satisfying the zero-chroma rule as instructed). The `.dark` value
+  (`oklch(0.205 0 0)`) is untouched. No other token, and no other file, changed for this ruling.
+- Analytically recomputed (same OKLCH → linear-sRGB → WCAG maths as before, not yet a live measurement — this
+  worktree still has no dev server/browser, per the unchanged limitation noted above): pure white on
+  `--primary` (light) now measures **4.6445:1**, clearing 4.5:1. The dark-scheme pairing
+  (`--primary-foreground` unchanged) remains **7.5361:1**, also unchanged. Per instruction, the assertions in
+  `accent-contrast.spec.ts` are unweakened and still assert the full `>= 4.5` requirement; if the real,
+  browser-measured number lands under 4.5:1 despite this analysis, no further token is to move and the
+  measured number is reported and left to the tier above, per the same ruling as before.
+- Added a `reportRatio` helper to `accent-contrast.spec.ts` that logs the measured ratio for each of the five
+  required pairs sharing this token (primary button label, selected row text, selected row icon, selected row
+  unsaved marker, chat bubble text) under a distinct, greppable label per colour scheme, regardless of whether
+  the assertion passes — so each is confirmed by its own case in the run's log rather than inferred from one
+  case (the button) standing in for the rest, and so a look at the log states the actual number even when the
+  assertion is green.
+
+### Review correction 3: the directory de-collision was wrong; two more fixes (2026-09-19)
+
+Investigating "item 7" (whether the fake-provider timeout on `type-scale.spec.ts`'s case was this task's
+doing or a flake) required reading the fake-provider mechanism itself, which surfaced that review correction
+1's directory-based de-collision (round 3) was built on a wrong assumption and needed reverting.
+
+- **The fake provider's write path does not follow the open file.** Read `src/modules/agents/process.ts`
+  (`spawnProvider`, `cwd: projectRoot`) and `scripts/test-e2e.ts`'s embedded fake-provider script (both
+  read-only; neither edited) and confirmed: the provider process is spawned once per conversation with the
+  open-access service's fixed root as its `cwd`, and on an accepted file-change approval it always runs
+  `Bun.write('agent-live.mmd', ...)` — a literal, hard-coded, context-independent relative path. It never
+  reads the turn's `context.path` to decide where to write. Placing the browser's open file in a per-spec
+  subdirectory (`<uuid>/agent-live.mmd`, review correction 1's fix) therefore never touched the file the
+  provider actually wrote — a **deterministic** mismatch, not a timing-dependent one, which is why it broke
+  both previously-passing cases outright rather than flaking. Established without a live re-run (this sandbox
+  still cannot execute Playwright) from the mechanism itself: the write target is fixed regardless of
+  scheduling, so this failure mode reproduces on every run, not intermittently, once the fixture is off that
+  literal root-level path.
+- **Corrected de-collision: a lock file, not a renamed path.** Since the exact literal path
+  `<openRoot>/agent-live.mmd` is not negotiable, `agent-editing.spec.ts`'s open-access case and
+  `type-scale.spec.ts`'s case now both call a small `withAgentLiveLock` helper (duplicated in each file, since
+  `support.ts` is outside this task's file scope) that exclusive-creates a `.agent-live.lock` file under the
+  open-access root, retrying every 200ms for up to 60s, before writing the real fixture at the literal path;
+  the lock is removed once the wrapped action settles. Both specs are back to the exact original literal path
+  and filename; the exclusive-create flag and each test's own cleanup are unchanged; the suite itself is not
+  serialised, only these specific cases' shared external side effect.
+- **A third, previously unflagged instance of the same hazard.** Re-reading the fake-provider script while
+  investigating this showed it always performs this literal-path write on *any* accepted file-change approval,
+  regardless of which file is actually open — meaning `accent-contrast.spec.ts`'s own chat-bubble case (which
+  opens its own uniquely-named fixture and sends one turn) triggers the same background write to
+  `<openRoot>/agent-live.mmd`, and could silently corrupt `agent-editing.spec.ts`'s or `type-scale.spec.ts`'s
+  fixture if either is running at the same time. Wrapped that case's provider interaction in the same lock
+  (duplicated a third time) as a precaution, even though it was not named in the failing cases.
+- Reran the exact prescribed check after all three fixes:
+  `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
+  typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
+  (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+- **On whether the type-scale.spec.ts timeout was this task's doing or a flake** (item 7): established by
+  code-level analysis rather than a live isolated re-run, which this sandbox cannot perform. Two distinct
+  failures, two distinct answers: the *original* round-1 collision was contingent on scheduling (this task's
+  own doing in the sense the reviewer already established — adding a third spec file changed worker
+  distribution enough to let two pre-existing, previously-never-concurrent cases collide — not a pre-existing
+  flake independent of this branch, and not inherent to either test in isolation). The *subsequent* round-2/3
+  failures were this task's doing outright and deterministically (the renamed/relocated fixture guaranteed a
+  path mismatch against the provider's fixed write target on every run, not intermittently). Neither is a
+  flake unrelated to this branch. The corrected lock-based fix addresses the root cause of both: it keeps the
+  literal path the provider requires and only serialises the specific cases that must share it.

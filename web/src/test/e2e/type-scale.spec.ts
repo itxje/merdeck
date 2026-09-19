@@ -1,6 +1,5 @@
 import type { Locator, Page } from '@playwright/test'
-import { randomUUID } from 'node:crypto'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { browse, choose, expect, live, login, test } from './support'
 
@@ -135,30 +134,55 @@ test('the directory breadcrumb and the assistant attached-file line render in th
 
 const openRoot = process.env.MERDECK_OPEN_ROOT
 const openUrl = process.env.MERDECK_OPEN_URL
-test('the assistant tool and file-change targets render in the monospace stack', async ({ page }) => {
-  test.skip(process.env.MERDECK_TEST_AGENTS !== 'true' || !openRoot || !openUrl, 'Set MERDECK_TEST_AGENTS=true, MERDECK_OPEN_URL and MERDECK_OPEN_ROOT to run the fake-provider acceptance.')
-  // The fake provider scripts its edit against the literal name "agent-live.mmd", so de-collide with
-  // agent-editing.spec.ts's identically-named fixture through a unique directory instead of a unique name.
-  const dirName = `type-scale-${randomUUID()}`
-  const dir = join(openRoot!, dirName)
-  const path = join(dir, 'agent-live.mmd')
-  await mkdir(dir)
-  await writeFile(path, 'flowchart LR\nA[Before]-->B[Preview]\n', { flag: 'wx' })
+
+// The fake provider script (scripts/test-e2e.ts, out of scope) is spawned with the open-access root as
+// its cwd and always writes its edit to the literal relative path "agent-live.mmd", regardless of which
+// file the browser actually has open — so every open-access case that drives a real provider turn against
+// that fixture must use that exact root-level path, and two such cases can only share it by taking turns,
+// never by using a different name or directory for either. This lock file gives them that turn.
+async function withAgentLiveLock<T>(action: () => Promise<T>): Promise<T> {
+  const lock = join(openRoot!, '.agent-live.lock')
+  const deadline = Date.now() + 60000
+  for (;;) {
+    try {
+      await writeFile(lock, String(process.pid), { flag: 'wx' })
+      break
+    }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST' || Date.now() > deadline)
+        throw error
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+  }
   try {
-    await page.goto(openUrl!)
-    await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
-    await choose(page, `${dirName}/agent-live.mmd`)
-    await live(page)
-    await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
-    const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
-    await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram.')
-    await editor.getByRole('button', { name: 'Send', exact: true }).click()
-    const target = editor.getByRole('log', { name: 'AI conversation', exact: true }).locator('code', { hasText: 'agent-live.mmd' })
-    await expect(target).toBeVisible({ timeout: 15000 })
-    const monospace = await monospaceStack(page)
-    expect(await target.evaluate(element => getComputedStyle(element).fontFamily)).toBe(monospace)
+    return await action()
   }
   finally {
-    await rm(dir, { recursive: true, force: true })
+    await rm(lock, { force: true })
   }
+}
+
+test('the assistant tool and file-change targets render in the monospace stack', async ({ page }) => {
+  test.skip(process.env.MERDECK_TEST_AGENTS !== 'true' || !openRoot || !openUrl, 'Set MERDECK_TEST_AGENTS=true, MERDECK_OPEN_URL and MERDECK_OPEN_ROOT to run the fake-provider acceptance.')
+  await withAgentLiveLock(async () => {
+    const path = join(openRoot!, 'agent-live.mmd')
+    await writeFile(path, 'flowchart LR\nA[Before]-->B[Preview]\n', { flag: 'wx' })
+    try {
+      await page.goto(openUrl!)
+      await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+      await choose(page, 'agent-live.mmd')
+      await live(page)
+      await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+      const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+      await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram.')
+      await editor.getByRole('button', { name: 'Send', exact: true }).click()
+      const target = editor.getByRole('log', { name: 'AI conversation', exact: true }).locator('code', { hasText: 'agent-live.mmd' })
+      await expect(target).toBeVisible({ timeout: 15000 })
+      const monospace = await monospaceStack(page)
+      expect(await target.evaluate(element => getComputedStyle(element).fontFamily)).toBe(monospace)
+    }
+    finally {
+      await rm(path, { force: true })
+    }
+  })
 })
