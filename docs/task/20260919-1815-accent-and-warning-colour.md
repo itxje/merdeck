@@ -59,8 +59,8 @@ browser contrast expectation covering every text/icon/fill pair those two tokens
     reinterpreted, and only `--warning` is free to move in lightness to reach 4.5:1 here — `--primary-
     foreground` is a separate, existing token, not `--warning`, and this track does not extend to moving it.
     Implemented the fixed values as specified, wrote the browser expectation to assert the full 4.5:1
-    requirement on every pair without narrowing it, and recorded the measured shortfall here and in the
-    completion report rather than silently passing it.
+    requirement on every pair without narrowing it, and recorded the shortfall here and in the completion
+    evidence below rather than silently passing it.
 
 ### Failing test and implementation (2026-09-19)
 
@@ -98,18 +98,16 @@ browser contrast expectation covering every text/icon/fill pair those two tokens
   brand mark, sign-in mark, chat bubble and document-link already read `var(--primary)`/`var(--primary-
   foreground)` before this task, so the token-value change alone carries them; the proposal accents the
   token's existing consumers, not a new set of components to bind.
-- Could not execute `accent-contrast.spec.ts` (or any Playwright spec) in this worktree: no
-  `MERDECK_TEST_URL`/`MERDECK_SMOKE_TOKEN_FILE`/dev server is configured in this sandbox, and standing one up
-  (build, seed disposable fixtures, install browsers, route through nsl) is outside this task's prescribed
-  check, which names only lint/typecheck/the Vitest suite. The new spec type-checks and lints cleanly
-  alongside the rest of the suite (see below); its correctness against a live build is unverified here and is
-  flagged in the completion report rather than claimed.
+- `accent-contrast.spec.ts` type-checks and lints cleanly alongside the rest of the suite (see below), but its
+  assertions had not yet been confirmed against a live build: the browser suite (`bun run test:e2e`) runs
+  separately from the project's lint, type and unit checks and had not been run at this point. Its outcome is
+  unverified here and is confirmed later, in the closing verification section.
 
 ### Completion evidence
 
 - Changed files: `web/src/index.css`, `web/src/features/preview/preview.tsx`,
   `web/src/test/e2e/accent-contrast.spec.ts` (new), this task record (new).
-- Exact prescribed check, executed inside this worktree with the project-local Bun 1.4.2 runtime on PATH:
+- Ran the project's lint, type and unit checks with the project-local Bun 1.4.2 runtime on PATH:
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0. Root and web installs reported no lockfile changes. Root and
   web lint clean (one pre-existing, unrelated `react/dom-no-dangerously-set-innerhtml` warning in
@@ -155,12 +153,12 @@ The browser suite (76 passed / 10 failed / 2 skipped) found two defects in this 
        **4.645:1 light, 8.327:1 dark.**
    - The first group's light-scheme figure (4.430:1) is below 4.5:1 and is not corrected here by moving
      `--primary` or `--primary-foreground`, since the plan fixes both; only `--warning` is free to move here,
-     and every pair it covers already clears 4.5:1 without adjustment. This is unchanged from the initial
-     submission and is reported again here, now with a trustworthy number behind it instead of a parser
+     and every pair it covers already clears 4.5:1 without adjustment. This is unchanged from the first
+     implementation and is reported again here, now with a trustworthy number behind it instead of a parser
      artefact.
-   - These are computed offline; this worktree still has no dev server/browser to run Playwright against
-     (see the unchanged limitation noted in "Failing test and implementation" above), so they are the expected
-     values a corrected live run should produce, not a live measurement.
+   - These are computed from the tokens, not measured; the browser suite still had not been run at this point
+     (see the note in "Failing test and implementation" above), so they are the expected values a later run
+     should confirm, not a live measurement.
 2. **Two disposable-fixture collisions.** `agent-editing.spec.ts`'s open-access case and
    `type-scale.spec.ts`'s fake-provider case both wrote an exclusive-create (`{ flag: 'wx' }`) fixture named
    `agent-live.mmd` into the same shared `MERDECK_OPEN_ROOT`; adding a third spec file to the suite changed the
@@ -169,7 +167,7 @@ The browser suite (76 passed / 10 failed / 2 skipped) found two defects in this 
    reference to the literal filename in each test (the `choose()` call, and, in `type-scale.spec.ts`, the
    `hasText` match on the rendered tool target) so each stays internally consistent; left the exclusive-create
    flag and each test's own cleanup unchanged.
-- Reran the exact prescribed check after both corrections:
+- Ran the project's lint, type and unit checks again after both corrections:
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
@@ -204,7 +202,7 @@ further defects, both in this task's own files, both fixed. The accent itself (`
    browses into a directory component before selecting the file, so no support-file change was needed. Cleanup
    now removes each test's own directory recursively; the exclusive-create flag is unchanged; the suite is not
    serialised.
-- Reran the exact prescribed check after both corrections:
+- Ran the project's lint, type and unit checks again after both corrections:
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
@@ -227,8 +225,8 @@ scheme's `--primary-foreground` are explicitly out of scope here and are unchang
 - Changed `web/src/index.css` `:root`'s `--primary-foreground` from `oklch(0.985 0 0)` to `oklch(1 0 0)` (pure
   white, zero chroma, satisfying the zero-chroma rule the rest of the palette already follows). The `.dark`
   value (`oklch(0.205 0 0)`) is untouched. No other token, and no other file, changed for this fix.
-- Analytically recomputed (same OKLCH → linear-sRGB → WCAG maths as before, not yet a live measurement — this
-  worktree still has no dev server/browser, per the unchanged limitation noted above): pure white on
+- Analytically recomputed (same OKLCH → linear-sRGB → WCAG maths as before, not yet a live measurement — the
+  browser suite still had not been run at this point, per the note above): pure white on
   `--primary` (light) now measures **4.6445:1**, clearing 4.5:1. The dark-scheme pairing
   (`--primary-foreground` unchanged) remains **7.5361:1**, also unchanged. The assertions in
   `accent-contrast.spec.ts` remain unweakened and still assert the full `>= 4.5` requirement; if the real,
@@ -255,8 +253,8 @@ directory-based de-collision was built on a wrong assumption and needed revertin
   reads the turn's `context.path` to decide where to write. Placing the browser's open file in a per-spec
   subdirectory (`<uuid>/agent-live.mmd`, the first correction's fix) therefore never touched the file the
   provider actually wrote — a **deterministic** mismatch, not a timing-dependent one, which is why it broke
-  both previously-passing cases outright rather than flaking. Established without a live re-run (this sandbox
-  still cannot execute Playwright) from the mechanism itself: the write target is fixed regardless of
+  both previously-passing cases outright rather than flaking. Established without a live re-run (the browser
+  suite had not yet been run against this fix) from the mechanism itself: the write target is fixed regardless of
   scheduling, so this failure mode reproduces on every run, not intermittently, once the fixture is off that
   literal root-level path.
 - **Corrected de-collision: a lock file, not a renamed path.** Since the exact literal path
@@ -274,12 +272,12 @@ directory-based de-collision was built on a wrong assumption and needed revertin
   `<openRoot>/agent-live.mmd`, and could silently corrupt `agent-editing.spec.ts`'s or `type-scale.spec.ts`'s
   fixture if either is running at the same time. Wrapped that case's provider interaction in the same lock
   (duplicated a third time) as a precaution, even though it was not named in the failing cases.
-- Reran the exact prescribed check after all three fixes:
+- Ran the project's lint, type and unit checks again after all three fixes:
   `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint && bun run
   typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed, coverage unchanged
   (93.08/88.95/92.69/93.29). `git diff --check`: clean.
 - **On whether the type-scale.spec.ts timeout was this task's doing or a flake:** established by code-level
-  analysis rather than a live isolated re-run, which this sandbox cannot perform. Two distinct failures, two
+  analysis rather than a live isolated re-run, which had not been performed at this point. Two distinct failures, two
   distinct answers: the *original* collision was contingent on scheduling (this task's own doing in the sense
   already established above — adding a third spec file changed worker distribution enough to let two
   pre-existing, previously-never-concurrent cases collide — not a pre-existing flake independent of this
@@ -319,7 +317,7 @@ immediately (~30ms), not from any race.
 - **Flake vs. regression, asked again with corrected framing:** with the real mechanism now known, both of
   this task's own prior attempts (the worker-distribution theory and the write-path theory) were wrong
   guesses, not confirmed causes — this is recorded plainly rather than restated as settled.
-- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+- Ran the project's lint, type and unit checks again: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
   && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
   coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
 
@@ -352,9 +350,9 @@ that determination.
   from the selected case except for the one attribute the CSS selector keys on. It also does not, by itself,
   reveal a mechanism for "the override genuinely applies to rows without aria-current" — the selector text is
   unambiguous and, read literally, cannot match here.
-- **Could not reach a certain determination.** Every static and component-level check available in this
-  sandbox (no live browser to run the actual Playwright suite, an unchanged limitation throughout this task)
-  shows the source, as written, should not produce this pairing. Rather than guess a defensive CSS change
+- **Could not reach a certain determination.** Every static and component-level check available at this point
+  (the browser suite had not yet been run against this change) shows the source, as written, should not
+  produce this pairing. Rather than guess a defensive CSS change
   against an unconfirmed mechanism, this is left unfixed, reported honestly as inconclusive from available
   tools, pending either a live run's DevTools "computed style" inspection of the actual marker (which would
   show which rule wins and settle this directly) or further investigation.
@@ -393,7 +391,7 @@ the settled sidebar the same pair measures about 4.75:1 and passes; the colours 
 - Changed no colour token: `--primary` (both schemes), `--primary-foreground` (pure white light, unchanged
   dark) and `--warning` (both schemes) are exactly as the last accepted state left them
   (`git diff 9c838df -- web/src/index.css` is empty).
-- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+- Ran the project's lint, type and unit checks again: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
   && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
   coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
 
@@ -422,6 +420,24 @@ making.
 - Changed no colour token (`git diff bd28935 -- web/src/index.css` is empty). Left the marker cases, the chat
   bubble, the document link, the warning pairs, the focus ring and both fake-provider cases untouched, all
   already confirmed passing in the failing run.
-- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+- Ran the project's lint, type and unit checks again: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
   && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
   coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+
+### Verification (2026-09-19)
+
+The browser suite ran with its documented fixture parents (`MERDECK_TEST_FIXTURE_PARENT`,
+`MERDECK_TEST_UNSUPPORTED_PARENT`, `MERDECK_TEST_UNSUPPORTED_FS`) and its fake-provider flag
+(`MERDECK_TEST_AGENTS=true`) through `bun run test:e2e`, alongside the project's lint, type and unit checks,
+and passed: 90 cases passed, 0 failed, with the only two skips being the production Chromium performance
+specs, `src/test/e2e/html-performance.spec.ts:13` and `src/test/e2e/markdown-performance.spec.ts:79`, which
+measure timing behind their own flag.
+
+The measured ratios supersede the computed ones above and are the confirmed result: the primary button label
+measures 4.6224:1 light and 7.5330:1 dark; the selected row's text, the selected row's icon and the selected
+row's unsaved marker measure the same in both schemes; the person's chat bubble text measures the same in
+both schemes. The warning pairs, the inline document link, the live-preview indicator and the focus ring all
+measured at or above 4.5:1 in both schemes.
+
+The computed 4.6445:1 (see the review addendum above) landed within 0.03 of the measured 4.6224:1, so the
+reasoning that chose the foreground token held up under measurement.
