@@ -43,13 +43,34 @@ function renderTree(kinds: FileFilter, chooseKinds = vi.fn(), snapshot: Director
 }
 
 it('lists every supported file, its folders and an empty folder by default', () => {
-  const { unmount } = renderTree('all')
+  const { container, unmount } = renderTree('all')
   expect(screen.getByRole('button', { name: 'welcome.mmd' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'overview.md' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'report.html' }).querySelector('.lucide-file-type-2')).not.toBeNull()
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'empty' })).toBeVisible()
   expect(screen.getByText('3 loaded files · .mmd · .mermaid · .md · .html · .htm')).toBeVisible()
+  // The loaded-file count, the active file types, the page range and the listing status
+  // collapse into one line, in that order, each still its own findable phrase.
+  const summaryLine = container.querySelector('.tree-summary-line')
+  expect(summaryLine).toHaveTextContent('3 loaded files · .mmd · .mermaid · .md · .html · .htm · Pages 1–1 · End of this listing.')
+  expect(screen.getByText('Pages 1–1', { exact: true })).toBeVisible()
+  expect(screen.getByText('End of this listing.', { exact: true })).toBeVisible()
+  unmount()
+})
+
+it('folds the heading, breadcrumb and tools into one action rail with icon controls in order', () => {
+  const { container, unmount } = renderTree('all')
+  expect(screen.queryByText('EXPLORER')).toBeNull()
+  expect(container.querySelector('.tree-heading')).toBeNull()
+  const rail = container.querySelector('.tree-rail')
+  expect(rail).not.toBeNull()
+  expect(rail!.querySelector('.directory-crumbs')).not.toBeNull()
+  const actionNames = [...rail!.querySelectorAll('.tree-rail-actions button')].map(button => button.getAttribute('aria-label'))
+  expect(actionNames).toEqual(['Up', 'New file', 'New folder', 'Refresh files', 'Restart'])
+  // The four-way file type control sits inside the search field's own frame.
+  const search = screen.getByRole('textbox', { name: 'Filter files' }).closest('.tree-search')
+  expect(search?.querySelector('[aria-label="File types"]')).not.toBeNull()
   unmount()
 })
 
@@ -63,8 +84,21 @@ it('orders the loaded window with folders first and numbered names by value, wha
     { kind: 'file', path: '00-map.mmd', fileKind: 'mermaid', state: 'deferred' },
   ] }
   const { unmount } = renderTree('all', vi.fn(), unordered)
-  const rows = screen.getAllByRole('button').map(button => (button.textContent ?? '').replace(/Unopened$/, '')).filter(name => /^(?:alpha|zeta|\d\d-|c01)/.test(name))
+  const rows = screen.getAllByRole('button').map(button => button.textContent ?? '').filter(name => /^(?:alpha|zeta|\d\d-|c01)/.test(name))
   expect(rows).toEqual(['alpha', 'zeta', '00-map.mmd', '02-early.mmd', '10-late.mmd', 'c01-compare.mmd'])
+  unmount()
+})
+
+it('marks an unopened file with a decorative dot before its name, leaving the accessible name and the unsaved marker untouched', () => {
+  const { unmount } = renderTree('all')
+  const row = screen.getByRole('button', { name: 'welcome.mmd' })
+  expect(row).not.toHaveTextContent('Unopened')
+  const dot = row.querySelector('.unopened-dot')
+  expect(dot).not.toBeNull()
+  expect(dot).toHaveAttribute('aria-hidden', 'true')
+  // The dot sits before the name; the (absent, here) unsaved marker would still follow it.
+  const name = row.querySelector('.truncate')!
+  expect(dot!.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   unmount()
 })
 
@@ -166,7 +200,9 @@ it('searches this folder and its subfolders once text is typed, and returns to t
     </TooltipProvider>
   )
   const { rerender, unmount } = render(view({ query: '', pending: false, error: null, result: undefined }))
-  expect(screen.getByText('Search and file types look in this folder and its subfolders.')).toBeVisible()
+  // The explanatory sentence is gone; the placeholder alone states the search covers subfolders.
+  expect(screen.queryByText('Search and file types look in this folder and its subfolders.')).toBeNull()
+  expect(screen.getByRole('textbox', { name: 'Filter files' })).toHaveAttribute('placeholder', 'Search this folder and below…')
   expect(screen.getByRole('navigation', { name: 'Files and diagrams' })).toBeVisible()
   expect(screen.queryByRole('navigation', { name: 'Search results' })).toBeNull()
   await user.type(screen.getByRole('textbox', { name: 'Filter files' }), 'relay')

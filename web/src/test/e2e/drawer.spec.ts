@@ -21,11 +21,11 @@ async function measureDrawer(dialog: Locator) {
       fileTree: box(popup.querySelector('.file-tree')!),
       content,
       columns: style.gridTemplateColumns,
-      containers: measure(':scope > h2:not(.sr-only), :scope > p, .file-tree, .tree-heading, .tree-search, .tree-bottom, nav'),
+      containers: measure(':scope > h2:not(.sr-only), :scope > p, .file-tree, .tree-rail, .tree-search, .tree-bottom, nav'),
       descendants: measure('.file-tree ul, .file-tree li, .file-tree button, .file-tree input'),
       close: box(popup.querySelector('[data-slot="dialog-close"]')!),
-      heading: box(popup.querySelector('.tree-heading')!),
-      headingActions: measure('.tree-heading-actions button'),
+      heading: box(popup.querySelector('.tree-rail')!),
+      headingActions: measure('.tree-rail-actions button'),
     }
   })
 }

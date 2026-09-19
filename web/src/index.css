@@ -184,16 +184,22 @@ button:disabled { cursor: default; }
 /* The splitter sits on the explorer border and widens only under the pointer. */
 .explorer-resizer { flex: 0 0 5px; margin-left: -5px; cursor: col-resize; background: transparent; touch-action: none; z-index: 1; }
 .explorer-resizer:hover, .explorer-resizer:focus-visible { background: var(--ring); outline: none; }
-.tree-heading { padding: 16px 10px 8px 18px; min-height: 52px; display: flex; align-items: center; justify-content: space-between; font-size: var(--text-xs); font-weight: 600; letter-spacing: .1em; color: var(--muted-foreground); }
-.tree-heading-actions { display: flex; align-items: center; gap: 2px; }
-.tree-heading-actions button { color: var(--muted-foreground); }
-.tree-heading-actions button:hover { color: var(--foreground); }
-.tree-search { margin: 0 12px 16px; position: relative; display: flex; align-items: center; gap: 4px; }
-.tree-search > svg { position: absolute; left: 9px; top: 50%; translate: 0 -50%; width: 14px; height: 14px; color: var(--muted-foreground); }
-.tree-search input { flex: 1; padding-left: 29px; font-size: var(--text-base); background: var(--background); }
-.tree-kinds { margin: -10px 12px 14px; }
-.tree-kinds [data-slot="toggle-group"] { width: 100%; }
-.tree-kinds [data-slot="toggle-group-item"] { flex: 1; min-width: 0; font-size: var(--text-base); }
+/* A single low action rail replaces the former heading, breadcrumb and tools rows: the breadcrumb
+   takes the left, the up/create/refresh/restart controls stay right-aligned icons. Its height stays a
+   min so a breadcrumb that wraps at extreme depth still grows the rail rather than clipping it. */
+.tree-rail { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 40px; padding: 4px 6px 4px 14px; }
+.tree-rail-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+.tree-rail-actions button { color: var(--muted-foreground); }
+.tree-rail-actions button:hover { color: var(--foreground); }
+/* The search field's own frame carries the leading icon, the input and the trailing file-type control
+   as one visual unit, so the input itself gives up its own border and focus ring to the frame. */
+.tree-search { margin: 8px 12px 12px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--input); border-radius: var(--radius-lg); background: var(--background); padding: 0 6px; }
+.tree-search:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+.tree-search > svg { flex: none; width: 14px; height: 14px; color: var(--muted-foreground); }
+.tree-search input[data-slot="input"] { flex: 1; min-width: 0; height: 30px; border: 0; background: transparent; padding: 0 4px; box-shadow: none; font-size: var(--text-base); }
+.tree-search-kinds { flex: none; }
+.tree-search-kinds[data-slot="toggle-group"] { gap: 1px; }
+.tree-search-kinds [data-slot="toggle-group-item"] { height: 24px; min-width: 0; padding: 0 6px; font-size: var(--text-xs); }
 .file-tree nav { padding: 0 10px; flex: 1; overflow: auto; }
 .file-tree ul { list-style: none; padding: 0; margin: 0; }
 .file-tree .nested { margin: 3px 0 10px 37px; padding-left: 9px; border-left: 1px solid var(--border); }
@@ -217,7 +223,9 @@ button:disabled { cursor: default; }
 .file-tree .tree-row[data-open] { color: var(--foreground); font-weight: 600; }
 .file-tree .tree-row:has(.folder-icon):not(:hover) { background: transparent; }
 .tree-row .block-number { font: var(--text-xs) var(--font-mono); color: var(--muted-foreground); }
-.file-count { margin-left: auto; font-size: var(--text-xs); color: var(--muted-foreground); }
+/* Always present, even where invisible, so a row's name stays aligned with siblings whichever state they carry. */
+.unopened-dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.unopened-dot[data-shown] { background: var(--muted-foreground); opacity: .55; }
 .tree-bottom { padding: 16px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; font-size: var(--text-xs); }
 .editor-workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .agent-pane { position: relative; width: var(--agent-width); flex: 0 0 var(--agent-width); min-width: 0; border-left: 1px solid var(--border); background: var(--background); display: flex; flex-direction: column; }
@@ -317,7 +325,7 @@ button:disabled { cursor: default; }
 .file-drawer { width: 300px !important; max-width: calc(100% - 32px) !important; grid-template-columns: minmax(0, 1fr); }
 .file-drawer .file-tree { width: 100%; border: none; height: 64dvh; }
 /* The dialog close control shares the explorer's top rail without covering create or refresh actions. */
-.file-drawer .tree-heading { padding-right: 52px; }
+.file-drawer .tree-rail { padding-right: 52px; }
 @media (max-width: 1100px) {
   .workspace-body > .file-tree, .explorer-resizer { display: none; }
   .tree-toggle { display: inline-flex !important; }
@@ -331,6 +339,10 @@ button:disabled { cursor: default; }
   /* A settled empty folder has no scrolling list, so it should not consume the populated drawer's height. */
   .file-drawer .file-tree[data-compact] { height: auto; }
   .file-drawer .file-tree[data-compact] > nav[aria-label="Files and diagrams"] { flex: 0 0 auto; overflow: visible; }
+  /* Five 44px-target actions and the breadcrumb no longer share one line at this width, so the rail
+     stacks into two full-width rows instead of squeezing the breadcrumb into a sliver. */
+  .tree-rail { flex-direction: column; align-items: stretch; gap: 4px; }
+  .tree-rail-actions { justify-content: flex-end; flex-wrap: wrap; }
   .workspace { min-height: 400px; }
   .app-header { padding: 0 12px; height: 58px; gap: 8px; }
   .brand { gap: 8px; }
@@ -366,12 +378,8 @@ button:disabled { cursor: default; }
   .file-drawer { gap: 4px; padding: 8px 12px max(8px, env(safe-area-inset-bottom)) !important; }
   .file-drawer .file-tree { height: min(78dvh, calc(100dvh - 104px), 36rem); }
   .file-drawer .file-tree > nav[aria-label="Files and diagrams"], .file-drawer .file-tree > nav[aria-label="Search results"] { min-height: 88px; }
-  /* The filter controls already state the active scope; retain this hint for assistive technology without consuming a third row. */
-  .file-drawer .directory-scope { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .file-drawer .tree-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 6px 14px; }
-  .file-drawer .tree-bottom .tree-summary { grid-column: 1 / -1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .file-drawer .tree-bottom .tree-pages { grid-column: 1; }
-  .file-drawer .tree-bottom .tree-listing-status { grid-column: 2; text-align: right; white-space: nowrap; }
+  .file-drawer .tree-bottom .tree-summary-line { grid-column: 1 / -1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-drawer .tree-bottom .tree-pagination-notice { grid-column: 1 / -1; }
   .file-drawer .tree-bottom .tree-next-page:disabled { display: none; }
   .file-drawer .tree-bottom .tree-next-page:not(:disabled) { grid-column: 1 / -1; width: 100%; margin-top: 2px; }
@@ -502,12 +510,13 @@ button:disabled { cursor: default; }
   .status-bar { font-size: var(--text-sm); }
 }
 
-/* Directory controls follow the standalone navigation prototype's existing tokens. */
-.file-tree .directory-crumbs { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 0 10px; overflow: visible; }
-.directory-crumbs > svg { width: 12px; height: 12px; color: var(--muted-foreground); }
-.directory-crumbs button { min-width: 0; max-width: 100%; height: auto; min-height: 32px; white-space: normal; overflow-wrap: anywhere; font-family: var(--font-mono); }
+/* Directory controls follow the standalone navigation prototype's existing tokens. Each segment shrinks
+   and truncates rather than wrapping, so a deep or long-named path stays a fixed one-line row instead of
+   growing the rail without bound. */
+.file-tree .directory-crumbs { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 1px; overflow: hidden; }
+.directory-crumbs > svg { flex: none; width: 12px; height: 12px; color: var(--muted-foreground); }
+.directory-crumbs button { flex: 0 1 auto; min-width: 20px; max-width: 100%; height: 32px; font-family: var(--font-mono); }
+.directory-crumbs button .truncate { min-width: 0; }
 .directory-crumbs [aria-current="location"] { font-weight: 650; }
-.directory-tools { display: flex; gap: 4px; padding: 8px 12px; }
-.directory-scope { margin: 0; padding: 0 14px 8px; font-size: var(--text-xs); color: var(--muted-foreground); }
 .file-tree ul[data-stale] { opacity: .55; }
 .tree-bottom { gap: 8px; }
