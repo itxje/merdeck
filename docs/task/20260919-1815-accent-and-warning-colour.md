@@ -400,3 +400,31 @@ the settled sidebar the same pair measures about 4.75:1 and passes; the colours 
 - Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
   && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
   coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
+
+### Review correction 6: the two guards this fixed still bypassed the settle wait (2026-09-19)
+
+The compose check ran the merge onto the integration head: 89 passed, 1 failed, 2 skipped. Everything
+correction 5 addressed was fixed, including both marker cases and the measurement-route pair; the one
+failure was the open-row guard correction 5 had just fixed, failing for the reason that fix was worth making.
+
+- `accent-contrast.spec.ts`'s open-row and hovered-row guards read `getComputedStyle(...).backgroundColor`
+  through a bare `openRow.evaluate(...)`, immediately after `choose(page, 'sequence.mermaid')` and after
+  `openRow.hover()` respectively — neither goes through `requireElementHandle`, so neither waited for the
+  150ms fade to settle before reading. A read landing inside that fade sees the accent at partial alpha,
+  whose colour channels equal `--primary`'s, which is exactly what `colorBytesEqual` (added last round) then
+  correctly reported as equal — the byte comparison was right; the read feeding it was not settled. Confirmed
+  this is a race rather than a scheme difference: the dark scheme happened to pass in the failing run, which
+  is what an unwaited read does, not evidence the schemes differ.
+- Extracted the wait already inside `requireElementHandle` (the bounded loop over
+  `getAnimations({ subtree: true })`, skipping endless animations, already used by every measuring helper)
+  into its own `settleTransitions` function, called from `requireElementHandle` and, newly, from both guard
+  sites before each reads `backgroundColor` — one place waits, every site that reads a painted colour calls
+  it, no second copy of the loop. Did not compare alpha, did not widen either guard to "different or
+  translucent", did not drop either guard: both still assert that an unselected and a hovered row are not
+  accent-filled once settled.
+- Changed no colour token (`git diff bd28935 -- web/src/index.css` is empty). Left the marker cases, the chat
+  bubble, the document link, the warning pairs, the focus ring and both fake-provider cases untouched, all
+  already confirmed passing in the failing run.
+- Reran the exact prescribed check: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+  && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 568 tests passed,
+  coverage unchanged (93.08/88.95/92.69/93.29). `git diff --check`: clean.
