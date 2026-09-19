@@ -43,14 +43,33 @@ async function shellFontSteps(page: Page) {
   }, { allowed: steps, exemptSelector })
 }
 
+// Acceptance item 4: the header, the status bar, the composer and the explorer rail fit without
+// clipping or a horizontal scrollbar. Checked explicitly against each region's own box, not inferred
+// from the absence of other failures.
+async function assertFits(page: Page, regions: Locator[]) {
+  const viewport = page.viewportSize()!
+  for (const region of regions) {
+    await expect(region).toBeVisible()
+    const box = await region.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.y).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width + 0.5)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height + 0.5)
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+}
+
 test('the application shell renders only the five-step type scale', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
   await choose(page, 'welcome.mmd')
   await live(page)
   await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
-  await expect(page.getByRole('complementary', { name: 'AI file editor', exact: true })).toBeVisible()
+  const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+  await expect(editor).toBeVisible()
   expect(await shellFontSteps(page)).toEqual([])
+  await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator('.agent-composer'), page.locator('.workspace-body > .file-tree')])
 
   const px = async (locator: Locator) => Number.parseFloat(await locator.evaluate(element => getComputedStyle(element).fontSize))
   await expect.poll(() => px(page.locator('.file-tree .tree-row').first())).toBe(12)
@@ -60,8 +79,32 @@ test('the application shell renders only the five-step type scale', async ({ pag
   await expect.poll(() => px(page.locator('.header-file h1'))).toBe(15)
   await expect.poll(() => px(page.getByRole('button', { name: /^Save/ }))).toBe(13)
 
-  await page.setViewportSize({ width: 390, height: 844 })
-  expect(await shellFontSteps(page)).toEqual([])
+  // Below 1100px width the docked explorer rail becomes the project-files drawer; the composer
+  // becomes the fixed full-screen agent overlay. Both still need to fit at each remaining viewport.
+  const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  for (const size of [{ width: 390, height: 844 }, { width: 390, height: 700 }]) {
+    await page.setViewportSize(size)
+    expect(await shellFontSteps(page)).toEqual([])
+    await page.getByRole('button', { name: 'Open project files', exact: true }).click()
+    await expect(drawer).toBeVisible()
+    await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator('.agent-composer'), drawer])
+    await page.keyboard.press('Escape')
+    await expect(drawer).not.toBeVisible()
+  }
+})
+
+test('the login heading and the empty-state heading stay on the document-body step', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  // A fresh page has no session cookies, so this shows the login card rather than the workspace.
+  await page.goto('/')
+  const loginHeading = page.locator('.login-card h1')
+  await expect(loginHeading).toBeVisible()
+  expect(await loginHeading.evaluate(element => getComputedStyle(element).fontSize)).toBe('17px')
+
+  await login(page, true)
+  const emptyHeading = page.locator('.empty-state h2')
+  await expect(emptyHeading).toBeVisible()
+  expect(await emptyHeading.evaluate(element => getComputedStyle(element).fontSize)).toBe('17px')
 })
 
 test('the document reading surface keeps its own type scale outside the shell ramp', async ({ page }) => {

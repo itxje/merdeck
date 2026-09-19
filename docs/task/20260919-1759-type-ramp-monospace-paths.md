@@ -92,11 +92,12 @@ monospace stack.
 
 ### Completion evidence
 
-- Implementation commit head: `cf638baaa8f018cd648c984564a546c2a4eb21d9` plus the working-tree changes
-  recorded in this commit: `web/src/index.css` (the five tokens, the primitive-binding rule, the
-  `body` baseline, every `font-size`/`font` literal-to-`var()` change, and the three explicit
-  `font-family: var(--font-mono)` additions), `web/src/features/agents/agent-chat.tsx` (tool-event
-  `<span>` to `<code>`), `web/src/test/e2e/type-scale.spec.ts` (new), this task record (new).
+- Implementation commit: `d256f23b809e30b4cae76454531dc45479c57921`, on top of parent
+  `cf638baaa8f018cd648c984564a546c2a4eb21d9`. Changes: `web/src/index.css` (the five tokens, the
+  primitive-binding rule, the `body` baseline, every `font-size`/`font` literal-to-`var()` change,
+  and the three explicit `font-family: var(--font-mono)` additions), `web/src/features/agents/
+  agent-chat.tsx` (tool-event `<span>` to `<code>`), `web/src/test/e2e/type-scale.spec.ts` (new),
+  this task record (new). The review correction below adds a second commit on top of this one.
 - Exact prescribed check, executed inside this worktree with the project-local Bun 1.4.2 runtime on
   PATH: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run lint &&
   bun run typecheck && bun run --cwd web test` — exit 0. Root and web installs reported no lockfile
@@ -144,3 +145,34 @@ monospace stack.
   `scripts/test-e2e.ts`'s fake provider fixture does not script a `tool.started` event and this task
   does not edit that fixture. A follow-up that adds a tool-call scenario to the fixture could close
   this gap with an independent assertion.
+
+### Review correction (2026-09-19)
+
+Two findings from independent review, both applied:
+
+1. Acceptance item 4 names a 700px viewport height and the short-viewport CSS rules (the
+   `@media (max-width: 700px)` block that sets `.status-bar` to `var(--text-sm)` and hides
+   `.save-status`, and the compound `@media (max-width: 700px) and (max-height: 700px)` block) were
+   unmeasured at that height: the two existing viewports were 1440x900 and 390x844, and 844 is above
+   700. Extended `type-scale.spec.ts` with an `assertFits` helper that checks each named region's own
+   bounding box (not inferred from the absence of other failures) against the viewport, plus the
+   existing no-horizontal-scrollbar check, and applied it to the header, the status bar, the composer
+   and the explorer rail at all three viewports: 1440x900 (docked rail), and 390x844 and the added
+   390x700 (both opening the project-files drawer that the rail becomes below 1100px width, since the
+   composer's fixed full-screen presentation and the drawer are what actually need to fit at that
+   width, not a hidden docked sidebar).
+2. `.login-card h1` and `.empty-state h2` had been placed on `var(--text-lg)` (15px) with no stated
+   reason; the five-step table assigns 15px to pane titles and the header file name only, and
+   acceptance item 1 admits 17px as a valid shell size, not only the document body's size. Restored
+   both to `var(--text-xl)` (17px). Added a fifth spec case asserting both compute exactly `17px`
+   (the login heading on a fresh, cookie-less page; the empty-state heading right after login, before
+   any file is chosen) — the generic shell-wide walk alone cannot catch a wrong-but-still-valid step,
+   since 15px is itself one of the five allowed values.
+- Confirmed the new heading assertion is not vacuous: temporarily reverted the two declarations to
+  `var(--text-lg)`, rebuilt, and reran; the new case failed with `Expected: "17px" / Received:
+  "15px"`. Restored the fix, rebuilt, reran: all 5 cases in `type-scale.spec.ts` passed, and a
+  focused rerun of `header.spec.ts`, `drawer.spec.ts`, `panes.spec.ts` and `explorer-resize.spec.ts`
+  against the same build passed (7 of 7).
+- Reran the exact prescribed check after both corrections: `bun install --frozen-lockfile && bun
+  install --cwd web --frozen-lockfile && bun run lint && bun run typecheck && bun run --cwd web
+  test` — exit 0, 33 files / 568 tests passed, coverage unchanged (93.07/88.91/92.69/93.28).

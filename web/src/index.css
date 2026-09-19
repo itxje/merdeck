@@ -287,7 +287,7 @@ button:disabled { cursor: default; }
 .notice { border-bottom: 1px solid var(--border); padding: 10px 20px; background: var(--muted); display: flex; align-items: center; gap: 12px; font-size: var(--text-base); }
 .notice > span { flex: 1; }
 .empty-state { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; padding: 30px; }
-.empty-state h2 { margin: 0; font-size: var(--text-lg); font-weight: 550; letter-spacing: -.5px; }
+.empty-state h2 { margin: 0; font-size: var(--text-xl); font-weight: 550; letter-spacing: -.5px; }
 .empty-state p { max-width: 330px; font-size: var(--text-base); line-height: 1.65; color: var(--muted-foreground); margin: 0; }
 .empty-state > svg { width: 30px; height: 30px; margin-bottom: 10px; color: var(--muted-foreground); }
 .review-content { max-height: 80dvh; overflow: auto; }
@@ -373,7 +373,7 @@ button:disabled { cursor: default; }
 .tree-hint { padding: 8px; font-size: var(--text-sm); color: var(--muted-foreground); }
 .login-page { flex: 1; display: grid; place-items: center; overflow: auto; padding: 24px; background: var(--sidebar); }
 .login-card { width: min(100%, 400px); display: flex; flex-direction: column; gap: 20px; }
-.login-card h1 { font-size: var(--text-lg); font-weight: 600; letter-spacing: -.7px; }
+.login-card h1 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -.7px; }
 .login-card p { color: var(--muted-foreground); line-height: 1.7; }
 .login-card form { display: flex; flex-direction: column; gap: 12px; }
 .login-card form > button { margin-top: 8px; }
