@@ -73,7 +73,7 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
     expect(mobilePane!.width).toBe(390)
     expect(mobilePane!.height / 844).toBeCloseTo(0.55, 1)
     expect(mobilePane!.y).toBeGreaterThan(0)
-    expect(mobilePane!.y + mobilePane!.height).toBeLessThanOrEqual(Math.min(statusBar!.y, phoneBar!.y) + 1)
+    expect(mobilePane!.y + mobilePane!.height).toBeLessThanOrEqual(Math.min(statusBar!.y, phoneBar!.y))
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await expect(engine).toBeVisible()
     await expect(model).toBeVisible()
