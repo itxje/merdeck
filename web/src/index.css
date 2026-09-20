@@ -386,8 +386,11 @@ button:disabled { cursor: default; }
   .panes[data-pane="preview"] > #source-panel, .panes[data-pane="source"] > #preview-panel { visibility: hidden; pointer-events: none; }
   .source-pane[data-collapsed] { display: flex; }
   .source-input[data-slot="textarea"] { font-size: var(--text-sm); }
-  [data-slot="button"], [data-slot="tooltip-trigger"], .file-tree .tree-row, [data-slot="tabs-trigger"] { min-height: 44px; }
-  [data-slot="button"], [data-slot="tooltip-trigger"] { min-width: 44px; }
+  /* A render-prop trigger keeps the primitive's own data-slot rather than the wrapped Button's, so
+     the floor above needs each such slot named explicitly: the overflow menu's trigger and any
+     dialog's close control, both otherwise still sized by the primitive they wrap. */
+  [data-slot="button"], [data-slot="tooltip-trigger"], [data-slot="dropdown-menu-trigger"], [data-slot="dialog-close"], .file-tree .tree-row, [data-slot="tabs-trigger"] { min-height: 44px; }
+  [data-slot="button"], [data-slot="tooltip-trigger"], [data-slot="dropdown-menu-trigger"], [data-slot="dialog-close"] { min-width: 44px; }
   /* A file row keeps its content-driven wrapped/unwrapped height (48/34px) rather than the general
      touch floor above, which this equal-specificity, later rule overrides back down for this one
      selector; the row's full-width clickable area still satisfies the floor in the other dimension. */
@@ -400,7 +403,10 @@ button:disabled { cursor: default; }
   /* The panel docks to the bottom edge of the content area, above the persistent phone bar and
      status bar so it never overlaps either one, at a share of the viewport height instead of
      covering the document; its resize handle becomes a horizontal bar along its top edge. */
-  .agent-pane { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(30px + 56px + env(safe-area-inset-bottom)); width: 100%; height: var(--agent-height, 55dvh); max-height: calc(100dvh - 58px - 30px - 56px); border-left: 0; border-top: 1px solid var(--border); }
+  /* No separate max-height clamp here: the handle's own reported range is computed from this same
+     chrome (58px header + 30px status bar + 56px phone bar) and never lets --agent-height exceed
+     what actually fits, so the rendered height has exactly one source rather than two that can drift. */
+  .agent-pane { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(30px + 56px + env(safe-area-inset-bottom)); width: 100%; height: var(--agent-height, 55dvh); border-left: 0; border-top: 1px solid var(--border); }
   .agent-resizer { display: block; left: 0; right: 0; top: -4px; bottom: auto; width: auto; height: 8px; cursor: row-resize; }
   .agent-header { min-height: 52px; }
   /* The bottom-most bar touches the physical edge of the screen, so it alone accounts for the inset. */

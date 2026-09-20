@@ -66,6 +66,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [token, setToken] = React.useState('')
   const [loginError, setLoginError] = React.useState('')
   const [treeOpen, setTreeOpen] = React.useState(false)
+  const [overflowOpen, setOverflowOpen] = React.useState(false)
   const [logoutOpen, setLogoutOpen] = React.useState(false)
   const [reviewOpen, setReviewOpen] = React.useState(false)
   const [entryDialog, setEntryDialog] = React.useState<{ action: EntryAction, key: number } | null>(null)
@@ -320,11 +321,14 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
           )}
           {narrow
             ? (
-                <DropdownMenu>
+                // The theme switch and the assistant toggle inside are plain controls, not menu
+                // items, so nothing tells this menu a selection happened; closing it explicitly on
+                // any click inside is what keeps its backdrop from outliving the choice that was made.
+                <DropdownMenu open={overflowOpen} onOpenChange={setOverflowOpen}>
                   <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More options" />}>
                     <MoreHorizontal />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="header-menu">
+                  <DropdownMenuContent align="end" className="header-menu" onClick={() => setOverflowOpen(false)}>
                     {assistantToggle}
                     <ThemeToggle />
                     {signOut && <DropdownMenuSeparator />}

@@ -24,8 +24,15 @@ const maximumWidth = 560
 // preference, never written to storage.
 const narrowViewportQuery = '(max-width: 700px)'
 const minimumHeightPercent = 30
-const maximumHeightPercent = 85
 const defaultHeightPercent = 55
+// The design ceiling: the panel never grows past this share of the viewport even when the viewport
+// is tall enough to allow more, so a meaningful sliver of document always stays reachable above it.
+const designMaximumHeightPercent = 85
+// The chrome the docked sheet's own bottom offset reserves below the phone breakpoint: the phone bar
+// and the status bar (index.css's agent-pane bottom inset). On a short viewport this, not the design
+// ceiling, becomes the binding limit; both the reported range and the rendered height are derived
+// from this one number so they cannot drift apart the way a second, unrelated constant could.
+const phoneChromeHeight = 30 + 56
 
 function useNarrowViewport(): boolean {
   const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
@@ -38,16 +45,36 @@ function useNarrowViewport(): boolean {
   return narrow
 }
 
+// The panel's actual rendered height is capped by the same chrome the layout reserves elsewhere, so
+// the handle's reported maximum must be too, rather than a fixed percentage the layout cannot reach.
+function useMaximumHeightPercent(narrow: boolean): number {
+  const [viewportHeight, setViewportHeight] = React.useState(() => window.innerHeight)
+  React.useEffect(() => {
+    const update = () => setViewportHeight(window.innerHeight)
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  if (!narrow)
+    return 100
+  const reachable = ((viewportHeight - phoneChromeHeight) / viewportHeight) * 100
+  return Math.min(designMaximumHeightPercent, Math.max(minimumHeightPercent, reachable))
+}
+
 export function AgentChat({ session, open, blockedReason, activePath, onClose, onActiveChange, onFileChanged, onSettled }: AgentChatProps) {
   const blocked = blockedReason !== undefined
   const chat = useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled })
   const [prompt, setPrompt] = React.useState('')
   const narrow = useNarrowViewport()
+  const maximumHeightPercent = useMaximumHeightPercent(narrow)
   const [width, setWidth] = React.useState(() => {
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
     return Number.isFinite(stored) ? Math.min(maximumWidth, Math.max(minimumWidth, stored)) : 380
   })
   const [heightPercent, setHeightPercent] = React.useState(defaultHeightPercent)
+  // A viewport that shrinks (e.g. rotation) can drop the reachable maximum below the current value.
+  React.useEffect(() => {
+    setHeightPercent(current => Math.min(current, maximumHeightPercent))
+  }, [maximumHeightPercent])
   const [noticeDismissed, setNoticeDismissed] = React.useState(false)
   const transcriptRef = React.useRef<HTMLDivElement>(null)
   React.useEffect(() => {
