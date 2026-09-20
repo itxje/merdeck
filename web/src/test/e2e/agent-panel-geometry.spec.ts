@@ -112,7 +112,9 @@ test('the assistant panel stays inside the layout when the bottom safe area chan
   // the home-indicator area all move this inset without a window resize following it.
   await page.evaluate(() => {
     ;(window as Window & { resized?: number }).resized = 0
-    window.addEventListener('resize', () => { (window as Window & { resized?: number }).resized! += 1 })
+    window.addEventListener('resize', () => {
+      (window as Window & { resized?: number }).resized! += 1
+    })
   })
   await client.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, left: 0, bottom: 34, right: 0 } })
   const grown = await geometry(page)
