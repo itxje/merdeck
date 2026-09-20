@@ -5,10 +5,11 @@ test.skip(!url, 'Set MERDECK_OPEN_URL to a disposable service without an access 
 
 // Below the phone breakpoint the assistant's resize handle reports its position as a percentage of
 // the viewport height (aria-valuenow, driven by the same ArrowUp/ArrowDown keys used at desktop
-// width). The panel's actual rendered height is separately capped by a max-height that accounts for
-// the phone bar and status bar, so once that cap is reached, further keyboard presses keep raising
-// the reported value while the panel's real height stops moving — the handle no longer reports what
-// the layout actually does.
+// width). The panel's actual rendered height must be capped by the same figure the handle reports
+// (aria-valuemax), computed from the header, the phone bar, the status bar and the device's own
+// bottom safe area together, so that once the cap is reached, the reported value and the panel's
+// real height stop moving together rather than one outrunning the other. The exact number is not
+// asserted here — it depends on the viewport and the device's safe area — only that the two agree.
 test('the assistant resize handle keyboard value must match the panel\'s actual rendered height', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(url!)
@@ -18,10 +19,11 @@ test('the assistant resize handle keyboard value must match the panel\'s actual 
   await expect(editor).toBeVisible()
   const handle = page.getByRole('separator', { name: 'Resize AI file editor', exact: true })
   await handle.focus()
-  // Drive it to its reported maximum.
-  for (let i = 0; i < 12; i++) await page.keyboard.press('ArrowUp')
-  await expect(handle).toHaveAttribute('aria-valuenow', '85')
+  // Drive it well past its reported maximum; further presses must not move it further.
+  for (let i = 0; i < 20; i++) await page.keyboard.press('ArrowUp')
+  const max = Number(await handle.getAttribute('aria-valuemax'))
+  await expect(handle).toHaveAttribute('aria-valuenow', String(Math.round(max)))
   const box = (await editor.boundingBox())!
   const actualPercent = (box.height / 844) * 100
-  expect(actualPercent).toBeCloseTo(85, 0)
+  expect(actualPercent).toBeCloseTo(max, 0)
 })

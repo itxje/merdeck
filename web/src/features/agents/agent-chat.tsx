@@ -28,11 +28,32 @@ const defaultHeightPercent = 55
 // The design ceiling: the panel never grows past this share of the viewport even when the viewport
 // is tall enough to allow more, so a meaningful sliver of document always stays reachable above it.
 const designMaximumHeightPercent = 85
-// The chrome the docked sheet's own bottom offset reserves below the phone breakpoint: the phone bar
-// and the status bar (index.css's agent-pane bottom inset). On a short viewport this, not the design
-// ceiling, becomes the binding limit; both the reported range and the rendered height are derived
-// from this one number so they cannot drift apart the way a second, unrelated constant could.
+// The fixed chrome outside the docked sheet below the phone breakpoint: the header above it (which
+// the sheet must never climb over) and the phone bar plus the status bar its own bottom offset
+// reserves (index.css). The device's bottom safe area is not fixed — it is read live below, since a
+// hardcoded value would only agree with the CSS env() the layout itself reserves when that inset
+// happens to be zero, the same mistake that let the panel overlap the header once the CSS grew an
+// inset term the JS clamp never knew about.
+const headerHeight = 58
 const phoneChromeHeight = 30 + 56
+
+// The device's bottom safe area (env(safe-area-inset-bottom)) has no direct JS accessor; measuring
+// it through a probe element is the only way to read the exact value the layout's own CSS reserves,
+// so the reachable maximum below can be computed from that same number instead of assuming zero.
+function readSafeAreaInsetBottom(): number {
+  const probe = document.createElement('div')
+  probe.style.position = 'fixed'
+  probe.style.bottom = '0'
+  probe.style.left = '0'
+  probe.style.height = '0'
+  probe.style.paddingBottom = 'env(safe-area-inset-bottom)'
+  probe.style.visibility = 'hidden'
+  probe.style.pointerEvents = 'none'
+  document.body.append(probe)
+  const value = Number.parseFloat(getComputedStyle(probe).paddingBottom)
+  probe.remove()
+  return Number.isFinite(value) ? value : 0
+}
 
 function useNarrowViewport(): boolean {
   const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
@@ -45,18 +66,23 @@ function useNarrowViewport(): boolean {
   return narrow
 }
 
-// The panel's actual rendered height is capped by the same chrome the layout reserves elsewhere, so
-// the handle's reported maximum must be too, rather than a fixed percentage the layout cannot reach.
+// The panel's actual rendered height is capped by the same chrome the layout reserves elsewhere —
+// including the device's own bottom safe area — so the handle's reported maximum must be computed
+// from that same figure, not a fixed percentage the layout cannot reach on every device.
 function useMaximumHeightPercent(narrow: boolean): number {
   const [viewportHeight, setViewportHeight] = React.useState(() => window.innerHeight)
+  const [safeAreaInsetBottom, setSafeAreaInsetBottom] = React.useState(() => readSafeAreaInsetBottom())
   React.useEffect(() => {
-    const update = () => setViewportHeight(window.innerHeight)
+    const update = () => {
+      setViewportHeight(window.innerHeight)
+      setSafeAreaInsetBottom(readSafeAreaInsetBottom())
+    }
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [])
   if (!narrow)
     return 100
-  const reachable = ((viewportHeight - phoneChromeHeight) / viewportHeight) * 100
+  const reachable = ((viewportHeight - headerHeight - phoneChromeHeight - safeAreaInsetBottom) / viewportHeight) * 100
   return Math.min(designMaximumHeightPercent, Math.max(minimumHeightPercent, reachable))
 }
 
