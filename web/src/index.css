@@ -406,10 +406,14 @@ button:disabled { cursor: default; }
   /* The panel docks to the bottom edge of the content area, above the persistent phone bar and
      status bar so it never overlaps either one, at a share of the viewport height instead of
      covering the document; its resize handle becomes a horizontal bar along its top edge. */
-  /* No separate max-height clamp here: the handle's own reported range is computed from this same
-     chrome (58px header + 30px status bar + 56px phone bar) and never lets --agent-height exceed
-     what actually fits, so the rendered height has exactly one source rather than two that can drift. */
-  .agent-pane { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(30px + 56px + env(safe-area-inset-bottom)); width: 100%; height: var(--agent-height, 55dvh); border-left: 0; border-top: 1px solid var(--border); }
+  /* It is anchored to that area rather than offset by a copy of what sits below it: the area already
+     ends where the phone bar begins and already starts under the header, so its own height is the
+     room the panel may take, whatever the header, the bars and env(safe-area-inset-bottom) come to.
+     The max-height below is what keeps the panel inside that room; the handle's reported range is
+     read back from the same box (agent-chat.tsx) instead of being estimated a second time, so no
+     list of heights has to be kept in step and nothing has to observe the inset to stay correct. */
+  .workspace-body { position: relative; }
+  .agent-pane { position: absolute; z-index: 30; left: 0; right: 0; bottom: 0; width: 100%; height: var(--agent-height, 55dvh); max-height: 100%; border-left: 0; border-top: 1px solid var(--border); }
   .agent-resizer { display: block; left: 0; right: 0; top: -4px; bottom: auto; width: auto; height: 8px; cursor: row-resize; }
   .agent-header { min-height: 52px; }
   /* The bottom-most bar touches the physical edge of the screen, so it alone accounts for the inset. */

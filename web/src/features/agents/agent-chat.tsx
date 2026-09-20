@@ -28,32 +28,6 @@ const defaultHeightPercent = 55
 // The design ceiling: the panel never grows past this share of the viewport even when the viewport
 // is tall enough to allow more, so a meaningful sliver of document always stays reachable above it.
 const designMaximumHeightPercent = 85
-// The fixed chrome outside the docked sheet below the phone breakpoint: the header above it (which
-// the sheet must never climb over) and the phone bar plus the status bar its own bottom offset
-// reserves (index.css). The device's bottom safe area is not fixed — it is read live below, since a
-// hardcoded value would only agree with the CSS env() the layout itself reserves when that inset
-// happens to be zero, the same mistake that let the panel overlap the header once the CSS grew an
-// inset term the JS clamp never knew about.
-const headerHeight = 58
-const phoneChromeHeight = 30 + 56
-
-// The device's bottom safe area (env(safe-area-inset-bottom)) has no direct JS accessor; measuring
-// it through a probe element is the only way to read the exact value the layout's own CSS reserves,
-// so the reachable maximum below can be computed from that same number instead of assuming zero.
-function readSafeAreaInsetBottom(): number {
-  const probe = document.createElement('div')
-  probe.style.position = 'fixed'
-  probe.style.bottom = '0'
-  probe.style.left = '0'
-  probe.style.height = '0'
-  probe.style.paddingBottom = 'env(safe-area-inset-bottom)'
-  probe.style.visibility = 'hidden'
-  probe.style.pointerEvents = 'none'
-  document.body.append(probe)
-  const value = Number.parseFloat(getComputedStyle(probe).paddingBottom)
-  probe.remove()
-  return Number.isFinite(value) ? value : 0
-}
 
 function useNarrowViewport(): boolean {
   const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
@@ -66,23 +40,34 @@ function useNarrowViewport(): boolean {
   return narrow
 }
 
-// The panel's actual rendered height is capped by the same chrome the layout reserves elsewhere —
-// including the device's own bottom safe area — so the handle's reported maximum must be computed
-// from that same figure, not a fixed percentage the layout cannot reach on every device.
-function useMaximumHeightPercent(narrow: boolean): number {
-  const [viewportHeight, setViewportHeight] = React.useState(() => window.innerHeight)
-  const [safeAreaInsetBottom, setSafeAreaInsetBottom] = React.useState(() => readSafeAreaInsetBottom())
-  React.useEffect(() => {
-    const update = () => {
-      setViewportHeight(window.innerHeight)
-      setSafeAreaInsetBottom(readSafeAreaInsetBottom())
+// Below the phone breakpoint the panel is positioned inside the content area between the header and
+// the bottom bars, and index.css caps it at that area's own height, so the browser — not a number
+// here — keeps it off the header and off the bars, at whatever the header, the bars and
+// env(safe-area-inset-bottom) actually come to. This reads that same box back to report the range,
+// rather than reconstructing it from copies of those heights: copies need every term to be listed
+// and every change to be mirrored, and each term that was missing or stale let the reported range
+// and the reachable height drift apart again.
+function useReachableHeightPercent(narrow: boolean, paneRef: React.RefObject<HTMLElement | null>): number {
+  const [reachable, setReachable] = React.useState(designMaximumHeightPercent)
+  React.useLayoutEffect(() => {
+    const area = narrow ? paneRef.current?.parentElement : undefined
+    if (!area)
+      return
+    const measure = () => setReachable((area.getBoundingClientRect().height / window.innerHeight) * 100)
+    measure()
+    // The safe-area inset has no event of its own — it can change with no resize following it — but
+    // it is part of the bars below, so any change to it resizes this area. Observing the area is
+    // therefore the signal, and it covers a changed header or bar height just as well.
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
     }
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
+  }, [narrow, paneRef])
   if (!narrow)
     return 100
-  const reachable = ((viewportHeight - headerHeight - phoneChromeHeight - safeAreaInsetBottom) / viewportHeight) * 100
   return Math.min(designMaximumHeightPercent, Math.max(minimumHeightPercent, reachable))
 }
 
@@ -91,7 +76,8 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
   const chat = useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled })
   const [prompt, setPrompt] = React.useState('')
   const narrow = useNarrowViewport()
-  const maximumHeightPercent = useMaximumHeightPercent(narrow)
+  const paneRef = React.useRef<HTMLElement>(null)
+  const maximumHeightPercent = useReachableHeightPercent(narrow, paneRef)
   const [width, setWidth] = React.useState(() => {
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
     return Number.isFinite(stored) ? Math.min(maximumWidth, Math.max(minimumWidth, stored)) : 380
@@ -150,7 +136,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
   }
   const unavailable = !chat.capabilities.isPending && !chat.providers.length
   return (
-    <aside className="agent-pane" aria-label="AI file editor" hidden={!open} data-narrow={narrow || undefined} style={{ '--agent-width': `${width}px`, '--agent-height': `${heightPercent}dvh` } as React.CSSProperties}>
+    <aside ref={paneRef} className="agent-pane" aria-label="AI file editor" hidden={!open} data-narrow={narrow || undefined} style={{ '--agent-width': `${width}px`, '--agent-height': `${heightPercent}dvh` } as React.CSSProperties}>
       <div
         className="agent-resizer"
         role="separator"
