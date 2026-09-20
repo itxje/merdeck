@@ -107,3 +107,41 @@ in the row's title. A row whose name fits keeps its former 34px height; a wrappe
 - `workspace.spec.ts` failed its own filesystem-identity gate in this environment (a FUSE-backed mount rather
   than the overlayfs/ext4 the gate requires), the same documented limitation noted in the two prior UI refresh
   task records and not attributable to this change.
+
+### Review correction (2026-09-20)
+
+Independent review found the acceptance geometry itself had no browser assertion: the unit cases pin the
+markup (a stem span, an extension span, a title) but would pass unchanged if the stem never actually wrapped,
+if the extension fell to a second line, or if a wrapped row clipped at 34px instead of growing. Added
+`web/src/test/e2e/explorer-name-wrapping.spec.ts`, a new spec so nothing already passing is disturbed.
+
+- Fixture: the exact six names the UI refresh plan's own audit found indistinguishable once middle-truncated —
+  `flow-decisions.mmd`, `flow-decisions_zh.mmd`, `flow-recovery.mmd`, `flow-recovery_zh.mmd`, `flow-task.mmd`,
+  `flow-task_zh.mmd` — plus a trivially short `a.mmd` control, in one disposable folder.
+- Measured rather than assumed which names actually wrap at the default 232px explorer width and a 1440x900
+  viewport: only `flow-decisions_zh.mmd` (stem `flow-decisions_zh`, 17 characters) and `flow-recovery_zh.mmd`
+  (stem `flow-recovery_zh`, 16 characters) need the stem's second line and measure 48px; the other five,
+  including the shorter `flow-task_zh.mmd` (stem `flow-task_zh`, 12 characters), fit on one line and measure
+  34px. The assertion encodes this measured split by name, not a blanket "all six wrap" assumption.
+- For every one of the seven rows the spec asserts: the row resolves by its exact accessible name to exactly
+  one row (mutually distinguishable — no two of these names collapse onto the same rendered text the way they
+  did under middle truncation); the stem's `scrollHeight` equals its `clientHeight` (nothing clipped behind an
+  ellipsis, at either height); the extension reads exactly `.mmd`; the extension's top edge sits within 1px of
+  the stem's own top (held on the first line, not centred across a two-line stem); and the row's own height is
+  the measured 34 or 48.
+- Ran the new spec against the pre-change shape first, in a disposable worktree built from the commit
+  immediately before this task's first commit: it failed, throwing on the missing `.tree-name-stem`/
+  `.tree-name-ext` markup entirely (the old single span has neither). A second probe against that same
+  pre-change build, checking `scrollWidth` against `clientWidth` on the old `.truncate` span, confirmed the
+  plan's own claim directly: `flow-decisions_zh.mmd` and `flow-recovery_zh.mmd` overflowed their one-line box
+  (an ellipsis was showing) while the other five, `flow-task_zh.mmd` included, did not. Reran against the
+  implemented shape: passed.
+- Re-checked `explorer-density.spec.ts` in a real browser rather than assuming this task's height change left
+  it alone: its 60-file fixture uses short, non-wrapping names, and it still measures exactly 92px of chrome
+  and 18 of 60 rows visible, the same figures the explorer density task recorded and the spec already asserts;
+  no update needed.
+- Reran the required check after adding the new spec: `bun install --frozen-lockfile && bun install --cwd web
+  --frozen-lockfile && bun run lint && bun run typecheck && bun run --cwd web test` — exit 0, 33 files / 572
+  tests passed (the new spec is a Playwright file, outside this Vitest run), coverage unchanged
+  (93.08/88.95/92.69/93.29).
+- Changed files (this correction): `web/src/test/e2e/explorer-name-wrapping.spec.ts` (new), this task record.
