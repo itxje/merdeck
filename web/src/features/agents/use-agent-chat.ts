@@ -15,7 +15,6 @@ const eventTypes: AgentEvent['type'][] = [
   'assistant.delta',
   'tool.started',
   'file.changed',
-  'approval.requested',
   'turn.completed',
   'turn.failed',
   'provider.unavailable',
@@ -42,7 +41,6 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
   const [model, setModel] = React.useState(restored.selection?.model ?? restored.conversation?.model ?? 'default')
   const [conversation, setConversation] = React.useState<AgentConversationHandle | null>(restored.conversation)
   const [pending, setPending] = React.useState(false)
-  const [answering, setAnswering] = React.useState<Set<string>>(() => new Set())
   const [connection, setConnection] = React.useState<'idle' | 'connected' | 'reconnecting'>('idle')
   const activeRef = React.useRef(false)
   const lastEventRef = React.useRef(restored.state.lastEventId)
@@ -179,26 +177,6 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
     }
   }, [conversation, pending, csrfToken, setActive, onSettled, abandonConversation])
 
-  const answer = React.useCallback(async (approvalId: string, decision: 'approve' | 'deny') => {
-    if (!conversation || answering.has(approvalId))
-      return
-    setAnswering(current => new Set(current).add(approvalId))
-    try {
-      await agentApi.approve(conversation.id, approvalId, decision, csrfToken)
-      dispatch({ type: 'approval', approvalId, decision })
-    }
-    catch (error) {
-      dispatch({ type: 'error', message: message(error) })
-    }
-    finally {
-      setAnswering((current) => {
-        const next = new Set(current)
-        next.delete(approvalId)
-        return next
-      })
-    }
-  }, [answering, conversation, csrfToken])
-
   return {
     ...state,
     active: activeRef.current,
@@ -211,11 +189,9 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
     model: effectiveModel,
     setModel,
     pending,
-    answering,
     connection,
     blocked,
     send,
     cancel,
-    answer,
   }
 }

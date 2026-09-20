@@ -2,7 +2,7 @@ import type { AgentModel } from '../../shared/contracts'
 import type { AgentProviderAdapter, AgentProviderContext, AgentProviderProbeContext, AgentProviderSession } from './types'
 import { agentModelIdSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
-import { opaqueId, providerPath, safeLabel } from './paths'
+import { providerPath, safeLabel } from './paths'
 import { boundedText, drain, readJsonLines, record, spawnProvider, terminate, writeJsonLine } from './process'
 
 interface PendingRequest {
@@ -11,14 +11,9 @@ interface PendingRequest {
   timer: ReturnType<typeof setTimeout>
 }
 
-interface PendingApproval {
-  requestId: string | number
-}
-
 class CodexSession implements AgentProviderSession {
   private readonly process: Bun.PipedSubprocess
   private readonly requests = new Map<string, PendingRequest>()
-  private readonly approvals = new Map<string, PendingApproval>()
   private requestId = 0
   private threadId = ''
   private turnId = ''
@@ -46,8 +41,7 @@ class CodexSession implements AgentProviderSession {
       const started = record(await session.request('thread/start', {
         ...(context.model ? { model: context.model } : {}),
         cwd: context.projectRoot,
-        approvalPolicy: 'on-request',
-        approvalsReviewer: 'user',
+        approvalPolicy: 'never',
         sandbox: 'workspace-write',
         ephemeral: true,
         developerInstructions: 'Edit only files inside the current project. Do not access the network or request additional writable roots.',
@@ -107,8 +101,7 @@ class CodexSession implements AgentProviderSession {
         ...(this.context.model ? { model: this.context.model } : {}),
         input: [{ type: 'text', text: prompt, text_elements: [] }],
         cwd: this.context.projectRoot,
-        approvalPolicy: 'on-request',
-        approvalsReviewer: 'user',
+        approvalPolicy: 'never',
         sandboxPolicy: {
           type: 'workspaceWrite',
           writableRoots: [this.context.projectRoot],
@@ -142,17 +135,6 @@ class CodexSession implements AgentProviderSession {
     }
   }
 
-  async approve(approvalId: string, decision: 'approve' | 'deny'): Promise<void> {
-    const pending = this.approvals.get(approvalId)
-    if (!pending)
-      throw new AppError('not_found')
-    this.approvals.delete(approvalId)
-    await writeJsonLine(this.process, {
-      id: pending.requestId,
-      result: { decision: decision === 'approve' ? 'accept' : 'decline' },
-    })
-  }
-
   async cancel(): Promise<void> {
     this.turnGeneration++
     this.startingTurn = false
@@ -162,7 +144,6 @@ class CodexSession implements AgentProviderSession {
     const turnId = this.turnId
     this.ignoreTurn(turnId)
     this.turnId = ''
-    this.approvals.clear()
     await this.request('turn/interrupt', { threadId: this.threadId, turnId }).catch(() => undefined)
   }
 
@@ -174,7 +155,6 @@ class CodexSession implements AgentProviderSession {
     this.startingTurn = false
     this.completedBeforeStart.clear()
     this.turnId = ''
-    this.approvals.clear()
     for (const pending of this.requests.values()) {
       clearTimeout(pending.timer)
       pending.reject(new Error('Provider closed'))
@@ -265,14 +245,12 @@ class CodexSession implements AgentProviderSession {
       void writeJsonLine(this.process, { id: requestId, result: { decision: 'decline' } })
       return
     }
-    // File changes stay inside the writable project root, so they proceed without asking the operator.
-    if (method === 'item/fileChange/requestApproval') {
-      void writeJsonLine(this.process, { id: requestId, result: { decision: 'accept' } })
-      return
-    }
-    const approvalId = opaqueId()
-    this.approvals.set(approvalId, { requestId })
-    this.context.emit({ type: 'approval.requested', approvalId, kind: 'command', summary: safeLabel(params.command, 'Allow this command?') })
+    // Nothing here waits for a person. File changes stay inside the writable project root, so they
+    // proceed; a command asking to step outside the sandbox the turn was started with is refused,
+    // which holds the same boundary the turn already runs under whether or not anyone is watching.
+    // The turn is started with an approval policy of `never`, so a provider that honours it asks
+    // nothing at all and this answer is only the fallback for one that asks anyway.
+    void writeJsonLine(this.process, { id: requestId, result: { decision: method === 'item/fileChange/requestApproval' ? 'accept' : 'decline' } })
   }
 
   private notification(method: string, params: Record<string, unknown>): void {
@@ -337,7 +315,6 @@ class CodexSession implements AgentProviderSession {
     if (method === 'error' && this.turnId) {
       this.ignoreTurn(this.turnId)
       this.turnId = ''
-      this.approvals.clear()
       this.context.emit({ type: 'turn.failed', message: 'The provider could not complete the turn.' })
     }
   }
@@ -369,7 +346,6 @@ class CodexSession implements AgentProviderSession {
   }
 
   private finishTurn(status: unknown): void {
-    this.approvals.clear()
     if (status === 'completed')
       this.context.emit({ type: 'turn.completed' })
     else if (status === 'interrupted')
@@ -386,7 +362,6 @@ class CodexSession implements AgentProviderSession {
     this.completedBeforeStart.clear()
     const active = !!this.turnId
     this.turnId = ''
-    this.approvals.clear()
     for (const pending of this.requests.values()) {
       clearTimeout(pending.timer)
       pending.reject(new Error('Provider process failed'))

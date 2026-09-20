@@ -270,12 +270,6 @@ button:disabled { cursor: default; }
 .agent-event { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; align-items: flex-start; gap: 8px; color: var(--muted-foreground); font-size: var(--text-base); }
 .agent-event svg { width: 14px; height: 14px; flex: none; }
 .agent-event code { color: var(--foreground); font: var(--text-base) var(--font-mono); overflow-wrap: anywhere; }
-.agent-approval { padding: 11px; border: 1px solid var(--ring); border-radius: var(--radius-md); background: color-mix(in oklch, var(--muted) 65%, var(--background)); }
-.agent-approval strong { font-size: var(--text-base); }
-.agent-approval p { margin: 6px 0 10px; line-height: 1.5; overflow-wrap: anywhere; }
-.agent-approval > div { display: flex; justify-content: flex-end; gap: 7px; }
-.agent-decision { display: flex; align-items: center; gap: 5px; color: var(--muted-foreground); font-size: var(--text-sm); }
-.agent-decision svg { width: 12px; }
 .agent-error { margin: 0; padding: 8px 10px; border-radius: var(--radius-md); background: color-mix(in oklch, var(--destructive) 9%, transparent); color: var(--destructive); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .agent-composer { flex: none; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 .agent-composer > p { margin: 0; color: var(--destructive); font-size: var(--text-sm); }
@@ -415,7 +409,19 @@ button:disabled { cursor: default; }
   .workspace-body { position: relative; }
   .agent-pane { position: absolute; z-index: 30; left: 0; right: 0; bottom: 0; width: 100%; height: var(--agent-height, 55dvh); max-height: 100%; border-left: 0; border-top: 1px solid var(--border); }
   .agent-resizer { display: block; left: 0; right: 0; top: -4px; bottom: auto; width: auto; height: 8px; cursor: row-resize; }
-  .agent-header { min-height: 52px; }
+  /* The conversation is what the sheet is for, so the fixed chrome around it stays as small as the
+     44px touch floor allows: the title and its status share one line, the engine row keeps its
+     targets on tighter padding, and the composer opens one line tall and grows with what is typed
+     instead of reserving three empty lines. The previous heights took 313px of a 464px sheet, which
+     left 150px of conversation on a 844px viewport and 38px on the 640px one a phone browser's own
+     chrome leaves; web/src/test/e2e/agent-transcript-share.spec.ts holds the floor this keeps. */
+  .agent-header { min-height: 44px; padding: 6px 8px 6px 14px; }
+  .agent-header > div > div { flex-direction: row; align-items: baseline; gap: 6px; }
+  .agent-header strong { flex: none; font-size: var(--text-base); }
+  .agent-provider-row { padding: 6px 12px; }
+  .agent-transcript { padding: 10px 12px; }
+  .agent-composer { padding: 8px 12px max(8px, env(safe-area-inset-bottom)); gap: 6px; }
+  .agent-composer textarea { min-height: 44px; max-height: 26dvh; }
   /* The bottom-most bar touches the physical edge of the screen, so it alone accounts for the inset. */
   .status-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(30px + env(safe-area-inset-bottom)); }
 }

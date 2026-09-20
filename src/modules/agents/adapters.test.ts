@@ -34,7 +34,7 @@ async function waitFor(predicate: () => boolean, timeout = 3000): Promise<void> 
 }
 
 describe('provider adapters', () => {
-  test('Codex uses JSONL app-server, filters paths and routes opaque approvals', async () => {
+  test('Codex uses JSONL app-server, filters paths and answers provider approvals itself', async () => {
     const root = await fixture()
     const fake = await executable(root, 'fake-codex', String.raw`
 const requests = []
@@ -80,21 +80,18 @@ for await (const chunk of Bun.stdin.stream()) {
     const events: AgentAdapterEvent[] = []
     const session = await codexAdapter.open({ executable: fake, projectRoot: root, model: 'gpt-test', emit: event => events.push(event) })
     await session.startTurn('Update flow.mmd')
-    await waitFor(() => events.some(event => event.type === 'approval.requested'))
-    const approval = events.find(event => event.type === 'approval.requested')
-    expect(approval).toMatchObject({ kind: 'command', summary: 'bun test' })
-    if (approval?.type === 'approval.requested')
-      await session.approve(approval.approvalId, 'approve')
     await waitFor(() => events.some(event => event.type === 'turn.completed'))
     expect(events).toContainEqual({ type: 'assistant.delta', text: 'Changed safely.' })
     expect(events).toContainEqual({ type: 'file.changed', path: 'flow.mmd', change: 'update' })
     expect(events.some(event => event.type === 'file.changed' && event.path.includes('passwd'))).toBe(false)
     const requests = JSON.parse(await readFile(`${root}/codex-requests.json`, 'utf8')) as Array<Record<string, unknown>>
-    expect(requests).toContainEqual({ id: 'provider-approval', result: { decision: 'accept' } })
+    // Nothing waits for a person: the in-project file change proceeds, the command's request to step
+    // outside the turn's sandbox is refused, and neither reaches the browser.
     expect(requests).toContainEqual({ id: 'provider-file-approval', result: { decision: 'accept' } })
-    expect(events.some(event => event.type === 'approval.requested' && event.kind === 'file_change')).toBe(false)
-    expect(requests.find(request => request.method === 'thread/start')).toMatchObject({ params: { model: 'gpt-test' } })
-    expect(requests.find(request => request.method === 'turn/start')).toMatchObject({ params: { model: 'gpt-test', sandboxPolicy: { type: 'workspaceWrite', writableRoots: [root], networkAccess: false } } })
+    expect(requests).toContainEqual({ id: 'provider-approval', result: { decision: 'decline' } })
+    expect(events.some(event => (event as { type: string }).type === 'approval.requested')).toBe(false)
+    expect(requests.find(request => request.method === 'thread/start')).toMatchObject({ params: { model: 'gpt-test', approvalPolicy: 'never' } })
+    expect(requests.find(request => request.method === 'turn/start')).toMatchObject({ params: { model: 'gpt-test', approvalPolicy: 'never', sandboxPolicy: { type: 'workspaceWrite', writableRoots: [root], networkAccess: false } } })
     expect(JSON.parse(await readFile(`${root}/codex-launch.json`, 'utf8'))).toMatchObject({ argv: ['app-server', '--listen', 'stdio://'] })
     await session.startTurn('Run a second turn after the first completed quickly')
     await session.cancel()
@@ -261,7 +258,7 @@ for await (const chunk of Bun.stdin.stream()) {
     const session = await claudeAdapter.open({ executable: fake, projectRoot: root, model: 'sonnet', emit: event => events.push(event) })
     await session.startTurn('Edit the file')
     await waitFor(() => events.some(event => event.type === 'turn.completed'))
-    expect(events.some(event => event.type === 'approval.requested')).toBe(false)
+    expect(events.some(event => (event as { type: string }).type === 'approval.requested')).toBe(false)
     expect(events).toContainEqual({ type: 'assistant.delta', text: '<img src=x onerror=alert(1)>' })
     expect(events).toContainEqual({ type: 'tool.started', label: 'Edit flow.mmd' })
     expect(events).toContainEqual({ type: 'file.changed', path: 'flow.mmd', change: 'update' })

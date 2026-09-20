@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-20 18:37 [change]
+
+The AI file editor gives the conversation room on a phone and no longer stops for an approval. Its title row,
+engine row and composer are fixed in height, so on a 390x640 visual viewport they took 255px of a 352px sheet
+and left about one clipped line of transcript; they are now tighter, the composer opens one line tall, and the
+sheet opens at whichever is taller, the design share or the height that leaves a readable conversation. The
+project-files control in the phone bar carries a label rather than standing alone as an icon. Approvals are
+removed end to end: turns start with an approval policy of `never`, an in-project file change proceeds and a
+command asking to leave the turn's sandbox is refused rather than shown, and the approval route, event,
+schema and panel card are gone. The writable root, disabled network and tool allow-list are unchanged. See
+[20260920-1837-agent-sheet-and-approvals](task/20260920-1837-agent-sheet-and-approvals.md).
+
 ## 2026-09-20 18:04 [release]
 
 Published [v0.17.1](https://github.com/itxje/merdeck/releases/tag/v0.17.1) delivering two corrections to the

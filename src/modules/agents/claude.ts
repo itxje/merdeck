@@ -116,11 +116,6 @@ class ClaudeSession implements AgentProviderSession {
     }
   }
 
-  async approve(): Promise<void> {
-    // File tools inside the project run without approval, so nothing is ever pending here.
-    throw new AppError('not_found')
-  }
-
   async cancel(): Promise<void> {
     if (!this.turnActive)
       return

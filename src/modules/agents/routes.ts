@@ -6,7 +6,7 @@ import type { AgentManager, AgentPrincipal } from './manager'
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import { z } from 'zod'
-import { agentApprovalRequestSchema, agentOpaqueIdSchema, agentTurnRequestSchema, createAgentConversationRequestSchema } from '../../shared/contracts'
+import { agentOpaqueIdSchema, agentTurnRequestSchema, createAgentConversationRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { jsonInput, queryInput } from '../../shared/lib/http-input'
 import { requireMutation, requireSession } from '../auth/routes'
@@ -61,19 +61,6 @@ export function agentRoutes(diagrams: DiagramService, sessions: Sessions | undef
       throw new AppError('filesystem_unsupported')
     const id = validateId(c.req.param('id'))
     return c.json({ success: true as const, data: await agents.startTurn(id, owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs), request.prompt, request.context) })
-  })
-
-  router.post('/agents/conversations/:id/approvals/:approvalId', async (c) => {
-    queryInput(new URL(c.req.url), z.strictObject({}))
-    const session = requireSession(sessions, c.req.raw, c.get('origin'))
-    requireMutation(c.req.raw, c.get('origin'), session)
-    const request = await jsonInput(c.req.raw, 4096, agentApprovalRequestSchema)
-    return c.json({ success: true as const, data: await agents.approve(
-      validateId(c.req.param('id')),
-      owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs),
-      validateId(c.req.param('approvalId')),
-      request.decision,
-    ) })
   })
 
   router.post('/agents/conversations/:id/cancel', async (c) => {

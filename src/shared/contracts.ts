@@ -40,7 +40,6 @@ export const agentTurnRequestSchema = z.strictObject({
   prompt: z.string().trim().min(1).max(16000),
   context: agentTurnContextSchema.optional(),
 })
-export const agentApprovalRequestSchema = z.strictObject({ decision: z.enum(['approve', 'deny']) })
 export const agentOpaqueIdSchema = z.string().regex(/^[a-f0-9]{48}$/)
 
 export type RelativePath = z.infer<typeof relativePathSchema>
@@ -56,7 +55,6 @@ export type AgentProvider = z.infer<typeof agentProviderSchema>
 export type CreateAgentConversationRequest = z.infer<typeof createAgentConversationRequestSchema>
 export type AgentTurnContext = z.infer<typeof agentTurnContextSchema>
 export type AgentTurnRequest = z.infer<typeof agentTurnRequestSchema>
-export type AgentApprovalRequest = z.infer<typeof agentApprovalRequestSchema>
 export type FileKind = 'mermaid' | 'markdown' | 'html'
 
 export interface DiagramBlockSummary {
@@ -147,7 +145,6 @@ export type AgentEvent
     | { id: number, type: 'assistant.delta', text: string }
     | { id: number, type: 'tool.started', label: string }
     | { id: number, type: 'file.changed', path: RelativePath, change: 'add' | 'update' | 'delete' }
-    | { id: number, type: 'approval.requested', approvalId: string, kind: 'file_access' | 'file_change' | 'command', summary: string }
     | { id: number, type: 'turn.completed' }
     | { id: number, type: 'turn.failed', message: string }
     | { id: number, type: 'provider.unavailable', message: string }

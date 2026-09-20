@@ -98,12 +98,6 @@ export function decodeAgentEvent(value: unknown): AgentEvent {
       return invalid()
     return { id, type, path: item.path, change: item.change }
   }
-  if (type === 'approval.requested') {
-    exact(item, ['id', 'type', 'approvalId', 'kind', 'summary'])
-    if (item.kind !== 'file_access' && item.kind !== 'file_change' && item.kind !== 'command')
-      return invalid()
-    return { id, type, approvalId: opaqueId(item.approvalId), kind: item.kind, summary: text(item.summary, 500) }
-  }
   if (type === 'turn.completed') {
     exact(item, ['id', 'type'])
     return { id, type }
@@ -131,7 +125,6 @@ export const agentApi = {
   capabilities: (signal?: AbortSignal) => requestApi('/agents/capabilities', decodeAgentCapabilities, signal ? { signal } : {}),
   create: (provider: AgentProvider, model: string, csrfToken?: string) => requestApi('/agents/conversations', decodeAgentConversation, { method: 'POST', body: { provider, model: modelId(model) }, csrfToken }),
   turn: (conversationId: string, prompt: string, context: AgentTurnContext | undefined, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/turns`, accepted, { method: 'POST', body: context ? { prompt, context } : { prompt }, csrfToken }),
-  approve: (conversationId: string, approvalId: string, decision: 'approve' | 'deny', csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/approvals/${opaqueId(approvalId)}`, accepted, { method: 'POST', body: { decision }, csrfToken }),
   cancel: (conversationId: string, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/cancel`, cancelled, { method: 'POST', body: {}, csrfToken }),
   eventsUrl: (conversationId: string, after: number) => `/api/agents/conversations/${opaqueId(conversationId)}/events?after=${encodeURIComponent(String(after))}`,
 }

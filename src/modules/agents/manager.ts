@@ -229,16 +229,6 @@ export class AgentManager {
     }
   }
 
-  async approve(id: string, owner: AgentPrincipal, approvalId: string, decision: 'approve' | 'deny'): Promise<{ accepted: true }> {
-    const conversation = this.owned(id, owner)
-    if (conversation.terminal)
-      throw new AppError('unavailable')
-    if (!conversation.active)
-      throw new AppError('conflict')
-    await conversation.session.approve(approvalId, decision)
-    return { accepted: true }
-  }
-
   async cancel(id: string, owner: AgentPrincipal): Promise<{ cancelled: boolean }> {
     const conversation = this.owned(id, owner)
     if (conversation.terminal || !conversation.active)

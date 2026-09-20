@@ -89,11 +89,10 @@ it('defers provider discovery until the editor is opened', async () => {
   client.clear()
 })
 
-it('sends a turn, renders hostile provider text inertly, routes approval and reports file refresh', async () => {
+it('sends a turn, renders hostile provider text inertly and reports file refresh', async () => {
   vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
   vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-fast' })
   vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
-  vi.spyOn(agentApi, 'approve').mockResolvedValue({ accepted: true })
   const active = vi.fn()
   const changed = vi.fn()
   const settled = vi.fn()
@@ -115,15 +114,14 @@ it('sends a turn, renders hostile provider text inertly, routes approval and rep
   const source = FakeEventSource.instances[0]!
   source.emit({ id: 1, type: 'turn.started', turnId: 'b'.repeat(48) })
   source.emit({ id: 2, type: 'assistant.delta', text: '<img src=x onerror=alert(1)>' })
-  source.emit({ id: 3, type: 'approval.requested', approvalId: 'c'.repeat(48), kind: 'file_change', summary: 'Edit flow.mmd?' })
-  source.emit({ id: 4, type: 'file.changed', path: 'flow.mmd', change: 'update' })
+  source.emit({ id: 3, type: 'file.changed', path: 'flow.mmd', change: 'update' })
   expect(await screen.findByText('<img src=x onerror=alert(1)>')).toBeVisible()
   expect(view.container.querySelector('img')).toBeNull()
   expect(changed).toHaveBeenCalledWith('flow.mmd')
-  await userEvent.setup().click(screen.getByRole('button', { name: 'Approve' }))
-  await waitFor(() => expect(agentApi.approve).toHaveBeenCalledWith('a'.repeat(48), 'c'.repeat(48), 'approve', 'csrf'))
-  expect(await screen.findByText('Approved')).toBeVisible()
-  source.emit({ id: 5, type: 'turn.completed' })
+  // The provider edits project files without a confirmation standing between it and the write.
+  expect(screen.queryByRole('region', { name: 'Agent approval request' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull()
+  source.emit({ id: 4, type: 'turn.completed' })
   await waitFor(() => expect(active).toHaveBeenLastCalledWith(false))
   expect(settled).toHaveBeenCalled()
   view.unmount()

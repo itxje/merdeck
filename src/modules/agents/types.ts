@@ -4,14 +4,12 @@ export type AgentAdapterEvent
   = | { type: 'assistant.delta', text: string }
     | { type: 'tool.started', label: string }
     | { type: 'file.changed', path: RelativePath, change: 'add' | 'update' | 'delete' }
-    | { type: 'approval.requested', approvalId: string, kind: 'file_access' | 'file_change' | 'command', summary: string }
     | { type: 'turn.completed' }
     | { type: 'turn.failed', message: string }
     | { type: 'provider.unavailable', message: string }
 
 export interface AgentProviderSession {
   startTurn: (prompt: string) => Promise<void>
-  approve: (approvalId: string, decision: 'approve' | 'deny') => Promise<void>
   cancel: () => Promise<void>
   close: () => Promise<void>
 }

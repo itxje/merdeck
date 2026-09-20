@@ -31,7 +31,6 @@ async function fixture() {
         emit({ type: 'file.changed', path: 'flow.mmd', change: 'update' })
         emit({ type: 'turn.completed' })
       },
-      approve: async () => {},
       cancel: async () => {},
       close: async () => { closed++ },
     }),
@@ -67,7 +66,7 @@ describe('agent HTTP boundary', () => {
     const adapter: AgentProviderAdapter = {
       id: 'codex',
       label: 'Injected agent',
-      open: async () => ({ startTurn: async () => {}, approve: async () => {}, cancel: async () => {}, close: async () => {} }),
+      open: async () => ({ startTurn: async () => {}, cancel: async () => {}, close: async () => {} }),
     }
     const otherOrigin = 'http://localhost:8787'
     const config = await loadConfig({ MERDECK_ROOT: root, MERDECK_ALLOWED_ORIGINS: `${origin},${otherOrigin}` })
@@ -138,12 +137,13 @@ describe('agent HTTP boundary', () => {
     expect(created.status).toBe(200)
     const conversation = (await created.json() as { data: { id: string } }).data
 
-    const invalidApproval = await app.request(`${origin}/api/agents/conversations/${conversation.id}/approvals/not-an-opaque-id`, {
+    // Approvals are gone: no route answers one, so such a request never reaches a conversation.
+    const removedApproval = await app.request(`${origin}/api/agents/conversations/${conversation.id}/approvals/${'a'.repeat(48)}`, {
       method: 'POST',
       headers: headers(first, true),
       body: JSON.stringify({ decision: 'deny' }),
     })
-    expect(invalidApproval.status).toBe(404)
+    expect(removedApproval.status).toBe(405)
 
     const invalidEventHeader = await app.request(`${origin}/api/agents/conversations/${conversation.id}/events`, {
       headers: { ...headers(first), 'Last-Event-ID': 'not-a-sequence' },

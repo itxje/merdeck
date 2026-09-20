@@ -1,6 +1,6 @@
 import type { AgentProvider } from '../../../../src/shared/contracts'
 import type { Session } from '@/features/workspace/api'
-import { Bot, Check, FilePenLine, LoaderCircle, Paperclip, Send, Square, Wrench, X } from 'lucide-react'
+import { Bot, FilePenLine, LoaderCircle, Paperclip, Send, Square, Wrench, X } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
@@ -25,6 +25,13 @@ const maximumWidth = 560
 const narrowViewportQuery = '(max-width: 700px)'
 const minimumHeightPercent = 30
 const defaultHeightPercent = 55
+// The sheet's own chrome — the title row, the engine row and the composer — comes to about 255px on
+// a phone, so a share on its own leaves almost no conversation on the short visual viewport a phone
+// browser's toolbars produce: 55% of 640px is a 352px sheet holding 96px of transcript. The panel
+// therefore opens at whichever is taller, the design share or the height that leaves a readable
+// conversation, still bounded below by what the content area allows and still freely draggable.
+const readableSheetHeight = 420
+const initialHeightPercent = () => Math.max(defaultHeightPercent, (readableSheetHeight / window.innerHeight) * 100)
 // The design ceiling: the panel never grows past this share of the viewport even when the viewport
 // is tall enough to allow more, so a meaningful sliver of document always stays reachable above it.
 const designMaximumHeightPercent = 85
@@ -82,7 +89,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
     return Number.isFinite(stored) ? Math.min(maximumWidth, Math.max(minimumWidth, stored)) : 380
   })
-  const [heightPercent, setHeightPercent] = React.useState(defaultHeightPercent)
+  const [heightPercent, setHeightPercent] = React.useState(initialHeightPercent)
   // A viewport that shrinks (e.g. rotation) can drop the reachable maximum below the current value.
   React.useEffect(() => {
     setHeightPercent(current => Math.min(current, maximumHeightPercent))
@@ -253,29 +260,6 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
                   <code>{item.path}</code>
                 </span>
               </div>
-            )
-          }
-          if (item.kind === 'approval') {
-            const waiting = chat.answering.has(item.approvalId)
-            return (
-              <section key={item.key} className="agent-approval" aria-label="Agent approval request">
-                <strong>{item.approvalKind === 'command' ? 'Command approval' : item.approvalKind === 'file_access' ? 'File access approval' : 'File change approval'}</strong>
-                <p>{item.summary}</p>
-                {item.answered
-                  ? (
-                      <span className="agent-decision">
-                        <Check />
-                        {' '}
-                        {item.answered === 'approve' ? 'Approved' : 'Denied'}
-                      </span>
-                    )
-                  : (
-                      <div>
-                        <Button size="sm" variant="outline" disabled={waiting} onClick={() => void chat.answer(item.approvalId, 'deny')}>Deny</Button>
-                        <Button size="sm" disabled={waiting} onClick={() => void chat.answer(item.approvalId, 'approve')}>Approve</Button>
-                      </div>
-                    )}
-              </section>
             )
           }
           return <p key={item.key} className="agent-error" role="alert">{item.text}</p>

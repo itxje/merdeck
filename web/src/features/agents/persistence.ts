@@ -8,8 +8,6 @@ import { initialAgentChatState } from './state'
 const storageKey = 'merdeck-agent-session'
 const providers = ['codex', 'claude', 'agy'] as const satisfies readonly AgentProvider[]
 const changes = ['add', 'update', 'delete'] as const
-const approvalKinds = ['file_access', 'file_change', 'command'] as const
-const decisions = ['approve', 'deny'] as const
 const opaqueId = /^[a-f0-9]{48}$/
 
 export interface AgentConversationHandle {
@@ -73,15 +71,8 @@ function item(value: unknown): AgentChatItem | undefined {
     const change = member(stored.change, changes)
     return validPath(stored.path) && change ? { key, kind: 'file', path: stored.path, change } : undefined
   }
-  if (stored?.kind === 'approval') {
-    const approvalId = text(stored.approvalId, 48)
-    const approvalKind = member(stored.approvalKind, approvalKinds)
-    const summary = text(stored.summary, 500)
-    if (!approvalId || !opaqueId.test(approvalId) || !approvalKind || summary === undefined)
-      return undefined
-    const answered = member(stored.answered, decisions)
-    return { key, kind: 'approval', approvalId, approvalKind, summary, ...(answered ? { answered } : {}) }
-  }
+  // Any other kind is unknown, including an approval a tab stored before approvals were removed;
+  // the caller discards the whole stored transcript rather than restoring part of one.
   return undefined
 }
 

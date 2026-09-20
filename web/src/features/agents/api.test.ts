@@ -10,7 +10,7 @@ describe('agent response decoding', () => {
     expect(decodeAgentConversation({ id: 'b'.repeat(48), provider: 'agy', model: 'gemini-flash' })).toEqual({ id: 'b'.repeat(48), provider: 'agy', model: 'gemini-flash' })
     expect(decodeAgentEvent({ id: 1, type: 'assistant.delta', text: '<script>alert(1)</script>' })).toEqual({ id: 1, type: 'assistant.delta', text: '<script>alert(1)</script>' })
     expect(decodeAgentEvent({ id: 2, type: 'file.changed', path: 'docs/flow.mmd', change: 'update' })).toEqual({ id: 2, type: 'file.changed', path: 'docs/flow.mmd', change: 'update' })
-    expect(decodeAgentEvent({ id: 3, type: 'approval.requested', approvalId: 'b'.repeat(48), kind: 'command', summary: 'bun test' })).toMatchObject({ type: 'approval.requested' })
+    expect(decodeAgentEvent({ id: 3, type: 'tool.started', label: 'Edit files' })).toEqual({ id: 3, type: 'tool.started', label: 'Edit files' })
   })
 
   it('accepts every configured provider in one capability response', () => {
@@ -38,7 +38,8 @@ describe('agent response decoding', () => {
       { id: 1, type: 'file.changed', path: '../secret', change: 'update' },
       { id: 1, type: 'assistant.delta', text: 'safe', html: '<b>unsafe</b>' },
       { id: 0, type: 'turn.completed' },
-      { id: 1, type: 'approval.requested', approvalId: 'provider-id', kind: 'file_change', summary: 'edit' },
+      // Approvals were removed, so an event announcing one is no longer a known type.
+      { id: 1, type: 'approval.requested', approvalId: 'b'.repeat(48), kind: 'file_change', summary: 'edit' },
     ])
       expect(() => decodeAgentEvent(value)).toThrow(HttpError)
   })

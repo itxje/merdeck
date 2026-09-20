@@ -134,3 +134,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260920-0630-release-v0.17.0 Release v0.17.0**](20260920-0630-release-v0.17.0.md) `P1`
 - [x] [**20260920-0720-refresh-followups Interface refresh follow-ups: row alignment and heading navigation**](20260920-0720-refresh-followups.md) `P1`
 - [x] [**20260920-0805-release-v0.17.1 Release v0.17.1**](20260920-0805-release-v0.17.1.md) `P1`
+- [x] [**20260920-1837-agent-sheet-and-approvals AI file editor: a readable phone sheet, and no approval step**](20260920-1837-agent-sheet-and-approvals.md) `P1`

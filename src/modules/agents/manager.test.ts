@@ -7,7 +7,6 @@ import { providerEnvironment } from './process'
 
 class FakeSession implements AgentProviderSession {
   prompts: string[] = []
-  approvals: Array<[string, 'approve' | 'deny']> = []
   cancelled = 0
   closed = 0
 
@@ -15,10 +14,6 @@ class FakeSession implements AgentProviderSession {
 
   async startTurn(prompt: string) {
     this.prompts.push(prompt)
-  }
-
-  async approve(id: string, decision: 'approve' | 'deny') {
-    this.approvals.push([id, decision])
   }
 
   async cancel() {
@@ -79,18 +74,14 @@ describe('agent manager', () => {
     expect(sessions[0]?.prompts).toEqual(['Edit the diagram'])
     sessions[0]?.emit({ type: 'assistant.delta', text: 'Working' })
     sessions[0]?.emit({ type: 'file.changed', path: 'docs/flow.md', change: 'update' })
-    sessions[0]?.emit({ type: 'approval.requested', approvalId: 'a'.repeat(48), kind: 'file_change', summary: 'Allow edit?' })
-    await manager.approve(conversation.id, owner, 'a'.repeat(48), 'approve')
     sessions[0]?.emit({ type: 'turn.completed' })
 
     expect(received).toMatchObject([
       { id: 2, type: 'turn.started' },
       { id: 3, type: 'assistant.delta', text: 'Working' },
       { id: 4, type: 'file.changed', path: 'docs/flow.md' },
-      { id: 5, type: 'approval.requested' },
-      { id: 6, type: 'turn.completed' },
+      { id: 5, type: 'turn.completed' },
     ])
-    expect(sessions[0]?.approvals).toEqual([['a'.repeat(48), 'approve']])
     await expect(manager.startTurn(conversation.id, { ...owner, id: 'other' }, 'steal')).rejects.toEqual(expect.objectContaining({ code: 'not_found' }))
     subscription.unsubscribe()
     await manager.close()

@@ -92,10 +92,6 @@ class AgySession implements AgentProviderSession {
     }
   }
 
-  async approve(_approvalId: string, _decision: 'approve' | 'deny'): Promise<void> {
-    throw new AppError('not_found')
-  }
-
   async cancel(): Promise<void> {
     if (!this.turnActive)
       return

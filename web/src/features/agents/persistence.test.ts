@@ -7,12 +7,11 @@ const items = [
   { key: 'user:1', kind: 'user' as const, text: 'Rename the node' },
   { key: 'event:2', kind: 'tool' as const, label: 'Edit docs/flow.md' },
   { key: 'event:3', kind: 'file' as const, path: 'docs/flow.md', change: 'update' as const },
-  { key: 'event:4', kind: 'approval' as const, approvalId: 'b'.repeat(48), approvalKind: 'command' as const, summary: 'bun test', answered: 'deny' as const },
 ]
 
 it('restores one tab transcript, conversation and engine/model selection, always idle', () => {
-  writeAgentSession({ conversation, selection, state: { active: true, lastEventId: 4, items } })
-  expect(readAgentSession()).toEqual({ conversation, selection, state: { active: false, lastEventId: 4, items } })
+  writeAgentSession({ conversation, selection, state: { active: true, lastEventId: 3, items } })
+  expect(readAgentSession()).toEqual({ conversation, selection, state: { active: false, lastEventId: 3, items } })
 })
 
 it('keeps the last selected engine and model even without a started conversation', () => {
@@ -33,7 +32,8 @@ it('refuses malformed, foreign or oversized stored state instead of rendering it
     'not json',
     JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'script', text: 'x' }] } }),
     JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'file', path: '../escape.md', change: 'update' }] } }),
-    JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'approval', approvalId: 'short', approvalKind: 'command', summary: 's' }] } }),
+    // An approval stored before approvals were removed is an unknown kind now, however well formed.
+    JSON.stringify({ state: { active: false, lastEventId: 1, items: [{ key: 'k', kind: 'approval', approvalId: 'b'.repeat(48), approvalKind: 'command', summary: 'bun test', answered: 'deny' }] } }),
     JSON.stringify({ state: { active: false, lastEventId: -1, items: [] } }),
     JSON.stringify({ state: { active: false, lastEventId: 1 } }),
     JSON.stringify({ state: null }),

@@ -252,7 +252,14 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const dialogsOpen = treeOpen || logoutOpen || reviewOpen || entryOpen || !!token
   // The same control sits in the header at wider sizes and in the phone bottom bar below the
   // breakpoint; it is rendered in exactly one of the two places, never both.
-  const filesTrigger = <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
+  // In the header it sits among other icon controls and reads as one of them; alone at the left of
+  // the phone bar it needs a word, or it reads as a stray glyph beside an empty strip.
+  const filesTrigger = (labelled: boolean) => (
+    <Button className="tree-toggle" variant="ghost" size={labelled ? 'default' : 'icon'} aria-label="Open project files" onClick={() => setTreeOpen(true)}>
+      <PanelLeft />
+      {labelled && 'Files'}
+    </Button>
+  )
   const assistantToggle = state.session && (
     <Tooltip>
       <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => showAgent(!agentOpen)} />}>
@@ -280,7 +287,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
         {state.session && (
           <div className="header-file">
             {/* Below the phone breakpoint this same control moves into the bottom bar instead of duplicating it here. */}
-            {!narrow && filesTrigger}
+            {!narrow && filesTrigger(false)}
             {/* Without an open file the header names nothing: the explorer and the empty state already say what to do. */}
             {path && (
               <>
@@ -541,7 +548,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                   moved down from the header, always present once signed in, beside the source/preview tabs
                   that appear once a source pane exists. It sits above the status bar and is otherwise hidden. */}
               <div className="phone-tabbar">
-                {narrow && filesTrigger}
+                {narrow && filesTrigger(true)}
                 {selected && (
                   <Tabs value={pane} onValueChange={value => setPane(String(value))}>
                     <TabsList aria-label="Workspace pane">
