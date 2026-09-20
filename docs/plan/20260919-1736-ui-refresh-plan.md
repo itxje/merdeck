@@ -12,7 +12,8 @@ The screenshots and the measurement script behind these findings were working ma
 the repository.
 
 **Type.** `body` computes to 16px, but 95 elements render below 12px and the smallest is 9px
-(`.agent-composer > div > span`, the character counter). The explorer list, status bar, pane footers and agent
+(`.agent-composer > div > span`, the character counter) — an observation taken at the time against the v0.16.0
+build, which nothing in this repository reproduces. The explorer list, status bar, pane footers and agent
 transcript all sit at 9–11px. The document previews were raised to 17px in v0.16.0, so the reading surface and
 the surrounding interface are now two unrelated scales.
 
@@ -30,7 +31,8 @@ list sit three more lines of counters and pagination prose.
 `flow-task_z…`. Six of eight names in that folder are indistinguishable. Each row also carries an `Unopened`
 label that consumes the width the name needs.
 
-**Phone.** The AI panel covers 89.6% of the viewport and sits over the document on every file, because
+**Phone.** The AI panel covers 89.6% of the viewport — again an observation taken at the time, not a figure
+this repository reproduces — and sits over the document on every file, because
 `merdeck-agent-open` defaults to open and the panel has no phone-specific placement. The empty panel — the
 normal state with no provider configured — fills the screen with one sentence. The header truncates the file
 name to about five characters while three theme buttons and a display toggle keep full width.
@@ -64,8 +66,11 @@ Keep the neutral canvas; introduce one accent and use it consistently:
 
 - `--primary` becomes a low-chroma teal (`oklch(0.55 0.09 195)` light, `oklch(0.72 0.1 195)` dark), applied to
   the primary button, the selected file row, the focus ring and the live-preview indicator.
-- `--destructive` keeps its red for delete and refusal only; a new `--warning` amber carries stale-preview and
-  unsaved-draft states, which today share the same grey as inert text.
+- `--destructive` is not extended and nothing that was not red becomes red. Deletion and refusal keep it, and
+  so do the messages that ask for a correction — source syntax, assistant failures, form and label validation —
+  which carried it before this work. A new `--warning` amber carries what is shown not being current: a preview
+  that is not showing the current source, with or without a previous render to fall back on, and an unsaved
+  draft, which today share the same grey as inert text.
 - Selection becomes a filled accent row rather than the current grey block, so the open file is findable in a
   long list.
 
