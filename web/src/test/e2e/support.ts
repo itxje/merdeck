@@ -68,6 +68,17 @@ export async function tableHeaderIsFramed(table: Locator): Promise<boolean> {
   })
 }
 
+// The project-files control proves the authenticated shell is present at every viewport: the docked
+// explorer above 1100px carries this same accessible name as a landmark, the trigger that opens it
+// carries it as a button between 1100px and the phone breakpoint and inside the phone bar below it.
+// Exactly one of the two is ever visible at a given width, so asserting either covers every case,
+// unlike "Log out" (absent under the phone breakpoint, moved into the header's overflow menu) or the
+// absence of the sign-in form (also true of a blank, error or failed-navigation page).
+function projectFilesShell(page: Page) {
+  return page.getByRole('button', { name: 'Open project files', exact: true })
+    .or(page.getByRole('complementary', { name: 'Project files', exact: true }))
+}
+
 let sessionCookies: Awaited<ReturnType<BrowserContext['cookies']>> = []
 export async function login(page: Page, reuseSession = false) {
   const path = process.env.MERDECK_SMOKE_TOKEN_FILE
@@ -76,14 +87,14 @@ export async function login(page: Page, reuseSession = false) {
   if (reuseSession && sessionCookies.length) {
     await page.context().addCookies(sessionCookies)
     await page.goto('/')
-    await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible()
+    await expect(projectFilesShell(page)).toBeVisible()
     return
   }
   await page.goto('/index.html')
   await expect(page).toHaveURL(url => url.pathname === '/')
   await page.getByLabel('Access token', { exact: true }).fill((await readFile(path, 'utf8')).trim())
   await page.getByRole('button', { name: 'Connect to project' }).click()
-  await expect(page.getByRole('button', { name: 'Log out', exact: true })).toBeVisible()
+  await expect(projectFilesShell(page)).toBeVisible()
   if (reuseSession)
     sessionCookies = await page.context().cookies()
 }

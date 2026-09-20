@@ -39,7 +39,10 @@ function nameGeometry(row: Locator) {
 
 // The sheet is wider than the default 232px explorer, so its wrapping split is measured separately
 // rather than assumed to match the desktop case; only the six same-stem names apply here, since the
-// trivially short control name is not part of a pair.
+// trivially short control name is not part of a pair. Measured (not assumed): at 390x844 none of
+// the six wrap, including the two the desktop case wraps at 232px (flow-decisions_zh.mmd and
+// flow-recovery_zh.mmd) — the sheet's extra width fits every stem on one line, so its split is empty
+// rather than the desktop case's two-wrapped-against-the-rest.
 const sheetNames = names.slice(1)
 const sheetWraps = new Set<string>()
 

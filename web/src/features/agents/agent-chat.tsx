@@ -32,7 +32,6 @@ function useNarrowViewport(): boolean {
   React.useEffect(() => {
     const media = window.matchMedia(narrowViewportQuery)
     const update = () => setNarrow(media.matches)
-    update()
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
