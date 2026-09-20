@@ -9,12 +9,14 @@ if (!root)
 
 // The names the UI refresh plan's own audit found indistinguishable once middle-truncated: three
 // same-stem pairs, one member of each pair carrying a "_zh" suffix, all sharing the .mmd extension,
-// plus a trivially short control name. At the default 232px explorer width and a 1440x900 viewport,
-// two of the three "_zh" names are long enough to need the stem's second line and two of the three
-// short-name/"_zh" pairs still fit on one — measured directly below rather than assumed; only
-// flow-decisions_zh.mmd and flow-recovery_zh.mmd wrap here, flow-task_zh.mmd does not.
+// plus a trivially short control name.
+//
+// Which of them need a second line is a property of the font the browser actually has, not of this
+// application: the same names wrap differently on a machine with a different font set, so listing
+// the wrapped ones here asserts the environment rather than the behaviour. Each row's line count is
+// read from the rendered stem instead, and the row height is required to follow it.
 const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd']
-const wraps = new Set(['flow-decisions_zh.mmd', 'flow-recovery_zh.mmd'])
+const rowHeights = { single: 34, wrapped: 48 }
 
 function nameGeometry(row: Locator) {
   return row.evaluate((element) => {
@@ -24,8 +26,14 @@ function nameGeometry(row: Locator) {
       return null
     const stemBox = stem.getBoundingClientRect()
     const extBox = ext.getBoundingClientRect()
+    if (extBox.height <= 0)
+      throw new Error('The extension has no line box to measure the stem against')
     return {
       rowHeight: element.getBoundingClientRect().height,
+      // The stem is a two-line clamp, so it reports one client rect however many lines it uses. Its
+      // height against the extension's, which is always one line in the same font, is the number of
+      // lines the browser actually laid the name out on, whatever its font metrics are.
+      stemLines: Math.max(1, Math.round(stemBox.height / extBox.height)),
       // A clamped box whose content still overflows it shows an ellipsis; equal scroll and client
       // heights mean every character of the stem actually rendered, not just what fit before a cut.
       stemClipped: stem.scrollHeight - stem.clientHeight > 1,
@@ -37,14 +45,11 @@ function nameGeometry(row: Locator) {
   })
 }
 
-// The sheet is wider than the default 232px explorer, so its wrapping split is measured separately
-// rather than assumed to match the desktop case; only the six same-stem names apply here, since the
-// trivially short control name is not part of a pair. Measured (not assumed): at 390x844 none of
-// the six wrap, including the two the desktop case wraps at 232px (flow-decisions_zh.mmd and
-// flow-recovery_zh.mmd) — the sheet's extra width fits every stem on one line, so its split is empty
-// rather than the desktop case's two-wrapped-against-the-rest.
+// Only the six same-stem names apply in the sheet, since the trivially short control name is not
+// part of a pair. The sheet is wider than the default 232px explorer, so fewer stems need a second
+// line there, and how many is again a property of the font rather than of this application: the
+// same rule applies, the row height follows the line count the browser produced.
 const sheetNames = names.slice(1)
-const sheetWraps = new Set<string>()
 
 test('explorer rows wrap distinguishable same-stem names and hold the extension on the first line', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'name-wrap-'))
@@ -57,6 +62,7 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
     const explorer = page.locator('.workspace-body > .file-tree')
     const listing = explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })
 
+    let wrapped = 0
     for (const name of names) {
       const row = listing.locator(`.tree-row[title="${folder}/${name}"]`)
       await expect(row).toBeVisible()
@@ -70,8 +76,14 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
-      expect(geometry.rowHeight).toBe(wraps.has(name) ? 48 : 34)
+      // At most two lines, and the row height follows the lines the name actually took.
+      expect(geometry.stemLines).toBeLessThanOrEqual(2)
+      expect(geometry.rowHeight).toBe(geometry.stemLines > 1 ? rowHeights.wrapped : rowHeights.single)
+      wrapped += geometry.stemLines > 1 ? 1 : 0
     }
+    // The wrapped shape is exercised, not merely allowed: at this width the long "_zh" names are why
+    // the plan named them, and a layout that truncated instead would leave every row on one line.
+    expect(wrapped).toBeGreaterThan(0)
   }
   finally {
     await rm(owned, { recursive: true, force: true })
@@ -109,7 +121,8 @@ test('the project-files sheet wraps distinguishable same-stem names and holds th
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
-      expect(geometry.rowHeight).toBe(sheetWraps.has(name) ? 48 : 34)
+      expect(geometry.stemLines).toBeLessThanOrEqual(2)
+      expect(geometry.rowHeight).toBe(geometry.stemLines > 1 ? rowHeights.wrapped : rowHeights.single)
     }
   }
   finally {
