@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-20 00:45 [progress]
+
+Explorer rows wrap their names instead of middle-truncating them, so files that differ only in a
+suffix stay readable. A name renders as a stem that may break anywhere and clamps at two lines, and
+an extension held as a separate non-breaking item on the first line; the full path stays in the
+row's title, and the row's accessible name is unchanged. A row whose name fits keeps its 34px
+height and a wrapped row grows to 48px, both computed from the row's own content rather than fixed.
+A browser expectation measures the six same-stem names the plan named as unreadable: every stem
+renders whole, every extension sits on the first line, each name resolves to exactly one row, and
+the two names that need a second line measure 48px while the rest stay at 34px. See
+[20260920-0014-explorer-name-wrapping](task/20260920-0014-explorer-name-wrapping.md).
+
 ## 2026-09-19 23:45 [fix]
 
 The UI refresh plan carried two estimated density figures that the delivered work measured: the

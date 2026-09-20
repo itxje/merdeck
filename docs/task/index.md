@@ -128,3 +128,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260919-1815-accent-and-warning-colour Accent and warning colour**](20260919-1815-accent-and-warning-colour.md) `P2`
 - [x] [**20260919-1930-explorer-density Explorer density**](20260919-1930-explorer-density.md) `P2`
 - [x] [**20260919-2015-design-record-density-figures Design record density figures**](20260919-2015-design-record-density-figures.md) `P3`
+- [x] [**20260920-0014-explorer-name-wrapping Explorer name wrapping**](20260920-0014-explorer-name-wrapping.md) `P2`
