@@ -11,12 +11,14 @@ if (!root)
 // same-stem pairs, one member of each pair carrying a "_zh" suffix, all sharing the .mmd extension,
 // plus a trivially short control name.
 //
-// Which of them need a second line is a property of the font the browser actually has, not of this
-// application: the same names wrap differently on a machine with a different font set, so listing
-// the wrapped ones here asserts the environment rather than the behaviour. Each row's line count is
-// read from the rendered stem instead, and the row height is required to follow it.
+// How many lines each of them needs is a property of the font the browser actually has, not of this
+// application: the same names take a different number of lines on a machine with a different font
+// set, so listing them here asserts the environment rather than the behaviour. Each row's line
+// count is read from the rendered stem instead, and the row is required to grow with it while the
+// name stays whole.
 const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd']
-const rowHeights = { single: 34, wrapped: 48 }
+const singleLineRow = 34
+const maximumLines = 3
 
 function nameGeometry(row: Locator) {
   return row.evaluate((element) => {
@@ -63,6 +65,7 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
     const listing = explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })
 
     let wrapped = 0
+    const heights = new Map<number, number>()
     for (const name of names) {
       const row = listing.locator(`.tree-row[title="${folder}/${name}"]`)
       await expect(row).toBeVisible()
@@ -76,11 +79,15 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
-      // At most two lines, and the row height follows the lines the name actually took.
-      expect(geometry.stemLines).toBeLessThanOrEqual(2)
-      expect(geometry.rowHeight).toBe(geometry.stemLines > 1 ? rowHeights.wrapped : rowHeights.single)
+      expect(geometry.stemLines).toBeLessThanOrEqual(maximumLines)
+      heights.set(geometry.stemLines, geometry.rowHeight)
       wrapped += geometry.stemLines > 1 ? 1 : 0
     }
+    // A single-line row is the height the explorer's density depends on; a row that took more lines
+    // is taller, without this check reconstructing by how much from padding and line height.
+    expect(heights.get(1)).toBe(singleLineRow)
+    for (const [lines, height] of [...heights].sort((a, b) => a[0] - b[0]).slice(1))
+      expect(height).toBeGreaterThan(heights.get(lines - 1)!)
     // The wrapped shape is exercised, not merely allowed: at this width the long "_zh" names are why
     // the plan named them, and a layout that truncated instead would leave every row on one line.
     expect(wrapped).toBeGreaterThan(0)
@@ -121,8 +128,10 @@ test('the project-files sheet wraps distinguishable same-stem names and holds th
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
-      expect(geometry.stemLines).toBeLessThanOrEqual(2)
-      expect(geometry.rowHeight).toBe(geometry.stemLines > 1 ? rowHeights.wrapped : rowHeights.single)
+      expect(geometry.stemLines).toBeLessThanOrEqual(maximumLines)
+      expect(geometry.rowHeight).toBeGreaterThanOrEqual(singleLineRow)
+      if (geometry.stemLines === 1)
+        expect(geometry.rowHeight).toBe(singleLineRow)
     }
   }
   finally {

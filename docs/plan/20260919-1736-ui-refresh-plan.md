@@ -82,8 +82,9 @@ Keep the neutral canvas; introduce one accent and use it consistently:
 
 ### 4. File names
 
-Rows wrap to a second line instead of middle-truncating, with the extension kept on the first line. A row grows
-from 34px to 34/48px. Long names stay distinguishable, which is the point of the change.
+Rows wrap instead of middle-truncating, with the extension kept on the first line. A one-line row stays 34px
+and a row grows with the lines its name needs, up to three. Long names stay distinguishable, which is the
+point of the change.
 
 ### 5. Phone layout
 

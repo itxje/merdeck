@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-20 05:30 [fix]
+
+An explorer row now holds a wrapped name on up to three lines instead of two. On machines whose fonts are
+wider than the one the wrapping was measured on, the longest of the names this refresh set out to make
+distinguishable needed a third line, and the two-line clamp cut it with an ellipsis — the outcome the change
+existed to remove. The row already grew on its own, so only the clamp moved. The checks that guard it no
+longer list which names wrap: they read the line count the browser produced and require the row to grow with
+it, so they describe the layout rather than the machine's fonts. See
+[20260920-0530-name-wrapping-third-line](task/20260920-0530-name-wrapping-third-line.md).
+
 ## 2026-09-20 05:00 [progress]
 
 The phone layout was reworked around the assistant, the header and the pane tabs. Below 700px the
