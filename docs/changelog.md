@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-20 05:00 [progress]
+
+The phone layout was reworked around the assistant, the header and the pane tabs. Below 700px the
+assistant docks to the bottom of the space the layout leaves it, at 55% of the viewport height, with
+the document visible above and a horizontal drag handle that keeps its accessible name, its keyboard
+adjustment and a value range read back from the area it sits in. It starts closed on a phone whatever
+the stored preference says, and only an explicit open or close writes that value, so a desktop
+preference survives a phone visit; the panel's height and the dismissal of the no-provider line last
+for the session only, and no new stored value is introduced. The header keeps the brand mark, the
+file name and the save control, moving the theme choice, the assistant toggle and sign-out into one
+overflow menu that closes when a control inside it is used. A bottom bar carries the project-files
+control — moved from the header rather than duplicated — beside the source and preview tabs, above
+the status bar and clear of the safe area. Every interactive control below the breakpoint reaches
+44px, the provider and model selects included. Browser expectations measure the panel's edges against
+the header and the bars at a zero and a nonzero safe-area inset, including an inset change that
+arrives with no resize event, and the project-files sheet's wrapped names are measured there as they
+already were at the default explorer width. See
+[20260920-0100-phone-layout](task/20260920-0100-phone-layout.md).
+
 ## 2026-09-20 00:45 [progress]
 
 Explorer rows wrap their names instead of middle-truncating them, so files that differ only in a
