@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-20 19:16 [release]
+
+Published [v0.18.0](https://github.com/itxje/merdeck/releases/tag/v0.18.0): the AI file editor's conversation
+has room on a phone and no longer stops for an approval, the assistant opens from the phone header rather
+than the overflow menu, and the Markdown view switch is a row of the reading area instead of two tabs clipped
+in its corner. Exact commit `f1534f3` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35530572725), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35531214188) repeated acceptance and
+published `merdeck.tar.gz` (1383122 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded
+archive. See [20260920-1905-release-v0.18.0](task/20260920-1905-release-v0.18.0.md).
+
 ## 2026-09-20 18:50 [change]
 
 On a phone the AI file editor opens from the header rather than from the overflow menu, which keeps the theme
