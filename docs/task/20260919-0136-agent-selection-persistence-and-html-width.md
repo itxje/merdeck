@@ -2,7 +2,7 @@
 
 - **status**: completed
 - **priority**: P2
-- **owner**: l1/session-20260919-0136
+- **owner**: Frontend maintainer
 - **createdAt**: 2026-09-19 01:36
 
 ## Description

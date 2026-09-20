@@ -123,7 +123,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260919-0908-release-v0.16.0 Release v0.16.0**](20260919-0908-release-v0.16.0.md) `P1`
 - [x] [**20260919-1727-markdown-contents-mobile-layout Collapse the Markdown contents list on narrow viewports**](20260919-1727-markdown-contents-mobile-layout.md) `P2`
 - [-] [**20260919-1735-release-v0.16.1 Release v0.16.1**](20260919-1735-release-v0.16.1.md) `P1`
-- [-] [**20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile**](20260919-1736-ui-refresh-plan.md) `P2`
+- [x] [**20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile**](20260919-1736-ui-refresh-plan.md) `P2`
 - [x] [**20260919-1759-type-ramp-monospace-paths Type ramp and monospace paths**](20260919-1759-type-ramp-monospace-paths.md) `P2`
 - [x] [**20260919-1815-accent-and-warning-colour Accent and warning colour**](20260919-1815-accent-and-warning-colour.md) `P2`
 - [x] [**20260919-1930-explorer-density Explorer density**](20260919-1930-explorer-density.md) `P2`

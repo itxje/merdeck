@@ -1,14 +1,15 @@
 # 20260919-1736-ui-refresh-plan Plan a UI refresh: type, colour, interaction, mobile
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-19 17:36
-- **approvedAt**: (pending)
+- **approvedAt**: 2026-09-19
 - **relatedTask**: 20260919-1736-ui-refresh-plan
 
 ## Context
 
-Measured against the running service at `main` (v0.16.0 build, root `/workspace`), on a 1440x900 desktop and a
-390x844 phone. Screenshots and the measurement script are in ignored `tmp/l1/ui-audit/`.
+Measured against the running service at `main` (v0.16.0 build) on a 1440x900 desktop and a 390x844 phone.
+The screenshots and the measurement script behind these findings were working material and are not kept in
+the repository.
 
 **Type.** `body` computes to 16px, but 95 elements render below 12px and the smallest is 9px
 (`.agent-composer > div > span`, the character counter). The explorer list, status bar, pane footers and agent
@@ -122,11 +123,10 @@ browser-suite update.
 
 ## Annotations
 
-- Preview: `designs/merdeck-ui-2026/UI refresh.html`, served for review over the project-local nsl route
-  (`nsl run -n merdeck -- bun tmp/l1/serve-designs.ts`). It loads with no console errors, both audit
-  screenshots resolve, and it carries seven labelled screens.
-- Only the `merdeck` route name reaches the owner over HTTPS. A route registered under another name resolves
-  but answers 502, because the reverse proxy in front of this host forwards to the container port rather than
-  its published mapping; that proxy is outside this repository.
-- Measurement script and screenshots: ignored `tmp/l1/audit-ui.mjs` and `tmp/l1/ui-audit/`.
-- (Pending) the owner's decision on the accent colour and on which tracks to implement, in what order.
+- The owner approved the accent colour and all five tracks on 2026-09-19, in the order above.
+- Delivered on 2026-09-20 as five changes, one per track, each with its own task record and browser
+  expectations: the type ramp, the accent and warning colour, the explorer density, the wrapping file names
+  and the phone layout. The density figures in this plan were estimates; they were replaced with the values
+  `web/src/test/e2e/explorer-density.spec.ts` measures.
+- The measurement script and the screenshots behind this plan's findings were working material and are not
+  kept in the repository.

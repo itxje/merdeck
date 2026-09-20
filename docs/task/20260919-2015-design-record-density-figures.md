@@ -53,9 +53,9 @@ baselines for the same layout.
 - Scanned the rest of the plan for figures outside this task's two lines, to report rather than adjust or guess
   at any that a reader cannot rerun:
   - Line 13: "`body` computes to 16px, but 95 elements render below 12px and the smallest is 9px" is sourced
-    from the plan's own opening audit (`tmp/l1/audit-ui.mjs` and `tmp/l1/ui-audit/`, both gitignored), not from
+    from the plan's own opening audit, which was working material and is not kept in the repository, not from
     a committed, rerunnable expectation. Left unchanged; reported here rather than altered.
-  - Line 31: "The AI panel covers 89.6% of the viewport" is sourced from the same gitignored audit. Left
+  - Line 31: "The AI panel covers 89.6% of the viewport" is sourced from that same audit. Left
     unchanged; reported here rather than altered.
   - Both figures belong to the plan's original Context section rather than Track 3, and are outside the two
     lines this task was asked to correct.
