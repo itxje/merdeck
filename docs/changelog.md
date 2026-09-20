@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-20 19:55 [release]
+
+Published [v0.18.1](https://github.com/itxje/merdeck/releases/tag/v0.18.1): a file name and its extension
+read as one string again in a listing wider than its names. Exact commit `2b48c86` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35532525586), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35533277003) repeated acceptance and
+published `merdeck.tar.gz` (1383493 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded
+archive. See [20260920-1944-release-v0.18.1](task/20260920-1944-release-v0.18.1.md).
+
 ## 2026-09-20 19:30 [fix]
 
 A file name and its extension read as one string again. Wrapping split a row name into a stem and an
