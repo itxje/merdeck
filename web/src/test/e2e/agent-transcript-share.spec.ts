@@ -46,8 +46,7 @@ async function geometry(page: Page): Promise<Geometry> {
 }
 
 async function openPanel(page: Page) {
-  await page.getByRole('banner').getByRole('button', { name: 'More options', exact: true }).click()
-  await page.getByRole('menu').getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+  await page.getByRole('banner').getByRole('button', { name: 'Open AI file editor', exact: true }).click()
   await expect(page.getByRole('complementary', { name: 'AI file editor', exact: true })).toBeVisible()
 }
 

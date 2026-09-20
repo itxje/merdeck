@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-20 18:50 [change]
+
+On a phone the AI file editor opens from the header rather than from the overflow menu, which keeps the theme
+switch and log out, and the Document/Diagram switch on a Markdown file is a row of the reading area instead
+of two pills in its corner. Each of that switch's triggers takes the 44px touch floor while its list was
+fixed at 32px, so every trigger overflowed its own list upward into the header; the list now follows its
+triggers, keeps a gutter from the edge of the screen and spreads both tabs across the width. See
+[20260920-1850-phone-controls-and-view-switch](task/20260920-1850-phone-controls-and-view-switch.md).
+
 ## 2026-09-20 18:37 [change]
 
 The AI file editor gives the conversation room on a phone and no longer stops for an approval. Its title row,

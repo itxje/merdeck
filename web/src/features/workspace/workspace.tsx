@@ -328,20 +328,24 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
           )}
           {narrow
             ? (
-                // The theme switch and the assistant toggle inside are plain controls, not menu
-                // items, so nothing tells this menu a selection happened; closing it explicitly on
-                // any click inside is what keeps its backdrop from outliving the choice that was made.
-                <DropdownMenu open={overflowOpen} onOpenChange={setOverflowOpen}>
-                  <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More options" />}>
-                    <MoreHorizontal />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="header-menu" onClick={() => setOverflowOpen(false)}>
-                    {assistantToggle}
-                    <ThemeToggle />
-                    {signOut && <DropdownMenuSeparator />}
-                    {signOut}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <>
+                  {/* Opening the assistant is the one thing done often enough on a phone to keep in
+                      the header itself; the theme switch and log out stay one tap further in. */}
+                  {assistantToggle}
+                  {/* The theme switch inside is a plain control, not a menu item, so nothing tells
+                      this menu a selection happened; closing it explicitly on any click inside is
+                      what keeps its backdrop from outliving the choice that was made. */}
+                  <DropdownMenu open={overflowOpen} onOpenChange={setOverflowOpen}>
+                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More options" />}>
+                      <MoreHorizontal />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="header-menu" onClick={() => setOverflowOpen(false)}>
+                      <ThemeToggle />
+                      {signOut && <DropdownMenuSeparator />}
+                      {signOut}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               )
             : (
                 <>
@@ -432,7 +436,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     ? (
                         <>
                           {file?.baseline.kind === 'markdown' && (
-                            <Tabs value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
+                            <Tabs className="view-switch" value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
                               <TabsList aria-label="Markdown view">
                                 <TabsTrigger value="document">Document</TabsTrigger>
                                 <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>

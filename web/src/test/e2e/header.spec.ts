@@ -97,25 +97,28 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   await expect(page.locator('.status-bar')).toContainText(/Merdeck \S+/)
   await page.mouse.move(1, 1)
 
-  // Below the breakpoint the theme switch, the assistant toggle and log out move into one overflow
-  // menu; the trigger is the only one of these controls left directly in the header.
+  // Below the breakpoint the theme switch and log out move into one overflow menu, while the
+  // assistant toggle stays in the header beside its trigger: opening the assistant is done often
+  // enough on a phone that it is not worth a second tap.
   const menuTrigger = header.getByRole('button', { name: 'More options', exact: true })
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 844 })
     await expect(menuTrigger).toBeVisible()
     await expect(theme).toHaveCount(0)
     await expect(logout).toHaveCount(0)
+    await expect(agent).toBeVisible()
+    await expect(agent).toHaveAttribute('aria-pressed', 'false')
+    await expect.poll(async () => Math.round((await size(agent)).width)).toBeGreaterThanOrEqual(44)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await menuTrigger.click()
     const menu = page.getByRole('menu')
     const menuTheme = menu.getByRole('group', { name: 'Theme', exact: true })
     const menuLight = menuTheme.getByRole('button', { name: 'Light theme', exact: true })
     const menuLogout = menu.getByRole('button', { name: 'Log out', exact: true })
-    const menuAgent = menu.getByRole('button', { name: 'Open AI file editor', exact: true })
     await expect(menuTheme).toBeVisible()
+    await expect(menu.getByRole('button', { name: 'Open AI file editor', exact: true })).toHaveCount(0)
     // The same controls keep their accessible name and pressed state once moved into the menu.
     await expect(menuLight).toHaveAttribute('aria-pressed', 'true')
-    await expect(menuAgent).toHaveAttribute('aria-pressed', 'false')
     // Controls take their touch-target sizes below the narrow breakpoint.
     await expect.poll(async () => Math.round((await size(menuLight)).width)).toBe(44)
     await expect.poll(async () => Math.round((await size(menuLogout)).width)).toBeGreaterThanOrEqual(44)
@@ -139,9 +142,7 @@ test('the assistant panel starts closed under the phone breakpoint despite a sto
   await expect(editor).toBeHidden()
   // Reading the stored value to decide the initial state never writes it back.
   expect(await page.evaluate(() => localStorage.getItem('merdeck-agent-open'))).toBe('true')
-  const menuTrigger = page.getByRole('banner').getByRole('button', { name: 'More options', exact: true })
-  await menuTrigger.click()
-  const agentToggle = page.getByRole('menu').getByRole('button', { name: 'Open AI file editor', exact: true })
+  const agentToggle = page.getByRole('banner').getByRole('button', { name: 'Open AI file editor', exact: true })
   await expect(agentToggle).toHaveAttribute('aria-pressed', 'false')
 
   // An explicit open still writes the preference, so a desktop session opened afterward finds it.

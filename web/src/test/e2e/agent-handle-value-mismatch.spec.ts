@@ -13,8 +13,7 @@ test.skip(!url, 'Set MERDECK_OPEN_URL to a disposable service without an access 
 test('the assistant resize handle keyboard value must match the panel\'s actual rendered height', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(url!)
-  await page.getByRole('banner').getByRole('button', { name: 'More options', exact: true }).click()
-  await page.getByRole('menu').getByRole('button', { name: 'Open AI file editor', exact: true }).click()
+  await page.getByRole('banner').getByRole('button', { name: 'Open AI file editor', exact: true }).click()
   const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
   await expect(editor).toBeVisible()
   const handle = page.getByRole('separator', { name: 'Resize AI file editor', exact: true })

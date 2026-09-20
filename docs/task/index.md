@@ -135,3 +135,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260920-0720-refresh-followups Interface refresh follow-ups: row alignment and heading navigation**](20260920-0720-refresh-followups.md) `P1`
 - [x] [**20260920-0805-release-v0.17.1 Release v0.17.1**](20260920-0805-release-v0.17.1.md) `P1`
 - [x] [**20260920-1837-agent-sheet-and-approvals AI file editor: a readable phone sheet, and no approval step**](20260920-1837-agent-sheet-and-approvals.md) `P1`
+- [x] [**20260920-1850-phone-controls-and-view-switch Phone controls: the assistant in the header, and the view switch as a row**](20260920-1850-phone-controls-and-view-switch.md) `P1`
