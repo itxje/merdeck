@@ -175,8 +175,12 @@ test('narrow source theme changes preserve fitted preview geometry and directory
   await page.getByRole('tab', { name: 'Diagram', exact: true }).click()
   await expect(page.getByRole('tab', { name: 'Diagram', exact: true })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('tab', { name: 'Source', exact: true }).click()
-  await page.getByRole('button', { name: 'Dark theme', exact: true }).click()
+  // Below the phone breakpoint the theme switch moves into the header's overflow menu; selecting it
+  // closes the menu on its own, the way any completed choice must.
+  await page.getByRole('button', { name: 'More options', exact: true }).click()
+  await page.getByRole('menu').getByRole('button', { name: 'Dark theme', exact: true }).click()
   await expect(page.locator('html')).toHaveClass('dark')
+  await expect(page.getByRole('menu')).toHaveCount(0)
   await expect(page.getByText('Live preview', { exact: true })).toBeAttached()
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await live(page)

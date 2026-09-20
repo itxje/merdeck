@@ -33,12 +33,23 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
     await agent.click()
     const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
     await expect(agent).toHaveAttribute('aria-pressed', 'true')
-    await expect(editor.getByText('No provider is configured. Set an approved executable path on the service and restart it.', { exact: true })).toBeVisible()
+    const notice = editor.getByText('No provider is configured. Set an approved executable path on the service and restart it.', { exact: true })
+    await expect(notice).toBeVisible()
     await expect(editor.getByLabel('Engine', { exact: true })).toHaveValue('')
     await expect(editor.getByLabel('Model', { exact: true })).toHaveValue('')
+    const composer = editor.getByLabel('Agent instruction', { exact: true })
+    await expect(composer).toBeDisabled()
+    // The notice is dismissible; the composer stays disabled with its existing message regardless.
+    await editor.getByRole('button', { name: 'Dismiss', exact: true }).click()
+    await expect(notice).toBeHidden()
+    await expect(composer).toBeDisabled()
     await editor.getByRole('button', { name: 'Close AI file editor', exact: true }).click()
     await expect(editor).not.toBeVisible()
     await expect(agent).toHaveAttribute('aria-pressed', 'false')
+    // The dismissal lasts for the page's session, not just the one open/close cycle.
+    await agent.click()
+    await expect(notice).toBeHidden()
+    await editor.getByRole('button', { name: 'Close AI file editor', exact: true }).click()
   }
 
   // Icon controls share one height and render their icons at the design-system size.
@@ -86,17 +97,58 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   await expect(page.locator('.status-bar')).toContainText(/Merdeck \S+/)
   await page.mouse.move(1, 1)
 
+  // Below the breakpoint the theme switch, the assistant toggle and log out move into one overflow
+  // menu; the trigger is the only one of these controls left directly in the header.
+  const menuTrigger = header.getByRole('button', { name: 'More options', exact: true })
   for (const width of [390, 360]) {
     await page.setViewportSize({ width, height: 844 })
-    await expect(theme).toBeVisible()
-    // Controls transition to their touch-target sizes after crossing the narrow breakpoint.
-    await expect.poll(async () => Math.round((await size(light)).width)).toBe(44)
-    await expect.poll(async () => Math.round((await size(logout)).width)).toBeGreaterThanOrEqual(44)
+    await expect(menuTrigger).toBeVisible()
+    await expect(theme).toHaveCount(0)
+    await expect(logout).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    const headerBox = await size(header)
-    for (const control of [theme, logout])
-      expect((await size(control)).x + (await size(control)).width).toBeLessThanOrEqual(headerBox.x + headerBox.width)
+    await menuTrigger.click()
+    const menu = page.getByRole('menu')
+    const menuTheme = menu.getByRole('group', { name: 'Theme', exact: true })
+    const menuLight = menuTheme.getByRole('button', { name: 'Light theme', exact: true })
+    const menuLogout = menu.getByRole('button', { name: 'Log out', exact: true })
+    const menuAgent = menu.getByRole('button', { name: 'Open AI file editor', exact: true })
+    await expect(menuTheme).toBeVisible()
+    // The same controls keep their accessible name and pressed state once moved into the menu.
+    await expect(menuLight).toHaveAttribute('aria-pressed', 'true')
+    await expect(menuAgent).toHaveAttribute('aria-pressed', 'false')
+    // Controls take their touch-target sizes below the narrow breakpoint.
+    await expect.poll(async () => Math.round((await size(menuLight)).width)).toBe(44)
+    await expect.poll(async () => Math.round((await size(menuLogout)).width)).toBeGreaterThanOrEqual(44)
+    await menuTrigger.click()
+    await expect(menu).toHaveCount(0)
   }
   await page.getByRole('button', { name: 'Open project files', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Project files', exact: true }).getByRole('button', { name: 'Refresh files', exact: true })).toBeVisible()
+})
+
+test('the assistant panel starts closed under the phone breakpoint despite a stored open preference, and an explicit choice still persists', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await login(page, true)
+  // Registered after the shared audit fixture's own init script, so this one runs second on every
+  // following navigation and wins: the stored preference says open, as a desktop session left it.
+  await page.addInitScript(() => localStorage.setItem('merdeck-agent-open', 'true'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Open project files', exact: true })).toBeVisible()
+  const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+  await expect(editor).toBeHidden()
+  // Reading the stored value to decide the initial state never writes it back.
+  expect(await page.evaluate(() => localStorage.getItem('merdeck-agent-open'))).toBe('true')
+  const menuTrigger = page.getByRole('banner').getByRole('button', { name: 'More options', exact: true })
+  await menuTrigger.click()
+  const agentToggle = page.getByRole('menu').getByRole('button', { name: 'Open AI file editor', exact: true })
+  await expect(agentToggle).toHaveAttribute('aria-pressed', 'false')
+
+  // An explicit open still writes the preference, so a desktop session opened afterward finds it.
+  await agentToggle.click()
+  await expect(editor).toBeVisible()
+  expect(await page.evaluate(() => localStorage.getItem('merdeck-agent-open'))).toBe('true')
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.reload()
+  await expect(page.getByRole('complementary', { name: 'AI file editor', exact: true })).toBeVisible()
 })
