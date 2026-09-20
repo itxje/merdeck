@@ -137,3 +137,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260920-1837-agent-sheet-and-approvals AI file editor: a readable phone sheet, and no approval step**](20260920-1837-agent-sheet-and-approvals.md) `P1`
 - [x] [**20260920-1850-phone-controls-and-view-switch Phone controls: the assistant in the header, and the view switch as a row**](20260920-1850-phone-controls-and-view-switch.md) `P1`
 - [x] [**20260920-1905-release-v0.18.0 Release v0.18.0**](20260920-1905-release-v0.18.0.md) `P1`
+- [x] [**20260920-1930-name-extension-beside-stem A file name and its extension read as one string**](20260920-1930-name-extension-beside-stem.md) `P1`

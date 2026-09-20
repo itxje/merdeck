@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-20 19:30 [fix]
+
+A file name and its extension read as one string again. Wrapping split a row name into a stem and an
+extension so the extension can stay on the first line; the stem was also allowed to grow, so in a listing
+wider than its names the stem's box took the free width and left the extension against the right edge of the
+row. The stem now shrinks but never grows, which changes nothing for a name long enough to wrap and keeps a
+short one beside its own extension. See
+[20260920-1930-name-extension-beside-stem](task/20260920-1930-name-extension-beside-stem.md).
+
 ## 2026-09-20 19:16 [release]
 
 Published [v0.18.0](https://github.com/itxje/merdeck/releases/tag/v0.18.0): the AI file editor's conversation

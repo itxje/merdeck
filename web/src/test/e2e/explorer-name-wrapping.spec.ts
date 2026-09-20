@@ -19,6 +19,8 @@ if (!root)
 const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd']
 const singleLineRow = 34
 const maximumLines = 3
+// The 3px flex gap between the stem and the extension, and a pixel for subpixel layout.
+const nameGapPixels = 4
 
 function nameGeometry(row: Locator) {
   return row.evaluate((element) => {
@@ -43,6 +45,16 @@ function nameGeometry(row: Locator) {
       extText: ext.textContent,
       stemTop: stemBox.top,
       extTop: extBox.top,
+      // Where the stem's last glyph actually ends, against where the extension starts. A stem that
+      // takes the row's free width rather than its own content leaves the two ends of one name at
+      // opposite sides of a wide row, which is what this distance catches.
+      extGap: (() => {
+        const range = document.createRange()
+        range.selectNodeContents(stem.firstChild!)
+        const rects = [...range.getClientRects()]
+        const lastLine = rects.at(-1)
+        return lastLine ? extBox.left - lastLine.right : Number.NaN
+      })(),
     }
   })
 }
@@ -79,6 +91,10 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
+      // One name, read as one string: the extension follows the stem's glyphs across the flex gap
+      // rather than sitting at the far end of the row.
+      if (geometry.stemLines === 1)
+        expect(geometry.extGap).toBeLessThanOrEqual(nameGapPixels)
       expect(geometry.stemLines).toBeLessThanOrEqual(maximumLines)
       heights.set(geometry.stemLines, geometry.rowHeight)
       wrapped += geometry.stemLines > 1 ? 1 : 0
@@ -97,7 +113,7 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
   }
 })
 
-test('explorer row names start at the left of their column however wide the row is', async ({ page }) => {
+test('explorer row names start at the left of their column and keep their extension beside them', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'name-align-'))
   const folder = relative(root, owned)
   await writeFile(join(owned, 'a.mmd'), 'flowchart LR\n  A --> B\n')
@@ -111,15 +127,21 @@ test('explorer row names start at the left of their column however wide the row 
     const dialog = page.getByRole('dialog', { name: 'Project files', exact: true })
     const row = dialog.locator(`.tree-row[title="${folder}/a.mmd"]`)
     await expect(row).toBeVisible()
-    const offset = await row.evaluate((element) => {
+    const measured = await row.evaluate((element) => {
       const stem = element.querySelector('.tree-name-stem')!
-      const text = stem.firstChild!
+      const ext = element.querySelector('.tree-name-ext')!
       const range = document.createRange()
-      range.selectNodeContents(text)
-      // Where the glyphs actually start, against the box they sit in: equal means left-aligned.
-      return range.getBoundingClientRect().left - stem.getBoundingClientRect().left
+      range.selectNodeContents(stem.firstChild!)
+      const glyphs = range.getBoundingClientRect()
+      return {
+        // Where the glyphs actually start, against the box they sit in: equal means left-aligned.
+        offset: glyphs.left - stem.getBoundingClientRect().left,
+        // And where the extension starts, against where those glyphs end: one name, one string.
+        gap: ext.getBoundingClientRect().left - glyphs.right,
+      }
     })
-    expect(offset).toBeLessThanOrEqual(1)
+    expect(measured.offset).toBeLessThanOrEqual(1)
+    expect(measured.gap).toBeLessThanOrEqual(nameGapPixels)
   }
   finally {
     await rm(owned, { recursive: true, force: true })
@@ -157,6 +179,8 @@ test('the project-files sheet wraps distinguishable same-stem names and holds th
       expect(geometry.stemClipped).toBe(false)
       expect(geometry.extText).toBe('.mmd')
       expect(Math.abs(geometry.extTop - geometry.stemTop)).toBeLessThanOrEqual(1)
+      if (geometry.stemLines === 1)
+        expect(geometry.extGap).toBeLessThanOrEqual(nameGapPixels)
       expect(geometry.stemLines).toBeLessThanOrEqual(maximumLines)
       expect(geometry.rowHeight).toBeGreaterThanOrEqual(singleLineRow)
       if (geometry.stemLines === 1)

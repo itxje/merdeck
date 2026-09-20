@@ -221,8 +221,10 @@ button:disabled { cursor: default; }
 /* The stem may break anywhere and clamps at two lines; the extension is a separate, non-breaking
    item pinned to the first line and never split, so it stays readable regardless of stem length. */
 .tree-name { display: flex; align-items: flex-start; flex: 1 1 auto; min-width: 0; gap: 3px; }
-/* The Button primitive's own base class sets white-space: nowrap; undo that inherited value so the stem can wrap. */
-.tree-name-stem { flex: 1 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+/* The Button primitive's own base class sets white-space: nowrap; undo that inherited value so the stem can wrap.
+   The stem shrinks but never grows: a growing stem took the row's whole free width, which left the
+   extension pinned to the far right of a wide listing with the name it belongs to on the other side. */
+.tree-name-stem { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
 .tree-name-ext { flex: none; white-space: nowrap; }
 /* Row actions stay out of the way until the row is hovered or focused, or its menu is open. */
 .tree-item { position: relative; }
