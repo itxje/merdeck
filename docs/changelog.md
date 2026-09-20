@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-20 06:32 [release]
+
+Published [v0.17.0](https://github.com/itxje/merdeck/releases/tag/v0.17.0) delivering the interface refresh:
+one five-step type ramp with an 11px floor and monospace path strings, a low-chroma teal accent with a warning
+amber beside the red kept for deletion and refusal, an explorer folded into one action rail with the type
+filter inside the search field, rows that wrap a long name instead of middle-truncating it, and a phone layout
+with the assistant as a bottom sheet, a header overflow menu, a three-way bottom bar and 44px tap targets.
+Exact commit `329b84e` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35493574929),
+and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35493980941) repeated acceptance and
+published `merdeck.tar.gz` (1383846 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded
+archive. See [20260920-0630-release-v0.17.0](task/20260920-0630-release-v0.17.0.md).
+
 ## 2026-09-20 05:30 [fix]
 
 An explorer row now holds a wrapped name on up to three lines instead of two. On machines whose fonts are
