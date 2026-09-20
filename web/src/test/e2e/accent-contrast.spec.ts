@@ -242,7 +242,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(selectedRow).toHaveAttribute('aria-current', 'true')
     const marker = selectedRow.locator('.dirty-dot')
     await expect(marker).toBeVisible()
-    const rowTextRatio = await textContrast(page, selectedRow.locator('.truncate'), selectedRow)
+    const rowTextRatio = await textContrast(page, selectedRow.locator('.tree-name-stem'), selectedRow)
     reportRatio('selected row text', colorScheme, rowTextRatio)
     expect(rowTextRatio).toBeGreaterThanOrEqual(4.5)
     const rowIconRatio = await textContrast(page, selectedRow.locator('svg'), selectedRow)

@@ -224,7 +224,10 @@ test('file drawer omits its redundant header while retaining named usable contro
       await expect.poll(() => listing.evaluate(node => node.scrollHeight > node.clientHeight), { message: 'Populated mobile listing does not scroll' }).toBe(true)
       await search.fill('drawer-target')
       await expect(dialog.getByRole('button', { name: 'welcome.mmd', exact: true })).toHaveCount(0)
-      const target = dialog.locator('button').filter({ has: dialog.page().locator(`span:text-is("${filename}")`) })
+      // The name now renders as a separate stem and extension, so no single span carries the full text; the
+      // row's accessible name still equals the full file name (plus the usual unsaved-marker suffix, present
+      // on the second pass once this file carries the draft set below), via the aria-label on its name span.
+      const target = dialog.getByRole('button', { name: new RegExp(`^${filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?: Unsaved changes)?$`) })
       await expect(target).toHaveAttribute('title', relative(root, path))
       assertContained(await measureDrawer(dialog))
       await target.click()
