@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-20 18:04 [release]
+
+Published [v0.17.1](https://github.com/itxje/merdeck/releases/tag/v0.17.1) delivering two corrections to the
+interface refresh: explorer row names read from the left again rather than floating in the middle of a wide
+listing, and a heading chosen from the Markdown contents list arrives at the top of the view rather than at
+its bottom edge. Exact commit `88ab43a` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35526624273), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35527270520) repeated acceptance and
+published `merdeck.tar.gz` (1384555 bytes) and `SHA256SUMS`; `sha256sum -c` reports OK on the downloaded
+archive. See [20260920-0805-release-v0.17.1](task/20260920-0805-release-v0.17.1.md).
+
 ## 2026-09-20 07:20 [fix]
 
 Explorer rows read from the left again, and a heading chosen from the Markdown contents list arrives at the
