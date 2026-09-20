@@ -66,6 +66,8 @@ beforeEach(() => {
   FakeEventSource.instances = []
   vi.stubGlobal('EventSource', FakeEventSource)
   Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
+  const media = Object.assign(new EventTarget(), { matches: false })
+  vi.stubGlobal('matchMedia', () => media)
 })
 
 it('defers provider discovery until the editor is opened', async () => {

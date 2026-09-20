@@ -63,7 +63,9 @@ test('HTML preview stays inert, navigates safely, responds narrowly and preserve
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(article).toContainText('Safe HTML title')
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.getByRole('button', { name: 'Dark theme', exact: true }).click()
+    // Below the phone breakpoint the theme switch moves into the header's overflow menu.
+    await page.getByRole('button', { name: 'More options', exact: true }).click()
+    await page.getByRole('menu').getByRole('button', { name: 'Dark theme', exact: true }).click()
     await expect(page.locator('html')).toHaveClass('dark')
     expect(await tableHeaderIsFramed(table)).toBe(true)
     await expect(article.getByRole('heading', { name: 'Safe HTML title & entities', exact: true })).toBeVisible()

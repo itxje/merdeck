@@ -19,15 +19,75 @@ interface AgentChatProps {
 
 const minimumWidth = 300
 const maximumWidth = 560
+// Below the phone breakpoint the panel docks to the bottom edge instead of the side, sized as a
+// share of the viewport height instead of a stored pixel width; that height is a session-only
+// preference, never written to storage.
+const narrowViewportQuery = '(max-width: 700px)'
+const minimumHeightPercent = 30
+const defaultHeightPercent = 55
+// The design ceiling: the panel never grows past this share of the viewport even when the viewport
+// is tall enough to allow more, so a meaningful sliver of document always stays reachable above it.
+const designMaximumHeightPercent = 85
+
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
+  React.useEffect(() => {
+    const media = window.matchMedia(narrowViewportQuery)
+    const update = () => setNarrow(media.matches)
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return narrow
+}
+
+// Below the phone breakpoint the panel is positioned inside the content area between the header and
+// the bottom bars, and index.css caps it at that area's own height, so the browser — not a number
+// here — keeps it off the header and off the bars, at whatever the header, the bars and
+// env(safe-area-inset-bottom) actually come to. This reads that same box back to report the range,
+// rather than reconstructing it from copies of those heights: copies need every term to be listed
+// and every change to be mirrored, and each term that was missing or stale let the reported range
+// and the reachable height drift apart again.
+function useReachableHeightPercent(narrow: boolean, paneRef: React.RefObject<HTMLElement | null>): number {
+  const [reachable, setReachable] = React.useState(designMaximumHeightPercent)
+  React.useLayoutEffect(() => {
+    const area = narrow ? paneRef.current?.parentElement : undefined
+    if (!area)
+      return
+    const measure = () => setReachable((area.getBoundingClientRect().height / window.innerHeight) * 100)
+    measure()
+    // The safe-area inset has no event of its own — it can change with no resize following it — but
+    // it is part of the bars below, so any change to it resizes this area. Observing the area is
+    // therefore the signal, and it covers a changed header or bar height just as well.
+    const observer = new ResizeObserver(measure)
+    observer.observe(area)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [narrow, paneRef])
+  if (!narrow)
+    return 100
+  return Math.min(designMaximumHeightPercent, Math.max(minimumHeightPercent, reachable))
+}
 
 export function AgentChat({ session, open, blockedReason, activePath, onClose, onActiveChange, onFileChanged, onSettled }: AgentChatProps) {
   const blocked = blockedReason !== undefined
   const chat = useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled })
   const [prompt, setPrompt] = React.useState('')
+  const narrow = useNarrowViewport()
+  const paneRef = React.useRef<HTMLElement>(null)
+  const maximumHeightPercent = useReachableHeightPercent(narrow, paneRef)
   const [width, setWidth] = React.useState(() => {
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
     return Number.isFinite(stored) ? Math.min(maximumWidth, Math.max(minimumWidth, stored)) : 380
   })
+  const [heightPercent, setHeightPercent] = React.useState(defaultHeightPercent)
+  // A viewport that shrinks (e.g. rotation) can drop the reachable maximum below the current value.
+  React.useEffect(() => {
+    setHeightPercent(current => Math.min(current, maximumHeightPercent))
+  }, [maximumHeightPercent])
+  const [noticeDismissed, setNoticeDismissed] = React.useState(false)
   const transcriptRef = React.useRef<HTMLDivElement>(null)
   React.useEffect(() => {
     transcriptRef.current?.lastElementChild?.scrollIntoView({ block: 'nearest' })
@@ -37,7 +97,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     if (sent)
       setPrompt('')
   }
-  const resize = (event: React.PointerEvent<HTMLDivElement>) => {
+  const resizeWidth = (event: React.PointerEvent<HTMLDivElement>) => {
     const handle = event.currentTarget
     const origin = event.clientX
     const start = width
@@ -55,20 +115,47 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     handle.addEventListener('pointerup', stop)
     handle.addEventListener('pointercancel', stop)
   }
+  const resizeHeight = (event: React.PointerEvent<HTMLDivElement>) => {
+    const handle = event.currentTarget
+    const origin = event.clientY
+    const start = heightPercent
+    const viewportHeight = window.innerHeight
+    handle.setPointerCapture(event.pointerId)
+    const move = (moved: PointerEvent) => {
+      const delta = ((origin - moved.clientY) / viewportHeight) * 100
+      setHeightPercent(Math.min(maximumHeightPercent, Math.max(minimumHeightPercent, start + delta)))
+    }
+    const stop = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', stop)
+      handle.removeEventListener('pointercancel', stop)
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', stop)
+    handle.addEventListener('pointercancel', stop)
+  }
   const unavailable = !chat.capabilities.isPending && !chat.providers.length
   return (
-    <aside className="agent-pane" aria-label="AI file editor" hidden={!open} style={{ '--agent-width': `${width}px` } as React.CSSProperties}>
+    <aside ref={paneRef} className="agent-pane" aria-label="AI file editor" hidden={!open} data-narrow={narrow || undefined} style={{ '--agent-width': `${width}px`, '--agent-height': `${heightPercent}dvh` } as React.CSSProperties}>
       <div
         className="agent-resizer"
         role="separator"
         aria-label="Resize AI file editor"
-        aria-orientation="vertical"
-        aria-valuemin={minimumWidth}
-        aria-valuemax={maximumWidth}
-        aria-valuenow={width}
+        aria-orientation={narrow ? 'horizontal' : 'vertical'}
+        aria-valuemin={narrow ? minimumHeightPercent : minimumWidth}
+        aria-valuemax={narrow ? maximumHeightPercent : maximumWidth}
+        aria-valuenow={narrow ? Math.round(heightPercent) : width}
         tabIndex={0}
-        onPointerDown={resize}
+        onPointerDown={narrow ? resizeHeight : resizeWidth}
         onKeyDown={(event) => {
+          if (narrow) {
+            const change = event.key === 'ArrowUp' ? 5 : event.key === 'ArrowDown' ? -5 : 0
+            if (!change)
+              return
+            event.preventDefault()
+            setHeightPercent(current => Math.min(maximumHeightPercent, Math.max(minimumHeightPercent, current + change)))
+            return
+          }
           const change = event.key === 'ArrowLeft' ? 16 : event.key === 'ArrowRight' ? -16 : 0
           if (!change)
             return
@@ -123,7 +210,12 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
           </p>
         )}
         {chat.capabilities.isError && <p className="agent-error" role="alert">The agent capability check failed.</p>}
-        {unavailable && <p className="agent-empty">No provider is configured. Set an approved executable path on the service and restart it.</p>}
+        {unavailable && !noticeDismissed && (
+          <div className="agent-notice" role="status">
+            <p>No provider is configured. Set an approved executable path on the service and restart it.</p>
+            <Button variant="ghost" size="icon-sm" aria-label="Dismiss" onClick={() => setNoticeDismissed(true)}><X /></Button>
+          </div>
+        )}
         {!chat.capabilities.isPending && !unavailable && !chat.items.length && <p className="agent-empty">Ask the agent to update a diagram or document. File changes refresh the current preview automatically.</p>}
         {chat.items.map((item) => {
           if (item.kind === 'user') {
@@ -146,7 +238,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
             return (
               <div key={item.key} className="agent-event">
                 <Wrench />
-                <span>{item.label}</span>
+                <code>{item.label}</code>
               </div>
             )
           }

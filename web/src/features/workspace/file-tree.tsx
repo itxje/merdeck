@@ -4,7 +4,7 @@ import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
 import type { useDirectory } from './use-directory'
 import type { SearchView } from './use-directory-search'
-import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, MoreHorizontal, RefreshCw, Search } from 'lucide-react'
+import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, MoreHorizontal, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
@@ -112,6 +112,29 @@ function byName(a: { kind: string, path: string }, b: { kind: string, path: stri
   return names.compare(a.path.slice(a.path.lastIndexOf('/') + 1), b.path.slice(b.path.lastIndexOf('/') + 1)) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
 }
 
+// The extension comes from the last path segment, so a search result's slashes stay part of the wrapping stem.
+function splitName(value: string): { stem: string, extension: string } {
+  const base = value.slice(value.lastIndexOf('/') + 1)
+  const dot = base.lastIndexOf('.')
+  if (dot <= 0)
+    return { stem: value, extension: '' }
+  const extension = base.slice(dot)
+  return { stem: value.slice(0, value.length - extension.length), extension }
+}
+
+// A row name wraps by its stem; the extension is a held, non-breaking item on the row's first line.
+// The stem and extension are separate flex items for layout, so the wrapper carries an explicit
+// aria-label: without it, the browser's accessible name joins the two boxes with an inserted space.
+function RowName({ value }: { value: string }) {
+  const { stem, extension } = splitName(value)
+  return (
+    <span className="tree-name" aria-label={value}>
+      <span className="tree-name-stem" aria-hidden="true">{stem}</span>
+      {extension && <span className="tree-name-ext" aria-hidden="true">{extension}</span>}
+    </span>
+  )
+}
+
 export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, filterRef, search, onQueryChange }: Props) {
   const crumbsRef = React.useRef<HTMLElement>(null)
   const focusDirectoryRef = React.useRef(false)
@@ -156,10 +179,10 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
           const diagrams = draft.baseline.kind === 'markdown' && draft.baseline.blocks.length > 0
           return (
             <li key={name}>
-              <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} onClick={() => select(name)}>
+              <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} title={name} onClick={() => select(name)}>
                 <span className="tree-twistie" />
                 <FileText />
-                <span className="truncate">{name}</span>
+                <RowName value={name} />
                 <span className="dirty-dot" />
               </Button>
               {diagrams && <DiagramList file={name} blocks={draft.baseline.blocks} draft={draft} open={open} block={block} select={select} />}
@@ -180,29 +203,23 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
   })
   return (
     <aside className="file-tree" data-compact={compact || undefined} aria-label="Project files">
-      <div className="tree-heading">
-        <span>EXPLORER</span>
-        <span className="tree-heading-actions">
+      <div className="tree-rail">
+        <nav ref={crumbsRef} className="directory-crumbs" aria-label="Directory breadcrumbs">
+          <Button variant="ghost" size="sm" aria-current={!directory ? 'location' : undefined} onClick={() => openDirectory('')}><span className="truncate">Root</span></Button>
+          {directory.split('/').filter(Boolean).map((part, index, parts) => (
+            <React.Fragment key={parts.slice(0, index + 1).join('/')}>
+              <ChevronRight aria-hidden="true" />
+              <Button variant="ghost" size="sm" title={parts.slice(0, index + 1).join('/')} aria-current={index === parts.length - 1 ? 'location' : undefined} onClick={() => openDirectory(parts.slice(0, index + 1).join('/'))}><span className="truncate">{part}</span></Button>
+            </React.Fragment>
+          ))}
+        </nav>
+        <span className="tree-rail-actions">
+          <HeadingAction label="Up" disabled={!directory} onClick={() => openDirectory(parentDirectory(directory))}><ArrowUp /></HeadingAction>
           <HeadingAction label="New file" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
           <HeadingAction label="New folder" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
           <HeadingAction label="Refresh files" onClick={refresh}><RefreshCw /></HeadingAction>
+          <HeadingAction label="Restart" disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}><RotateCcw /></HeadingAction>
         </span>
-      </div>
-      <nav ref={crumbsRef} className="directory-crumbs" aria-label="Directory breadcrumbs">
-        <Button variant="ghost" size="sm" aria-current={!directory ? 'location' : undefined} onClick={() => openDirectory('')}>Root</Button>
-        {directory.split('/').filter(Boolean).map((part, index, parts) => (
-          <React.Fragment key={parts.slice(0, index + 1).join('/')}>
-            <ChevronRight aria-hidden="true" />
-            <Button variant="ghost" size="sm" title={parts.slice(0, index + 1).join('/')} aria-current={index === parts.length - 1 ? 'location' : undefined} onClick={() => openDirectory(parts.slice(0, index + 1).join('/'))}>{part}</Button>
-          </React.Fragment>
-        ))}
-      </nav>
-      <div className="directory-tools">
-        <Button variant="outline" size="sm" disabled={!directory} onClick={() => openDirectory(parentDirectory(directory))}>
-          <ArrowUp />
-          Up
-        </Button>
-        <Button variant="ghost" size="sm" disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}>Restart</Button>
       </div>
       <div className="tree-search">
         <Search aria-hidden="true" />
@@ -216,9 +233,8 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             onQueryChange?.(event.target.value)
           }}
         />
-      </div>
-      <div className="tree-kinds">
         <ToggleGroup
+          className="tree-search-kinds"
           size="sm"
           aria-label="File types"
           value={[kinds]}
@@ -234,7 +250,6 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
           ))}
         </ToggleGroup>
       </div>
-      <p className="directory-scope">{search ? 'Search and file types look in this folder and its subfolders.' : 'Filters apply to loaded files. Folders stay visible.'}</p>
       {searching && search && (
         <nav aria-label="Search results" aria-busy={search.pending}>
           {search.pending && <p className="tree-hint" role="status">Searching…</p>}
@@ -272,7 +287,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       >
                         <span className="tree-twistie" />
                         {entry.kind === 'directory' ? <Folder className="folder-icon" /> : <FileKindIcon kind={entry.fileKind} />}
-                        <span className="truncate">{below}</span>
+                        <RowName value={below} />
                         {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
                       </Button>
                     </div>
@@ -316,12 +331,15 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       <Button
                         variant="ghost"
                         className="tree-row"
+                        title={entry.path}
                         onKeyDown={shortcuts(rename, remove)}
                         onClick={() => openDirectory(entry.path)}
                       >
                         <span className="tree-twistie"><ChevronRight /></span>
                         <Folder className="folder-icon" />
-                        <span className="truncate">{name}</span>
+                        {/* Reserved even though folders are never "unopened", so a file's name beside it still lines up. */}
+                        <span className="unopened-dot" aria-hidden="true" />
+                        <RowName value={name} />
                       </Button>
                       <RowMenu
                         name={name}
@@ -354,9 +372,10 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       {/* An empty chevron column keeps a file's icon in line with the folders beside it. */}
                       <span className="tree-twistie" />
                       <FileKindIcon kind={entry.fileKind} />
-                      <span className="truncate">{name}</span>
+                      {/* Always reserved, so an opened file's name stays lined up with an unopened one. */}
+                      <span className="unopened-dot" aria-hidden="true" data-shown={!draft || undefined} />
+                      <RowName value={name} />
                       {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
-                      {!draft && <span className="file-count" aria-hidden="true">Unopened</span>}
                     </Button>
                     <RowMenu name={name} open={menuState.open} onOpenChange={menuState.onOpenChange} items={[rename, remove]} />
                   </div>
@@ -371,16 +390,20 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
         </nav>
       )}
       <div className="tree-bottom">
-        <span className="tree-summary muted">
-          {listed.length}
-          {' '}
-          {listed.length === 1 ? 'loaded file' : 'loaded files'}
-          {` · ${fileExtensions[kinds].join(' · ')}`}
+        <span className="tree-summary-line">
+          <span className="tree-summary muted">
+            {listed.length}
+            {' '}
+            {listed.length === 1 ? 'loaded file' : 'loaded files'}
+            {` · ${fileExtensions[kinds].join(' · ')}`}
+          </span>
+          {' · '}
+          <span className="tree-pages">{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
+          {' · '}
+          <span className="tree-listing-status">{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
         </span>
-        <span className="tree-pages">{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
         {listing.firstPage > 1 && <span className="tree-pagination-notice" role="status">Earlier pages are no longer shown. Restart to see them.</span>}
         <Button className="tree-next-page" variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>
-        <span className="tree-listing-status">{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
       </div>
     </aside>
   )

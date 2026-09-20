@@ -1,5 +1,88 @@
 # Changelog
 
+## 2026-09-20 05:00 [progress]
+
+The phone layout was reworked around the assistant, the header and the pane tabs. Below 700px the
+assistant docks to the bottom of the space the layout leaves it, at 55% of the viewport height, with
+the document visible above and a horizontal drag handle that keeps its accessible name, its keyboard
+adjustment and a value range read back from the area it sits in. It starts closed on a phone whatever
+the stored preference says, and only an explicit open or close writes that value, so a desktop
+preference survives a phone visit; the panel's height and the dismissal of the no-provider line last
+for the session only, and no new stored value is introduced. The header keeps the brand mark, the
+file name and the save control, moving the theme choice, the assistant toggle and sign-out into one
+overflow menu that closes when a control inside it is used. A bottom bar carries the project-files
+control — moved from the header rather than duplicated — beside the source and preview tabs, above
+the status bar and clear of the safe area. Every interactive control below the breakpoint reaches
+44px, the provider and model selects included. Browser expectations measure the panel's edges against
+the header and the bars at a zero and a nonzero safe-area inset, including an inset change that
+arrives with no resize event, and the project-files sheet's wrapped names are measured there as they
+already were at the default explorer width. See
+[20260920-0100-phone-layout](task/20260920-0100-phone-layout.md).
+
+## 2026-09-20 00:45 [progress]
+
+Explorer rows wrap their names instead of middle-truncating them, so files that differ only in a
+suffix stay readable. A name renders as a stem that may break anywhere and clamps at two lines, and
+an extension held as a separate non-breaking item on the first line; the full path stays in the
+row's title, and the row's accessible name is unchanged. A row whose name fits keeps its 34px
+height and a wrapped row grows to 48px, both computed from the row's own content rather than fixed.
+A browser expectation measures the six same-stem names the plan named as unreadable: every stem
+renders whole, every extension sits on the first line, each name resolves to exactly one row, and
+the two names that need a second line measure 48px while the rest stay at 34px. See
+[20260920-0014-explorer-name-wrapping](task/20260920-0014-explorer-name-wrapping.md).
+
+## 2026-09-19 23:45 [fix]
+
+The UI refresh plan carried two estimated density figures that the delivered work measured: the
+explorer's chrome above the first file row, stated as 346px and 38% of a 900px viewport, measures
+249px and 28%, and the expected result of the density work, stated as about 150px and roughly nine
+more visible rows, measures between 80 and 105px — 92px as delivered — and six more rows of a
+sixty-file folder. Both places now carry the measured figures and name
+`web/src/test/e2e/explorer-density.spec.ts`, which produces them, so the plan and the task record no
+longer disagree about the same layout. See
+[20260919-2015-design-record-density-figures](task/20260919-2015-design-record-density-figures.md).
+
+## 2026-09-19 23:30 [progress]
+
+The explorer spends far less of its height on chrome. The heading, the breadcrumb and the tools row
+are now one 40px action rail carrying the breadcrumb on the left and go up, new file, new folder,
+refresh and restart as icon controls on the right, each keeping the name, tooltip and conditions it
+had. The file-type control moved into the search field's frame as a trailing segmented control and
+the sentence below it is gone, its information already carried by the search placeholder. A row's
+unopened state now reads as a small dot before the name instead of a trailing word, with the dot's
+column reserved on every row so names stay aligned. The loaded-file count, the active file types,
+the page range and the listing status are one line, each phrase still its own element. Measured at
+the default explorer width and a 1440x900 viewport, the chrome above the first row falls from 249px
+to 92px and the listing fits six more rows; a browser expectation pins both figures. See
+[20260919-1930-explorer-density](task/20260919-1930-explorer-density.md).
+
+## 2026-09-19 22:25 [progress]
+
+The application took on a low-chroma teal accent and a warning amber, both declared beside the
+existing colour tokens. The accent carries the primary button, the selected explorer row, the focus
+ring and the live-preview indicator, and every surface that already read the accent token moves with
+it; the canvas, the surfaces, the borders and the muted text stay neutral. A selected file or
+diagram row is filled with the accent, with its text, icon and unsaved marker on the accent
+foreground, while an open file that is not the selection is still marked by weight alone. The
+warning carries a preview showing its last valid render rather than the current source, and an
+unsaved draft. Red is now reserved for deletion and refusal. A browser expectation measures every
+introduced text and fill pair in both schemes against a 4.5:1 threshold, over settled and composited
+fills, and a second expectation guards that measurement route itself. See
+[20260919-1815-accent-and-warning-colour](task/20260919-1815-accent-and-warning-colour.md).
+
+## 2026-09-19 18:50 [progress]
+
+The application shell now draws every size from one five-step type ramp declared beside the colour
+tokens: 11px for counters and footers, 12px for explorer rows and the status bar, 13px for controls,
+inputs and selects, 15px for pane titles and the header file name, 17px for page headings and the
+document body. The shared interface primitives are bound to the control step by one unlayered rule
+rather than being edited, and the directory breadcrumb, the assistant's attached-file line and its
+tool and file-change targets now read in the monospace stack. The document reading surfaces keep the
+typography they had. A browser expectation walks the shell at three viewports, asserting every size
+resolves to one of the five steps and that the header, the status bar, the composer and the explorer
+rail fit without clipping. See
+[20260919-1759-type-ramp-monospace-paths](task/20260919-1759-type-ramp-monospace-paths.md).
+
 ## 2026-09-19 17:27 [fix]
 
 The Markdown preview's contents list was not adapted for mobile browsers: `.html-document-view` carries an

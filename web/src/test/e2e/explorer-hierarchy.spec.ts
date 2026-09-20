@@ -11,7 +11,7 @@ if (!root)
 function measure(row: Locator) {
   return row.evaluate((element) => {
     const icons = element.querySelectorAll('svg')
-    const name = element.querySelector('.truncate')!
+    const name = element.querySelector('.tree-name')!
     return { icon: icons[icons.length - 1]!.getBoundingClientRect().left, name: name.getBoundingClientRect().left, weight: Number(getComputedStyle(name).fontWeight) }
   })
 }
