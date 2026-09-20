@@ -386,11 +386,14 @@ button:disabled { cursor: default; }
   .panes[data-pane="preview"] > #source-panel, .panes[data-pane="source"] > #preview-panel { visibility: hidden; pointer-events: none; }
   .source-pane[data-collapsed] { display: flex; }
   .source-input[data-slot="textarea"] { font-size: var(--text-sm); }
-  /* A render-prop trigger keeps the primitive's own data-slot rather than the wrapped Button's, so
-     the floor above needs each such slot named explicitly: the overflow menu's trigger and any
-     dialog's close control, both otherwise still sized by the primitive they wrap. */
-  [data-slot="button"], [data-slot="tooltip-trigger"], [data-slot="dropdown-menu-trigger"], [data-slot="dialog-close"], .file-tree .tree-row, [data-slot="tabs-trigger"] { min-height: 44px; }
-  [data-slot="button"], [data-slot="tooltip-trigger"], [data-slot="dropdown-menu-trigger"], [data-slot="dialog-close"] { min-width: 44px; }
+  [data-slot="button"], [data-slot="tooltip-trigger"], .file-tree .tree-row, [data-slot="tabs-trigger"] { min-height: 44px; }
+  [data-slot="button"], [data-slot="tooltip-trigger"] { min-width: 44px; }
+  /* The overflow trigger wraps a Button through a render prop, and the wrapping primitive's own
+     data-slot ("dropdown-menu-trigger") reaches the DOM in place of the wrapped Button's ("button"),
+     so the shared floor above never matches it. Keyed on the aria-label instead of any data-slot:
+     that value is ours, set directly on this one control, and the primitive has no reason to touch
+     an accessibility attribute the way it already overwrites the styling slot. */
+  .header-actions [aria-label="More options"] { min-height: 44px; min-width: 44px; }
   /* A file row keeps its content-driven wrapped/unwrapped height (48/34px) rather than the general
      touch floor above, which this equal-specificity, later rule overrides back down for this one
      selector; the row's full-width clickable area still satisfies the floor in the other dimension. */
