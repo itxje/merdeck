@@ -112,7 +112,9 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     await expect(page.locator('html')).not.toHaveClass('dark')
     await expect(article).toContainText('Complete document')
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-    await page.getByRole('button', { name: 'Dark theme', exact: true }).click()
+    // Below the phone breakpoint the theme switch moves into the header's overflow menu.
+    await page.getByRole('button', { name: 'More options', exact: true }).click()
+    await page.getByRole('menu').getByRole('button', { name: 'Dark theme', exact: true }).click()
     await expect(page.locator('html')).toHaveClass('dark')
     expect(await tableHeaderIsFramed(table)).toBe(true)
     await expect(secondFigure.locator('svg')).toBeVisible()

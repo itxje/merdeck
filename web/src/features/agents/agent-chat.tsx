@@ -19,15 +19,37 @@ interface AgentChatProps {
 
 const minimumWidth = 300
 const maximumWidth = 560
+// Below the phone breakpoint the panel docks to the bottom edge instead of the side, sized as a
+// share of the viewport height instead of a stored pixel width; that height is a session-only
+// preference, never written to storage.
+const narrowViewportQuery = '(max-width: 700px)'
+const minimumHeightPercent = 30
+const maximumHeightPercent = 85
+const defaultHeightPercent = 55
+
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
+  React.useEffect(() => {
+    const media = window.matchMedia(narrowViewportQuery)
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return narrow
+}
 
 export function AgentChat({ session, open, blockedReason, activePath, onClose, onActiveChange, onFileChanged, onSettled }: AgentChatProps) {
   const blocked = blockedReason !== undefined
   const chat = useAgentChat({ session, open, blocked, activePath, onActiveChange, onFileChanged, onSettled })
   const [prompt, setPrompt] = React.useState('')
+  const narrow = useNarrowViewport()
   const [width, setWidth] = React.useState(() => {
     const stored = Number(localStorage.getItem('merdeck-agent-width'))
     return Number.isFinite(stored) ? Math.min(maximumWidth, Math.max(minimumWidth, stored)) : 380
   })
+  const [heightPercent, setHeightPercent] = React.useState(defaultHeightPercent)
+  const [noticeDismissed, setNoticeDismissed] = React.useState(false)
   const transcriptRef = React.useRef<HTMLDivElement>(null)
   React.useEffect(() => {
     transcriptRef.current?.lastElementChild?.scrollIntoView({ block: 'nearest' })
@@ -37,7 +59,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     if (sent)
       setPrompt('')
   }
-  const resize = (event: React.PointerEvent<HTMLDivElement>) => {
+  const resizeWidth = (event: React.PointerEvent<HTMLDivElement>) => {
     const handle = event.currentTarget
     const origin = event.clientX
     const start = width
@@ -55,20 +77,47 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     handle.addEventListener('pointerup', stop)
     handle.addEventListener('pointercancel', stop)
   }
+  const resizeHeight = (event: React.PointerEvent<HTMLDivElement>) => {
+    const handle = event.currentTarget
+    const origin = event.clientY
+    const start = heightPercent
+    const viewportHeight = window.innerHeight
+    handle.setPointerCapture(event.pointerId)
+    const move = (moved: PointerEvent) => {
+      const delta = ((origin - moved.clientY) / viewportHeight) * 100
+      setHeightPercent(Math.min(maximumHeightPercent, Math.max(minimumHeightPercent, start + delta)))
+    }
+    const stop = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', stop)
+      handle.removeEventListener('pointercancel', stop)
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', stop)
+    handle.addEventListener('pointercancel', stop)
+  }
   const unavailable = !chat.capabilities.isPending && !chat.providers.length
   return (
-    <aside className="agent-pane" aria-label="AI file editor" hidden={!open} style={{ '--agent-width': `${width}px` } as React.CSSProperties}>
+    <aside className="agent-pane" aria-label="AI file editor" hidden={!open} data-narrow={narrow || undefined} style={{ '--agent-width': `${width}px`, '--agent-height': `${heightPercent}dvh` } as React.CSSProperties}>
       <div
         className="agent-resizer"
         role="separator"
         aria-label="Resize AI file editor"
-        aria-orientation="vertical"
-        aria-valuemin={minimumWidth}
-        aria-valuemax={maximumWidth}
-        aria-valuenow={width}
+        aria-orientation={narrow ? 'horizontal' : 'vertical'}
+        aria-valuemin={narrow ? minimumHeightPercent : minimumWidth}
+        aria-valuemax={narrow ? maximumHeightPercent : maximumWidth}
+        aria-valuenow={narrow ? Math.round(heightPercent) : width}
         tabIndex={0}
-        onPointerDown={resize}
+        onPointerDown={narrow ? resizeHeight : resizeWidth}
         onKeyDown={(event) => {
+          if (narrow) {
+            const change = event.key === 'ArrowUp' ? 5 : event.key === 'ArrowDown' ? -5 : 0
+            if (!change)
+              return
+            event.preventDefault()
+            setHeightPercent(current => Math.min(maximumHeightPercent, Math.max(minimumHeightPercent, current + change)))
+            return
+          }
           const change = event.key === 'ArrowLeft' ? 16 : event.key === 'ArrowRight' ? -16 : 0
           if (!change)
             return
@@ -123,7 +172,12 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
           </p>
         )}
         {chat.capabilities.isError && <p className="agent-error" role="alert">The agent capability check failed.</p>}
-        {unavailable && <p className="agent-empty">No provider is configured. Set an approved executable path on the service and restart it.</p>}
+        {unavailable && !noticeDismissed && (
+          <div className="agent-notice" role="status">
+            <p>No provider is configured. Set an approved executable path on the service and restart it.</p>
+            <Button variant="ghost" size="icon-sm" aria-label="Dismiss" onClick={() => setNoticeDismissed(true)}><X /></Button>
+          </div>
+        )}
         {!chat.capabilities.isPending && !unavailable && !chat.items.length && <p className="agent-empty">Ask the agent to update a diagram or document. File changes refresh the current preview automatically.</p>}
         {chat.items.map((item) => {
           if (item.kind === 'user') {

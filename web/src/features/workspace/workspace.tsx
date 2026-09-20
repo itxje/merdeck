@@ -1,6 +1,6 @@
 import type { EntryAction } from './entries'
 import type { EntryOperation } from './use-workspace'
-import { Bot, Check, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Bot, Check, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, MoreHorizontal, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 import * as React from 'react'
 import { useDefaultLayout, usePanelRef } from 'react-resizable-panels'
 import { ThemeToggle } from '@/app/theme-toggle'
@@ -12,6 +12,7 @@ import { UpdateNotice } from '@/features/update/update-notice'
 import { MerdeckMark } from '@/shared/components/brand/merdeck-mark'
 import { Button } from '@/shared/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/shared/components/ui/resizable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
@@ -28,10 +29,28 @@ import { useWorkspace } from './use-workspace'
 
 const introduction = 'Browse, edit and preview diagrams in your project files.'
 const collapsedSourceWidth = 40
+// Below this width the header controls collapse into an overflow menu, the pane tabs move into a
+// bottom bar, and the assistant docks to the bottom edge instead of the side.
+const narrowViewportQuery = '(max-width: 700px)'
+
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = React.useState(() => window.matchMedia(narrowViewportQuery).matches)
+  React.useEffect(() => {
+    const media = window.matchMedia(narrowViewportQuery)
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return narrow
+}
 
 export function Workspace({ path, block, directory = parentDirectory(path), browse = () => {}, navigate }: { path: string, block: number, directory?: string, browse?: (directory: string) => void, navigate: (path: string, block: number, directory?: string) => void }) {
-  // The AI file editor is docked open by default; an operator who closes it keeps it closed across reloads.
-  const [agentOpen, setAgentOpen] = React.useState(() => localStorage.getItem('merdeck-agent-open') !== 'false')
+  const narrow = useNarrowViewport()
+  // The AI file editor is docked open by default; an operator who closes it keeps it closed across
+  // reloads. Below the phone breakpoint it always starts closed, whatever that stored preference
+  // says, without writing over it, so a desktop preference set on a later visit is unaffected.
+  const [agentOpen, setAgentOpen] = React.useState(() => window.matchMedia(narrowViewportQuery).matches ? false : localStorage.getItem('merdeck-agent-open') !== 'false')
   const showAgent = React.useCallback((open: boolean) => {
     localStorage.setItem('merdeck-agent-open', String(open))
     setAgentOpen(open)
@@ -231,6 +250,25 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const deleted = state.revision.data?.state === 'deleted'
   // Reloading would close these dialogs and forget a typed token.
   const dialogsOpen = treeOpen || logoutOpen || reviewOpen || entryOpen || !!token
+  // The same control sits in the header at wider sizes and in the phone bottom bar below the
+  // breakpoint; it is rendered in exactly one of the two places, never both.
+  const filesTrigger = <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
+  const assistantToggle = state.session && (
+    <Tooltip>
+      <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => showAgent(!agentOpen)} />}>
+        <Bot />
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="end">AI file editor</TooltipContent>
+    </Tooltip>
+  )
+  const signOut = state.session?.access === 'token' && (
+    <Tooltip>
+      <TooltipTrigger render={<Button variant="ghost" size="icon" aria-label="Log out" onClick={() => setLogoutOpen(true)} />}>
+        <LogOut />
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="end">Log out</TooltipContent>
+    </Tooltip>
+  )
   return (
     <div className="workspace" data-screen-label="Diagram workspace">
       <header className="app-header">
@@ -241,7 +279,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
         {/* The open file and its save controls share the header, so no second bar takes height from the diagram. */}
         {state.session && (
           <div className="header-file">
-            <Button className="tree-toggle" variant="ghost" size="icon" aria-label="Open project files" onClick={() => setTreeOpen(true)}><PanelLeft /></Button>
+            {/* Below the phone breakpoint this same control moves into the bottom bar instead of duplicating it here. */}
+            {!narrow && filesTrigger}
             {/* Without an open file the header names nothing: the explorer and the empty state already say what to do. */}
             {path && (
               <>
@@ -280,26 +319,32 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
               <span className="control-divider" aria-hidden="true" />
             </>
           )}
-          {state.session && (
-            <Tooltip>
-              <TooltipTrigger render={<Button variant={agentOpen ? 'secondary' : 'ghost'} size="icon" aria-label="Open AI file editor" aria-pressed={agentOpen} onClick={() => showAgent(!agentOpen)} />}>
-                <Bot />
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="end">AI file editor</TooltipContent>
-            </Tooltip>
-          )}
-          <ThemeToggle />
-          {state.session?.access === 'token' && (
-            <>
-              <span className="control-divider" aria-hidden="true" />
-              <Tooltip>
-                <TooltipTrigger render={<Button variant="ghost" size="icon" aria-label="Log out" onClick={() => setLogoutOpen(true)} />}>
-                  <LogOut />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end">Log out</TooltipContent>
-              </Tooltip>
-            </>
-          )}
+          {narrow
+            ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="More options" />}>
+                    <MoreHorizontal />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="header-menu">
+                    {assistantToggle}
+                    <ThemeToggle />
+                    {signOut && <DropdownMenuSeparator />}
+                    {signOut}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )
+            : (
+                <>
+                  {assistantToggle}
+                  <ThemeToggle />
+                  {signOut && (
+                    <>
+                      <span className="control-divider" aria-hidden="true" />
+                      {signOut}
+                    </>
+                  )}
+                </>
+              )}
         </div>
       </header>
       <UpdateNotice blocked={state.reloadBlocked || dialogsOpen} reload={() => state.reloadApplication(dialogsOpen)} />
@@ -382,22 +427,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                 <TabsTrigger value="document">Document</TabsTrigger>
                                 <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>
                               </TabsList>
-                            </Tabs>
-                          )}
-                          {selected && (
-                            <Tabs className="mobile-panes" value={pane} onValueChange={value => setPane(String(value))}>
-                              <TabsList aria-label="Workspace pane">
-                                <TabsTrigger value="source">
-                                  <Code2 />
-                                  Source
-                                </TabsTrigger>
-                                <TabsTrigger value="preview">
-                                  <GitBranch />
-                                  Preview
-                                </TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="source" className="sr-only">Source editor</TabsContent>
-                              <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
                             </Tabs>
                           )}
                           {file?.baseline.kind === 'html'
@@ -503,6 +532,28 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                     onFileChanged={state.reconcileAgentChange}
                     onSettled={state.reconcileAgentChange}
                   />
+                )}
+              </div>
+              {/* Below the phone breakpoint this replaces the top pane tab strip: the project-files control
+                  moved down from the header, always present once signed in, beside the source/preview tabs
+                  that appear once a source pane exists. It sits above the status bar and is otherwise hidden. */}
+              <div className="phone-tabbar">
+                {narrow && filesTrigger}
+                {selected && (
+                  <Tabs value={pane} onValueChange={value => setPane(String(value))}>
+                    <TabsList aria-label="Workspace pane">
+                      <TabsTrigger value="source">
+                        <Code2 />
+                        Source
+                      </TabsTrigger>
+                      <TabsTrigger value="preview">
+                        <GitBranch />
+                        Preview
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="source" className="sr-only">Source editor</TabsContent>
+                    <TabsContent value="preview" className="sr-only">Diagram preview</TabsContent>
+                  </Tabs>
                 )}
               </div>
               <footer className="status-bar">

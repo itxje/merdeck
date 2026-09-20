@@ -64,13 +64,31 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
     await page.setViewportSize({ width: 390, height: 844 })
     const mobilePane = await editor.boundingBox()
     expect(mobilePane).not.toBeNull()
+    // Below the phone breakpoint the panel docks to the bottom edge of the content area at 55% of
+    // the viewport height, leaving the document visible above it, instead of covering nearly the
+    // whole screen; it never overlaps the persistent phone bar or the status bar beneath it.
+    const statusBar = await page.locator('.status-bar').boundingBox()
+    const phoneBar = await page.locator('.phone-tabbar').boundingBox()
     expect(mobilePane!.x).toBe(0)
     expect(mobilePane!.width).toBe(390)
-    expect(mobilePane!.y).toBe(58)
-    expect(mobilePane!.y + mobilePane!.height).toBeLessThanOrEqual(814)
+    expect(mobilePane!.height / 844).toBeCloseTo(0.55, 1)
+    expect(mobilePane!.y).toBeGreaterThan(0)
+    expect(mobilePane!.y + mobilePane!.height).toBeLessThanOrEqual(Math.min(statusBar!.y, phoneBar!.y) + 1)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await expect(engine).toBeVisible()
     await expect(model).toBeVisible()
+
+    // The handle keeps its accessible name and its keyboard adjustment, now expressed as a
+    // horizontal drag bar resizing the panel's height within a stated range.
+    const handle = page.getByRole('separator', { name: 'Resize AI file editor', exact: true })
+    await expect(handle).toHaveAttribute('aria-orientation', 'horizontal')
+    const beforeHeight = mobilePane!.height
+    await handle.focus()
+    await page.keyboard.press('ArrowUp')
+    await expect.poll(async () => (await editor.boundingBox())!.height).toBeGreaterThan(beforeHeight)
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    await expect.poll(async () => (await editor.boundingBox())!.height).toBeLessThan(beforeHeight)
 
     await editor.getByLabel('Agent instruction', { exact: true }).fill('Wait until stopped.')
     await editor.getByRole('button', { name: 'Send', exact: true }).click()
