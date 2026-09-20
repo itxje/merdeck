@@ -112,6 +112,29 @@ function byName(a: { kind: string, path: string }, b: { kind: string, path: stri
   return names.compare(a.path.slice(a.path.lastIndexOf('/') + 1), b.path.slice(b.path.lastIndexOf('/') + 1)) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
 }
 
+// The extension comes from the last path segment, so a search result's slashes stay part of the wrapping stem.
+function splitName(value: string): { stem: string, extension: string } {
+  const base = value.slice(value.lastIndexOf('/') + 1)
+  const dot = base.lastIndexOf('.')
+  if (dot <= 0)
+    return { stem: value, extension: '' }
+  const extension = base.slice(dot)
+  return { stem: value.slice(0, value.length - extension.length), extension }
+}
+
+// A row name wraps by its stem; the extension is a held, non-breaking item on the row's first line.
+// The stem and extension are separate flex items for layout, so the wrapper carries an explicit
+// aria-label: without it, the browser's accessible name joins the two boxes with an inserted space.
+function RowName({ value }: { value: string }) {
+  const { stem, extension } = splitName(value)
+  return (
+    <span className="tree-name" aria-label={value}>
+      <span className="tree-name-stem" aria-hidden="true">{stem}</span>
+      {extension && <span className="tree-name-ext" aria-hidden="true">{extension}</span>}
+    </span>
+  )
+}
+
 export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, filterRef, search, onQueryChange }: Props) {
   const crumbsRef = React.useRef<HTMLElement>(null)
   const focusDirectoryRef = React.useRef(false)
@@ -156,10 +179,10 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
           const diagrams = draft.baseline.kind === 'markdown' && draft.baseline.blocks.length > 0
           return (
             <li key={name}>
-              <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} onClick={() => select(name)}>
+              <Button variant="ghost" className="tree-row" aria-current={open && !diagrams} data-open={(open && diagrams) || undefined} title={name} onClick={() => select(name)}>
                 <span className="tree-twistie" />
                 <FileText />
-                <span className="truncate">{name}</span>
+                <RowName value={name} />
                 <span className="dirty-dot" />
               </Button>
               {diagrams && <DiagramList file={name} blocks={draft.baseline.blocks} draft={draft} open={open} block={block} select={select} />}
@@ -264,7 +287,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       >
                         <span className="tree-twistie" />
                         {entry.kind === 'directory' ? <Folder className="folder-icon" /> : <FileKindIcon kind={entry.fileKind} />}
-                        <span className="truncate">{below}</span>
+                        <RowName value={below} />
                         {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
                       </Button>
                     </div>
@@ -308,6 +331,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       <Button
                         variant="ghost"
                         className="tree-row"
+                        title={entry.path}
                         onKeyDown={shortcuts(rename, remove)}
                         onClick={() => openDirectory(entry.path)}
                       >
@@ -315,7 +339,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                         <Folder className="folder-icon" />
                         {/* Reserved even though folders are never "unopened", so a file's name beside it still lines up. */}
                         <span className="unopened-dot" aria-hidden="true" />
-                        <span className="truncate">{name}</span>
+                        <RowName value={name} />
                       </Button>
                       <RowMenu
                         name={name}
@@ -350,7 +374,7 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                       <FileKindIcon kind={entry.fileKind} />
                       {/* Always reserved, so an opened file's name stays lined up with an unopened one. */}
                       <span className="unopened-dot" aria-hidden="true" data-shown={!draft || undefined} />
-                      <span className="truncate">{name}</span>
+                      <RowName value={name} />
                       {draft && dirty(draft) && <span className="dirty-dot" aria-label="Unsaved changes" />}
                     </Button>
                     <RowMenu name={name} open={menuState.open} onOpenChange={menuState.onOpenChange} items={[rename, remove]} />

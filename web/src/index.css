@@ -203,13 +203,24 @@ button:disabled { cursor: default; }
 .file-tree nav { padding: 0 10px; flex: 1; overflow: auto; }
 .file-tree ul { list-style: none; padding: 0; margin: 0; }
 .file-tree .nested { margin: 3px 0 10px 37px; padding-left: 9px; border-left: 1px solid var(--border); }
-.file-tree .tree-row { width: 100%; justify-content: flex-start; padding: 0 9px; gap: 8px; font-size: var(--text-sm); height: 34px; font-weight: 400; border-radius: var(--radius-sm); }
+/* The Button primitive's own size class fixes a height (h-8); override it with an auto height so a
+   wrapped row can grow past the min-height floor instead of clipping to the primitive's own size.
+   Auto height = the primitive's 1px top+bottom border, this padding, and the tallest child: the
+   16px icon for one line (8 + 8 + 16 + 2 = the former fixed 34px), the 15px-line-height, two-line
+   clamped name for a wrapped row (8 + 8 + 30 + 2 = 48px), nothing hardcoded past the icon size. */
+.file-tree .tree-row { width: 100%; justify-content: flex-start; padding: 8px 9px; gap: 8px; font-size: var(--text-sm); line-height: 15px; height: auto; min-height: 34px; font-weight: 400; border-radius: var(--radius-sm); }
 .file-tree .tree-row svg { color: var(--muted-foreground); width: 14px; }
 /* One level clears the chevron column; each ancestor draws a guide through its chevron's centre. */
 .file-tree .tree-entry { display: flow-root; padding-left: calc(var(--depth) * 16px); background: repeating-linear-gradient(to right, transparent 0 15px, var(--border) 15px 16px) 0 0 / calc(var(--depth) * 16px) 100% no-repeat; }
 .file-tree .tree-twistie { display: inline-flex; flex: none; width: 14px; }
 .file-tree .tree-row .folder-icon { color: var(--foreground); fill: color-mix(in oklch, var(--foreground) 14%, transparent); }
-.file-tree .tree-row:has(.folder-icon) .truncate { font-weight: 500; }
+.file-tree .tree-row:has(.folder-icon) .tree-name { font-weight: 500; }
+/* The stem may break anywhere and clamps at two lines; the extension is a separate, non-breaking
+   item pinned to the first line and never split, so it stays readable regardless of stem length. */
+.tree-name { display: flex; align-items: flex-start; flex: 1 1 auto; min-width: 0; gap: 3px; }
+/* The Button primitive's own base class sets white-space: nowrap; undo that inherited value so the stem can wrap. */
+.tree-name-stem { flex: 1 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+.tree-name-ext { flex: none; white-space: nowrap; }
 /* Row actions stay out of the way until the row is hovered or focused, or its menu is open. */
 .tree-item { position: relative; }
 .tree-item > .tree-row { padding-right: 30px; }

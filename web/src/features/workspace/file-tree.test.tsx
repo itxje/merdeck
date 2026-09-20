@@ -97,8 +97,29 @@ it('marks an unopened file with a decorative dot before its name, leaving the ac
   expect(dot).not.toBeNull()
   expect(dot).toHaveAttribute('aria-hidden', 'true')
   // The dot sits before the name; the (absent, here) unsaved marker would still follow it.
-  const name = row.querySelector('.truncate')!
+  const name = row.querySelector('.tree-name')!
   expect(dot!.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  unmount()
+})
+
+it('renders a file name as a wrapping stem and a held, non-breaking extension, and keeps the full path in the row title', () => {
+  const { unmount } = renderTree('all')
+  const row = screen.getByRole('button', { name: 'welcome.mmd' })
+  expect(row).toHaveAttribute('title', 'welcome.mmd')
+  const stem = row.querySelector('.tree-name-stem')!
+  const extension = row.querySelector('.tree-name-ext')!
+  expect(stem).toHaveTextContent('welcome')
+  expect(extension).toHaveTextContent('.mmd')
+  expect(stem.compareDocumentPosition(extension) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  unmount()
+})
+
+it('renders a folder name with no extension item and keeps its full path in the row title', () => {
+  const { unmount } = renderTree('all')
+  const row = screen.getByRole('button', { name: 'docs' })
+  expect(row).toHaveAttribute('title', 'docs')
+  expect(row.querySelector('.tree-name-stem')).toHaveTextContent('docs')
+  expect(row.querySelector('.tree-name-ext')).toBeNull()
   unmount()
 })
 
