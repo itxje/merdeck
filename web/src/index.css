@@ -211,7 +211,7 @@ button:disabled { cursor: default; }
    Auto height = the primitive's 1px top+bottom border, this padding, and the tallest child: the
    16px icon for one line (8 + 8 + 16 + 2 = the former fixed 34px), the 15px-line-height, two-line
    clamped name for a wrapped row (8 + 8 + 30 + 2 = 48px), nothing hardcoded past the icon size. */
-.file-tree .tree-row { width: 100%; justify-content: flex-start; padding: 8px 9px; gap: 8px; font-size: var(--text-sm); line-height: 15px; height: auto; min-height: 34px; font-weight: 400; border-radius: var(--radius-sm); }
+.file-tree .tree-row { width: 100%; justify-content: flex-start; text-align: left; padding: 8px 9px; gap: 8px; font-size: var(--text-sm); line-height: 15px; height: auto; min-height: 34px; font-weight: 400; border-radius: var(--radius-sm); }
 .file-tree .tree-row svg { color: var(--muted-foreground); width: 14px; }
 /* One level clears the chevron column; each ancestor draws a guide through its chevron's centre. */
 .file-tree .tree-entry { display: flow-root; padding-left: calc(var(--depth) * 16px); background: repeating-linear-gradient(to right, transparent 0 15px, var(--border) 15px 16px) 0 0 / calc(var(--depth) * 16px) 100% no-repeat; }

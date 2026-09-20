@@ -423,7 +423,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
   const resource = (url: string, children: React.ReactNode, key: string): React.ReactNode => {
     const fragment = followFragment(url)
     if (fragment)
-      return <button key={key} type="button" className="document-link" onClick={() => headingMapRef.current.get(fragment)?.scrollIntoView({ block: 'nearest' })}>{children}</button>
+      return <button key={key} type="button" className="document-link" onClick={() => headingMapRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
     const project = resolveProjectLink(path, url)
     if (project)
       return <button key={key} type="button" className="document-link" onClick={() => followDocumentLink(project)}>{children}</button>
@@ -570,7 +570,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
           <ul>
             {contents.map(item => (
               <li key={item.slug} className={`document-contents-depth-${item.depth}`}>
-                <button type="button" className="document-link" onClick={() => headingMapRef.current.get(item.slug)?.scrollIntoView({ block: 'nearest' })}>{item.text}</button>
+                <button type="button" className="document-link" onClick={() => headingMapRef.current.get(item.slug)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{item.text}</button>
               </li>
             ))}
           </ul>

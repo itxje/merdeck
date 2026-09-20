@@ -358,9 +358,11 @@ it('renders approved Markdown semantics, definitions, images, footnotes, and lit
   expect(screen.getByRole('button', { name: 'Footnote 1' })).toBeVisible()
   expect(screen.getByRole('complementary', { name: 'Footnote 1' })).toHaveTextContent('footnote text')
   fireEvent.click(screen.getByRole('button', { name: 'fragment' }))
-  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  // A heading link puts its target at the top of the view, the way the HTML preview's anchors do;
+  // 'nearest' left a heading below the fold sitting at the bottom edge instead.
+  expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
   fireEvent.click(screen.getByRole('button', { name: 'nested' }))
-  expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
+  expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
   fireEvent.click(screen.getByRole('button', { name: 'Footnote 1' }))
   expect(scroll).toHaveBeenCalledWith({ block: 'nearest' })
   expect(screen.getAllByRole('heading', { name: 'Same' }).every(heading => !heading.hasAttribute('id'))).toBe(true)
@@ -481,7 +483,7 @@ it('lists the document headings beside the body and scrolls to the chosen one', 
   // Headings deeper than the third level would crowd the list, so they stay out of it.
   expect([...contents.querySelectorAll('button')].map(item => item.textContent)).toEqual(['Guide', 'Install', 'Details'])
   await userEvent.setup().click(screen.getByRole('button', { name: 'Install' }))
-  expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' })
 })
 
 it('omits the contents list from a document with fewer than two listed headings', async () => {

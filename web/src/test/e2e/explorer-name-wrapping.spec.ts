@@ -97,6 +97,35 @@ test('explorer rows wrap distinguishable same-stem names and hold the extension 
   }
 })
 
+test('explorer row names start at the left of their column however wide the row is', async ({ page }) => {
+  const owned = await mkdtemp(join(root, 'name-align-'))
+  const folder = relative(root, owned)
+  await writeFile(join(owned, 'a.mmd'), 'flowchart LR\n  A --> B\n')
+  try {
+    // The sheet is far wider than any of these names, so a row that centres its text shows it in the
+    // middle of an empty column. The row is a button, and a button's text centres by default.
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await login(page, true)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await browse(page, folder)
+    const dialog = page.getByRole('dialog', { name: 'Project files', exact: true })
+    const row = dialog.locator(`.tree-row[title="${folder}/a.mmd"]`)
+    await expect(row).toBeVisible()
+    const offset = await row.evaluate((element) => {
+      const stem = element.querySelector('.tree-name-stem')!
+      const text = stem.firstChild!
+      const range = document.createRange()
+      range.selectNodeContents(text)
+      // Where the glyphs actually start, against the box they sit in: equal means left-aligned.
+      return range.getBoundingClientRect().left - stem.getBoundingClientRect().left
+    })
+    expect(offset).toBeLessThanOrEqual(1)
+  }
+  finally {
+    await rm(owned, { recursive: true, force: true })
+  }
+})
+
 test('the project-files sheet wraps distinguishable same-stem names and holds the extension on the first line', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'name-wrap-sheet-'))
   const folder = relative(root, owned)

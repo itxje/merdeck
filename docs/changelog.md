@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-20 07:20 [fix]
+
+Explorer rows read from the left again, and a heading chosen from the Markdown contents list arrives at the
+top of the view. A row is a button, whose text centres by default; splitting the name into a stem and an
+extension gave the stem the row's free width, so the inherited centring became visible in wide listings such
+as the project-files sheet. The contents list and the in-document heading links scrolled with the minimum
+distance that makes a target visible, which parks a heading below the fold at the bottom edge; they now use
+the same start-aligned scroll the HTML preview's anchors already used. Footnote navigation is unchanged. See
+[20260920-0720-refresh-followups](task/20260920-0720-refresh-followups.md).
+
 ## 2026-09-20 06:32 [release]
 
 Published [v0.17.0](https://github.com/itxje/merdeck/releases/tag/v0.17.0) delivering the interface refresh:
