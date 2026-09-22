@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-22 15:44 [release]
+
+Published [v0.18.3](https://github.com/itxje/merdeck/releases/tag/v0.18.3): the preview refuses only Markdown
+image syntax that names a destination, so a label carrying a Rust inner attribute no longer takes its whole
+diagram down. Exact commit `c20ee7d` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35746561831), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35748051891) published `merdeck.tar.gz`
+(1383351 bytes) and `SHA256SUMS` on its first attempt; `sha256sum -c` reports OK on the downloaded archive.
+The console error that needed a rerun for the previous release did not recur.
+See [20260922-1532-release-v0.18.3](task/20260922-1532-release-v0.18.3.md).
+
 ## 2026-09-22 15:08 [fix]
 
 Narrowed the preview's Markdown image rule to syntax that actually names a destination. Any `![` refused the
