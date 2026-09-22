@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-22 13:22 [release]
+
+Published [v0.18.2](https://github.com/itxje/merdeck/releases/tag/v0.18.2): the document contents list sits at
+the leading edge of both previews instead of being stranded mid-pane, and its type joins the ramp. Exact commit
+`fb2ce35` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35729050682), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35730392314) published `merdeck.tar.gz`
+(1383488 bytes) and `SHA256SUMS` after one rerun; `sha256sum -c` reports OK on the downloaded archive.
+The first attempt failed on a single browser console error in `workspace.spec.ts` that the same commit did not
+produce on `main`, in the local suite, or in the executable pass of the same run, and that the rerun did not
+reproduce. If it returns it needs its own task.
+See [20260922-1300-release-v0.18.2](task/20260922-1300-release-v0.18.2.md).
+
 ## 2026-09-22 12:41 [fix]
 
 Anchored the document contents list to the leading edge in both previews. A fixed contents column and a fixed
