@@ -144,3 +144,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260922-1508-image-boundary-precision Refuse only real Markdown image syntax**](20260922-1508-image-boundary-precision.md) `P2`
 - [x] [**20260922-1532-release-v0.18.3 Release v0.18.3**](20260922-1532-release-v0.18.3.md) `P1`
 - [x] [**20260922-2055-agent-file-write-permission Let the assistant write the files it is asked to change**](20260922-2055-agent-file-write-permission.md) `P1`
+- [-] [**20260922-2120-release-v0.18.4 Release v0.18.4**](20260922-2120-release-v0.18.4.md) `P1`
