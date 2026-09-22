@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-22 21:32 [release]
+
+Published [v0.18.4](https://github.com/itxje/merdeck/releases/tag/v0.18.4): the assistant panel can change
+project files again, after the provider refused every write without ever asking this service to decide. Exact
+commit `57a859e` passed [native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35784730256),
+and [the tag workflow](https://github.com/itxje/merdeck/actions/runs/35786040937) published `merdeck.tar.gz`
+(1383376 bytes) and `SHA256SUMS` on its first attempt; `sha256sum -c` reports OK on the downloaded archive.
+See [20260922-2120-release-v0.18.4](task/20260922-2120-release-v0.18.4.md).
+
 ## 2026-09-22 21:07 [fix]
 
 Restored the assistant panel's ability to change files. It would read a file, prepare the edit and then report
