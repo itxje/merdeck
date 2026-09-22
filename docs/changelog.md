@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-22 12:41 [fix]
+
+Anchored the document contents list to the leading edge in both previews. A fixed contents column and a fixed
+reading measure were laid out as one centred grid, so a preview pane wider than their combined width stranded
+the list in the middle of an empty column — roughly 340px of nothing before it at a 2000px pane. The list now
+sits at the leading edge and the body takes the space that is left, centring within its own reading measure.
+The list also joined the type ramp: it carried a leftover `font-size: 14px`, and now uses the 13px step with a
+little more room between entries and a little less around the frame. A long heading in an HTML document's list
+wraps instead of pushing past the column.
+See [20260922-1241-document-contents-layout](task/20260922-1241-document-contents-layout.md).
+
 ## 2026-09-20 19:55 [release]
 
 Published [v0.18.1](https://github.com/itxje/merdeck/releases/tag/v0.18.1): a file name and its extension

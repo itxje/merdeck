@@ -139,3 +139,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260920-1905-release-v0.18.0 Release v0.18.0**](20260920-1905-release-v0.18.0.md) `P1`
 - [x] [**20260920-1930-name-extension-beside-stem A file name and its extension read as one string**](20260920-1930-name-extension-beside-stem.md) `P1`
 - [x] [**20260920-1944-release-v0.18.1 Release v0.18.1**](20260920-1944-release-v0.18.1.md) `P1`
+- [x] [**20260922-1241-document-contents-layout Anchor the document contents list to the leading edge**](20260922-1241-document-contents-layout.md) `P2`

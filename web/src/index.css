@@ -504,15 +504,17 @@ button:disabled { cursor: default; }
 .document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
 /* The Markdown preview derives its contents list from the document's own headings and lays it out
    beside one reading measure, matching the HTML preview. */
-.markdown-document-view { --markdown-doc-toc: 16rem; --markdown-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, var(--markdown-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; }
-.markdown-document-view:has(> nav) { grid-template-columns: var(--markdown-doc-toc) minmax(0, var(--markdown-doc-measure)); }
-.markdown-document-view > .markdown-document-body { grid-column: -2; min-width: 0; }
+.markdown-document-view { --markdown-doc-toc: 15rem; --markdown-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; }
+/* The contents list stays at the leading edge and the body centres in the space that is left, so a wide
+   viewport does not strand the list in the middle of an empty column. */
+.markdown-document-view:has(> nav) { grid-template-columns: var(--markdown-doc-toc) minmax(0, 1fr); }
+.markdown-document-view > .markdown-document-body { grid-column: -2; min-width: 0; max-width: var(--markdown-doc-measure); margin-inline: auto; }
 .markdown-document-view > .markdown-document-body > :first-child { margin-top: 0; }
 /* The body column is one grid item, so the contents list stays sticky beside the whole document. */
-.markdown-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 14px; line-height: 1.45; }
+.markdown-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: var(--text-base); line-height: 1.5; }
 .markdown-document-view > nav ul { list-style: none; margin: 0; padding-left: 0; }
 .markdown-document-view > nav li { margin: 0; }
-.markdown-document-view > nav .document-link { display: block; width: 100%; box-sizing: border-box; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
+.markdown-document-view > nav .document-link { display: block; width: 100%; box-sizing: border-box; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
 .markdown-document-view > nav .document-link:hover { background: var(--accent); color: var(--foreground); }
 .markdown-document-view > nav .document-contents-depth-1 > .document-link { color: var(--foreground); font-weight: 600; }
 .markdown-document-view > nav .document-contents-depth-2 > .document-link { padding-left: 17px; }
@@ -524,7 +526,7 @@ button:disabled { cursor: default; }
 }
 /* The preview owns HTML document layout: standalone templates target a whole window, so the app
    supplies the reading measure, the contents sidebar and the table, code and typography defaults. */
-.html-document-view { --html-doc-toc: 16rem; --html-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, var(--html-doc-measure)); justify-content: center; align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: var(--text-xl); line-height: 1.7; }
+.html-document-view { --html-doc-toc: 15rem; --html-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; font-size: var(--text-xl); line-height: 1.7; }
 .html-document-view [id], .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { scroll-margin-top: 1rem; }
 .html-document-view h1, .html-document-view h2, .html-document-view h3, .html-document-view h4, .html-document-view h5, .html-document-view h6 { color: var(--foreground); line-height: 1.25; margin: 1.8em 0 .6em; font-weight: 600; }
 .html-document-view h1 { font-size: 1.85em; font-weight: 700; letter-spacing: -.03em; }
@@ -534,15 +536,15 @@ button:disabled { cursor: default; }
 .html-document-view h5 { font-size: 1.05em; }
 .html-document-view h6 { font-size: .95em; }
 .html-document-view :is(main, section, article, div) > :first-child, .html-document-view hr + :is(h1, h2, h3, h4, h5, h6) { margin-top: 0; }
-.html-document-view:has(> nav) { grid-template-columns: var(--html-doc-toc) minmax(0, var(--html-doc-measure)); }
+.html-document-view:has(> nav) { grid-template-columns: var(--html-doc-toc) minmax(0, 1fr); }
 /* The body takes the last column: the only one without a contents list, the second one with it. */
-.html-document-view > .html-document-body { grid-column: -2; min-width: 0; }
+.html-document-view > .html-document-body { grid-column: -2; min-width: 0; max-width: var(--html-doc-measure); margin-inline: auto; }
 /* The body column is one grid item, so the contents list stays sticky beside the whole document. */
-.html-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: 14px; line-height: 1.45; }
+.html-document-view > nav { grid-column: 1; align-self: start; position: sticky; top: 0; max-height: calc(100dvh - 132px); overflow: auto; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); font-size: var(--text-base); line-height: 1.5; }
 .html-document-view > nav ul { list-style: none; margin: 0; padding-left: 0; }
 .html-document-view > nav ul ul { margin: 2px 0 2px 9px; padding-left: 9px; border-left: 1px solid var(--border); }
 .html-document-view > nav li { margin: 0; }
-.html-document-view > nav :is(a, .document-link) { display: block; width: 100%; box-sizing: border-box; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; }
+.html-document-view > nav :is(a, .document-link) { display: block; width: 100%; box-sizing: border-box; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--muted-foreground); font: inherit; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
 .html-document-view > nav :is(a, .document-link):hover { background: var(--accent); color: var(--foreground); }
 .html-document-view > nav > ul > li > :is(a, .document-link) { color: var(--foreground); font-weight: 600; }
 .html-document-view p, .html-document-view ul, .html-document-view ol, .html-document-view blockquote, .html-document-view dl, .html-document-view figure { margin: 0 0 1.1em; }
