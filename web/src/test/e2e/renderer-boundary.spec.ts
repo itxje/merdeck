@@ -13,6 +13,8 @@ const diagrams: Record<string, { source: string, text: string[] }> = {
   'state.mmd': { source: 'stateDiagram-v2\n    state check <<choice>>\n    [*] --> check\n    check --> Ready: a < b & c\n    check --> Failed: otherwise\n', text: ['Ready', 'Failed', 'a < b & c'] },
   'sequence.mmd': { source: 'sequenceDiagram\n    participant A as Client & Agent\n    A->>B: R&D uses CSS, links and style guides\n    B-->>A: see https://example.invalid/a and C:\\temp\\x\n    A->>B: x < y\n', text: ['Client & Agent', 'R&D uses CSS, links and style guides', 'see https://example.invalid/a and C:\\temp\\x', 'x < y'] },
   'table.mmd': { source: 'flowchart TB\n    classDef hdr fill:#e8e8e8,stroke:#666,color:#000,font-weight:bold\n    H1["Tailcat"]:::hdr ~~~ H2["keynet v0.3"]:::hdr\n    Deploy["mos-deploy"] --> Data["DATA: staging, metadata and transaction lock"]\n', text: ['Tailcat', 'keynet v0.3', 'DATA: staging, metadata and transaction lock'] },
+  // A bracket trailing an exclamation mark names no destination, so an attribute reads as label text.
+  'attribute.mmd': { source: 'flowchart TB\n    subgraph C["km2210-app · #![forbid(unsafe_code)]"]\n        A["#![no_std]"] --> B["![alt] with no destination"]\n    end\n', text: ['km2210-app · #![forbid(unsafe_code)]', '#![no_std]', '![alt] with no destination'] },
 }
 const compact = (value: string) => value.replace(/\s+/g, '')
 
@@ -37,6 +39,10 @@ test('ordinary syntax outside the boundary renders in every family, with class f
       await expect(svg.locator('foreignObject, script, image, a, use, style, [href], [style]')).toHaveCount(0)
     }
     // A class's font weight reaches the words of its labels; an unstyled label keeps the normal weight.
+    // The styled diagram is reopened first, because the loop above leaves its last file on screen.
+    await explorer.locator(`button[title="${folder}/table.mmd"]`).click()
+    await live(page)
+    await expect.poll(async () => compact((await page.locator('.diagram-graphic svg').textContent()) ?? '')).toContain('Tailcat')
     const weights = await page.locator('.diagram-graphic svg').evaluate(svg => ['Tailcat', 'mos-deploy'].map((label) => {
       const text = [...svg.querySelectorAll('text')].find(item => item.textContent?.includes(label))!
       const word = [...text.querySelectorAll('tspan')].find(span => !span.querySelector('tspan'))!

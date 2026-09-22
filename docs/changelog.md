@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-22 15:08 [fix]
+
+Narrowed the preview's Markdown image rule to syntax that actually names a destination. Any `![` refused the
+whole source, so a Rust inner attribute in a label — `#![forbid(unsafe_code)]` in a subgraph title, say — made
+an otherwise ordinary flowchart show nothing, with no hint in the source about why. A Markdown image needs a
+destination or a reference to name one, so `![...]` now counts only when `(` or `[` follows it. Both real forms
+stay refused, the destination form twice over, because the existing `](` rule still matches it. A bracket that
+merely trails an exclamation mark is label text, which is all Mermaid renders it as.
+See [20260922-1508-image-boundary-precision](task/20260922-1508-image-boundary-precision.md).
+
 ## 2026-09-22 13:22 [release]
 
 Published [v0.18.2](https://github.com/itxje/merdeck/releases/tag/v0.18.2): the document contents list sits at

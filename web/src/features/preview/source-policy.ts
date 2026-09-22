@@ -36,8 +36,10 @@ const markupElements = new Set('a abbr address area article aside audio b base b
 // The preview's security boundary: configuration directives, entities and Mermaid escape codes,
 // resource references, script schemes, shape metadata and math. A numeric character reference is
 // text that follows other text; a colour declaration follows its property, so `fill:#0c4a6e;` is
-// an ordinary statement rather than an entity.
-const boundary = /%%\s*\{|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:^|[^:&])#\w+;|!\[|\]\s*\(|\burl\s*\(|image-set\s*\(|@import|expression\s*\(|(?:javascript|vbscript):|@\{|\$\$/im
+// an ordinary statement rather than an entity. A Markdown image needs its destination or its
+// reference to name one, so `![...]` counts only when `(` or `[` follows it; a bracket that merely
+// trails an exclamation mark, as a Rust inner attribute does, is ordinary text in a label.
+const boundary = /%%\s*\{|&(?:#|lt|gt|amp|quot|apos|[a-z]\w*;)|(?:^|[^:&])#\w+;|!\[[^\]]*\]\s*[([]|\]\s*\(|\burl\s*\(|image-set\s*\(|@import|expression\s*\(|(?:javascript|vbscript):|@\{|\$\$/im
 const secondBlock = /^\s*---/m
 const c4Reference = /\$\w*(?:link|sprite)\w*\s*=/i
 // Statements whose values reach raw CSS or attributes, where a backslash can spell `url(`.

@@ -20,6 +20,8 @@ it.each([
   'quadrantChart\nx-axis Low --> High\ny-axis Low --> High\nPoint A:::c1: [0.3, 0.6]\nclassDef c1 color: #109060, radius : 10',
   'flowchart TB\nclassDef hdr fill:#e8e8e8,stroke:#666,color:#000,font-weight:bold\nH1["Tailcat"]:::hdr ~~~ H2["keynet v0.3"]:::hdr',
   'flowchart TB\nDeploy --> Data["DATA: staging, metadata and transaction lock"]\nApps <-->|D-Bus items| MQTT\nA[x < 10 & click here] --> B\n%% Map<String, Object> reference',
+  'flowchart TB\nsubgraph C["km2210-app · #![forbid(unsafe_code)]"]\n  A["#![no_std] and #![warn(missing_docs)]"]\nend',
+  'flowchart LR\nA["![alt] with no destination"] --> B["trailing ![]"]',
 ])('admits ordinary syntax in every family: %s', (source) => {
   expect(() => validateSource(source)).not.toThrow()
   expect(() => renderSource(source)).not.toThrow()
@@ -48,6 +50,9 @@ it.each([
   ['entity in an ER label', 'erDiagram\nA ||--o{ B : "&lt;b&gt;"'],
   ['Mermaid escape in a gantt task', `${gantt}Task #60;b#62; :a1, 2026-01-01, 3d`],
   ['Markdown image in a mindmap', 'mindmap\n  root\n    ![x](y.png)'],
+  ['Markdown image with a space before its destination', 'flowchart LR\nA["![x] (y.png)"] --> B'],
+  ['Markdown image reference in a flowchart label', 'flowchart LR\nA["![x][ref]"] --> B'],
+  ['Markdown image in a Markdown string label', 'flowchart LR\nA["`![x](y.png)`"] --> B'],
   ['url in a state label', 'stateDiagram-v2\nA --> B: url(https://example.invalid)'],
   ['image-set in a gantt marker', 'gantt\ndateFormat YYYY-MM-DD\ntodayMarker stroke:image-set("/probe")\nsection S\nA :a1, 2026-01-01, 3d'],
   ['javascript scheme in a class note', 'classDiagram\nclass A\nnote for A "javascript:alert(1)"'],
