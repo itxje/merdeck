@@ -267,6 +267,10 @@ for await (const chunk of Bun.stdin.stream()) {
     expect(launch.argv).toContain('--safe-mode')
     expect(launch.argv).toContain('--model=sonnet')
     expect(launch.argv).not.toContain('Bash')
+    // The panel exists to change files, so the file tools are named as available and as pre-approved; a
+    // provider that renames either argument fails here rather than leaving the panel unable to write.
+    expect(launch.argv.slice(launch.argv.indexOf('--tools'), launch.argv.indexOf('--tools') + 2)).toEqual(['--tools', 'Read,Edit,Write,Glob,Grep'])
+    expect(launch.argv.slice(launch.argv.indexOf('--allowedTools'), launch.argv.indexOf('--allowedTools') + 2)).toEqual(['--allowedTools', 'Read,Edit,Write,Glob,Grep'])
     const inputs = JSON.parse(await readFile(`${root}/claude-inputs.json`, 'utf8')) as Array<Record<string, any>>
     expect(inputs.find(input => input.response?.request_id === 'outside')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'missing')?.response.response).toMatchObject({ behavior: 'deny' })

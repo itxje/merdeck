@@ -84,3 +84,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260920-1944-release-v0.18.1 Release v0.18.1**](20260920-1944-release-v0.18.1.md) `2026-09-20`
 - [x] [**20260922-1300-release-v0.18.2 Release v0.18.2**](20260922-1300-release-v0.18.2.md) `2026-09-22`
 - [x] [**20260922-1532-release-v0.18.3 Release v0.18.3**](20260922-1532-release-v0.18.3.md) `2026-09-22`
+- [x] [**20260922-2055-agent-file-write-permission Let the assistant write the files it is asked to change**](20260922-2055-agent-file-write-permission.md) `2026-09-22`

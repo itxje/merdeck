@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-22 21:07 [fix]
+
+Restored the assistant panel's ability to change files. It would read a file, prepare the edit and then report
+that it lacked permission to write and ask for it to be granted — advice nobody could act on, because the
+panel has no such control and the approval step was removed on purpose. The provider refused the write itself
+and never asked this service to decide, so the handler that allows an in-project path never ran. The file
+tools the session is already limited to are now named as pre-approved at launch, which is the only argument
+change measured to help. The project boundary is unchanged: the provider confines those tools to the working
+directory, which is the project root, the session carries no command or network tool, and the handler still
+refuses an out-of-project path whenever it is consulted.
+See [20260922-2055-agent-file-write-permission](task/20260922-2055-agent-file-write-permission.md).
+
 ## 2026-09-22 15:44 [release]
 
 Published [v0.18.3](https://github.com/itxje/merdeck/releases/tag/v0.18.3): the preview refuses only Markdown

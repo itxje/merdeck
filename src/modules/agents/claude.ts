@@ -12,6 +12,7 @@ interface ClaudeRequest {
 }
 
 const allowedTools = new Set(['Read', 'Edit', 'Write', 'Glob', 'Grep'])
+const fileTools = [...allowedTools].join(',')
 const changingTools = new Set(['Edit', 'Write'])
 const pathRequiredTools = new Set(['Read', 'Edit', 'Write'])
 
@@ -40,7 +41,13 @@ class ClaudeSession implements AgentProviderSession {
       '--safe-mode',
       '--strict-mcp-config',
       '--tools',
-      'Read,Edit,Write,Glob,Grep',
+      fileTools,
+      // The provider holds a write behind a prompt it never sends here, so the panel could read a file and
+      // never change one. The same tools are pre-approved instead; `--restricted` keeps them inside the
+      // working directory, which is the project root, and the permission handler below still refuses an
+      // out-of-project path whenever a provider build does ask.
+      '--allowedTools',
+      fileTools,
       '--no-session-persistence',
       '--verbose',
       ...(context.model ? [`--model=${context.model}`] : []),
