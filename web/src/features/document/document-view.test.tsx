@@ -467,7 +467,7 @@ it('places an empty closed top-level Mermaid fence while retaining the exact mis
   const view = render(<DocumentView path="docs/empty.md" text={'```mermaid\n```\n'} blocks={[empty]} sources={['']} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
   expect(await screen.findByRole('button', { name: 'Select Diagram 1' })).toBeVisible()
   expect(screen.queryByRole('alert')).toBeNull()
-  expect(renderDiagram).toHaveBeenCalledWith('', expect.any(Function))
+  await waitFor(() => expect(renderDiagram).toHaveBeenCalledWith('', expect.any(Function)))
   view.rerender(<DocumentView path="docs/empty.md" text={'```mermaid\n```\n'} blocks={[{ ...empty, lineEnd: 3 }]} sources={['']} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
   expect(await screen.findByRole('alert')).toHaveTextContent('Diagram placement could not be verified')
   expect(screen.queryByRole('button', { name: 'Select Diagram 1' })).toBeNull()

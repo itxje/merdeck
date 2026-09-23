@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-23 09:35 [test]
+
+Stabilized a document-view unit test that failed once on CI for a documentation-only commit: it checked the
+inline diagram render synchronously, while rendering is scheduled after the diagram control appears. It now
+waits for the call like the neighbouring cases do.
+
 ## 2026-09-23 09:15 [release]
 
 Published [v0.19.1](https://github.com/itxje/merdeck/releases/tag/v0.19.1): the Claude Code adapter decides
