@@ -195,7 +195,7 @@ for await (const chunk of Bun.stdin.stream()) {
     await session.close()
   })
 
-  test('Claude uses restricted file tools and allows in-project work without approvals', async () => {
+  test('Claude routes file decisions to the adapter and allows only unflagged in-project work', async () => {
     const root = await fixture()
     const fake = await executable(root, 'fake-claude', String.raw`
 const inputs = []
@@ -205,9 +205,11 @@ let pending = ''
 let inside = false
 let outside = false
 let missing = false
+let flagged = false
+let hooks = false
 let finished = false
 async function finish() {
-  if (!inside || !outside || !missing || finished) return
+  if (!inside || !outside || !missing || !flagged || !hooks || finished) return
   finished = true
   console.log(JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tool-1', content: 'ok', is_error: false }] } }))
   console.log(JSON.stringify({ type: 'result', subtype: 'success', is_error: false }))
@@ -234,6 +236,16 @@ for await (const chunk of Bun.stdin.stream()) {
       console.log(JSON.stringify({ type: 'control_request', request_id: 'inside', request: { subtype: 'can_use_tool', tool_name: 'Edit', input: { file_path: 'flow.mmd', old_string: 'A', new_string: 'B' } } }))
       console.log(JSON.stringify({ type: 'control_request', request_id: 'outside', request: { subtype: 'can_use_tool', tool_name: 'Read', input: { file_path: '/etc/passwd' } } }))
       console.log(JSON.stringify({ type: 'control_request', request_id: 'missing', request: { subtype: 'can_use_tool', tool_name: 'Write', input: { content: 'unsafe' } } }))
+      console.log(JSON.stringify({ type: 'control_request', request_id: 'flagged', request: { subtype: 'can_use_tool', tool_name: 'Write', input: { file_path: 'notes/settings.json', content: '{}' }, decision_reason: 'sensitive file', decision_reason_type: 'safetyCheck' } }))
+      console.log(JSON.stringify({ type: 'control_request', request_id: 'hooks', request: { subtype: 'can_use_tool', tool_name: 'Write', input: { file_path: '.git/hooks/pre-commit', content: 'echo unsafe' } } }))
+    }
+    else if (message.type === 'control_response' && message.response?.request_id === 'flagged') {
+      flagged = message.response.response?.behavior === 'deny'
+      await finish()
+    }
+    else if (message.type === 'control_response' && message.response?.request_id === 'hooks') {
+      hooks = message.response.response?.behavior === 'deny'
+      await finish()
     }
     else if (message.type === 'control_response' && message.response?.request_id === 'inside') {
       inside = message.response.response?.behavior === 'allow'
@@ -267,15 +279,19 @@ for await (const chunk of Bun.stdin.stream()) {
     expect(launch.argv).toContain('--safe-mode')
     expect(launch.argv).toContain('--model=sonnet')
     expect(launch.argv).not.toContain('Bash')
-    // The panel exists to change files, so the file tools are named as available and as pre-approved; a
-    // provider that renames either argument fails here rather than leaving the panel unable to write.
+    // The file tools are available but never pre-approved, and the stdio handler is installed, so every
+    // write reaches the permission handler; a pre-approved tool would skip it.
     expect(launch.argv.slice(launch.argv.indexOf('--tools'), launch.argv.indexOf('--tools') + 2)).toEqual(['--tools', 'Read,Edit,Write,Glob,Grep'])
-    expect(launch.argv.slice(launch.argv.indexOf('--allowedTools'), launch.argv.indexOf('--allowedTools') + 2)).toEqual(['--allowedTools', 'Read,Edit,Write,Glob,Grep'])
+    expect(launch.argv.slice(launch.argv.indexOf('--permission-prompt-tool'), launch.argv.indexOf('--permission-prompt-tool') + 2)).toEqual(['--permission-prompt-tool', 'stdio'])
+    expect(launch.argv).not.toContain('--allowedTools')
+    expect(launch.argv).not.toContain('--allowed-tools')
     const inputs = JSON.parse(await readFile(`${root}/claude-inputs.json`, 'utf8')) as Array<Record<string, any>>
     expect(inputs.find(input => input.response?.request_id === 'outside')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'missing')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'idle')?.response.response).toMatchObject({ behavior: 'deny' })
     expect(inputs.find(input => input.response?.request_id === 'inside')?.response.response).toMatchObject({ behavior: 'allow', updatedInput: { file_path: 'flow.mmd' } })
+    expect(inputs.find(input => input.response?.request_id === 'flagged')?.response.response).toMatchObject({ behavior: 'deny', message: 'This file is protected.' })
+    expect(inputs.find(input => input.response?.request_id === 'hooks')?.response.response).toMatchObject({ behavior: 'deny', message: 'This file is protected.' })
     await session.close()
   })
 

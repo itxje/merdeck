@@ -1,6 +1,6 @@
 # 20260923-0109-provider-permission-channel Restore the host permission channel as a live boundary
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: l1/session-20260923
 - **createdAt**: 2026-09-23 01:09
@@ -64,4 +64,15 @@ Restoring the host permission channel.
     project were allowed and emitted `file.changed`, the protected file was refused and not created, and the
     turn completed.
 - Proposal: [20260923-0820-provider-permission-channel](../plan/20260923-0820-provider-permission-channel.md),
-  awaiting approval.
+  approved 2026-09-23.
+- Implementation: `claude.ts` passes `--permission-prompt-tool stdio` instead of `--allowedTools`, and
+  `permissionRequest` denies a request carrying a `decision_reason_type` and a changing-tool path with a
+  `.git` or `.claude` segment. The adapter suite asserts the handler argument, the absence of any
+  pre-approval, and both new refusals.
+- Re-measured through the adapter itself: on 2.1.269 (deployed) an in-project Edit and Write were allowed and
+  emitted `file.changed`; `.claude/settings.json`, `.git/hooks/pre-commit` and a sibling-directory write were
+  refused and not created, and the turn completed. On 2.1.280 the in-project Edit and Write were allowed.
+- Local `bun run check` passed with Bun 1.4.2 (292 backend tests, 579 web tests, lint, strict type checks,
+  coverage and both production builds); the browser suite passed 100 with 7 skipped by design.
+
+- complete: The permission channel is live again and enforced by the adapter.

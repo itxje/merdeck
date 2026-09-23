@@ -15,6 +15,9 @@ const allowedTools = new Set(['Read', 'Edit', 'Write', 'Glob', 'Grep'])
 const fileTools = [...allowedTools].join(',')
 const changingTools = new Set(['Edit', 'Write'])
 const pathRequiredTools = new Set(['Read', 'Edit', 'Write'])
+// Git metadata and agent configuration change what runs next, not the project's documents, so they stay
+// closed to writes whatever a provider build chooses to flag.
+const protectedSegments = new Set(['.git', '.claude'])
 
 class ClaudeSession implements AgentProviderSession {
   private readonly process: Bun.PipedSubprocess
@@ -42,12 +45,11 @@ class ClaudeSession implements AgentProviderSession {
       '--strict-mcp-config',
       '--tools',
       fileTools,
-      // The provider holds a write behind a prompt it never sends here, so the panel could read a file and
-      // never change one. The same tools are pre-approved instead; `--restricted` keeps them inside the
-      // working directory, which is the project root, and the permission handler below still refuses an
-      // out-of-project path whenever a provider build does ask.
-      '--allowedTools',
-      fileTools,
+      // `--permission-prompts host` only chooses who answers; this installs the handler, so every write is
+      // decided by `permissionRequest` below. The file tools must not be pre-approved: a pre-approved tool
+      // never asks, which would leave `--restricted` as the only boundary.
+      '--permission-prompt-tool',
+      'stdio',
       '--no-session-persistence',
       '--verbose',
       ...(context.model ? [`--model=${context.model}`] : []),
@@ -265,8 +267,17 @@ class ClaudeSession implements AgentProviderSession {
       void this.permissionResponse(providerId, { behavior: 'deny', message: 'This tool requires a project file path.' })
       return
     }
-    if (rawPath !== undefined && !providerPath(this.context.projectRoot, rawPath)) {
+    const path = rawPath === undefined ? undefined : providerPath(this.context.projectRoot, rawPath)
+    if (rawPath !== undefined && !path) {
       void this.permissionResponse(providerId, { behavior: 'deny', message: 'The path is outside the project.' })
+      return
+    }
+    // A plain in-project edit carries no decision reason; the provider attaches one when its own checks
+    // single the request out (a sensitive file, a path outside the working directory), and none of those
+    // is overridden here.
+    const flagged = request.decision_reason_type !== undefined && request.decision_reason_type !== null
+    if (flagged || (changingTools.has(name) && path?.split('/').some(segment => protectedSegments.has(segment)))) {
+      void this.permissionResponse(providerId, { behavior: 'deny', message: 'This file is protected.' })
       return
     }
     void this.permissionResponse(providerId, { behavior: 'allow', updatedInput: input })

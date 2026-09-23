@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-23 08:55 [fix]
+
+The Claude Code adapter decides file writes again. The provider had never once asked the service for a
+decision: the launch chose the host as the answerer but never installed the handler, and since 0.18.4 the
+file tools were pre-approved, which skips the host entirely. The adapter now installs the stdio handler and
+pre-approves nothing, so each write reaches its own check. That check also refuses what the provider flags as
+sensitive and anything beneath `.git` or `.claude`, which the pre-approval would otherwise have let through
+once the channel was live. The provider's working-directory confinement stays in place as a second boundary.
+See [20260923-0109-provider-permission-channel](task/20260923-0109-provider-permission-channel.md).
+
 ## 2026-09-23 08:30 [release]
 
 Published [v0.19.0](https://github.com/itxje/merdeck/releases/tag/v0.19.0): the assistant panel keeps its

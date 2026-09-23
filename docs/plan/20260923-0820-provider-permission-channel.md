@@ -1,7 +1,8 @@
 # 20260923-0820-provider-permission-channel Route file-write decisions through the adapter again
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-23 08:20
+- **approvedAt**: 2026-09-23 08:40 UTC
 - **relatedTask**: 20260923-0109-provider-permission-channel
 
 ## Context
@@ -49,3 +50,17 @@ the boundary. Codex and Antigravity adapters, the manager, routes, contracts and
   what `--restricted` confines would leave only the system prompt.
 - **Keep Edit/Write pre-approved and add a service-side check after the fact.** A write has already happened
   by the time a `file.changed` event arrives, so this can only report, not refuse.
+
+## Annotations
+
+- Approved by the owner on 2026-09-23 and implemented within the stated scope. Read, Glob and Grep are not
+  pre-approved either; nothing is.
+
+## Outcome
+
+The adapter launches with `--permission-prompt-tool stdio` and no `--allowedTools`, and its handler now also
+refuses provider-flagged requests and writes beneath `.git` or `.claude` with `This file is protected.` Driven
+through the adapter against the deployed provider build 2.1.269, an in-project Edit and Write were allowed
+and emitted `file.changed`, while `.claude/settings.json`, `.git/hooks/pre-commit` and a sibling-directory
+write were refused and not created; 2.1.280 allowed the in-project Edit and Write the same way. The project
+boundary is again two mechanisms: the adapter's decision and the provider's working-directory confinement.
