@@ -1,6 +1,6 @@
 # 20260916-0023-release-markdown-heading-fix Release the Markdown heading fix
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-16 00:23
 - **approvedAt**: 2026-09-16 00:23 UTC
 - **relatedTask**: 20260916-0023-release-markdown-heading-fix
@@ -39,3 +39,4 @@ Excluded: HTML document implementation or proposal publication, deployment/resta
 ## Annotations
 
 - The owner's 2026-09-15 instruction that subsequent completed fixes receive release tags authorizes this bounded patch-release workflow.
+- Closed (2026-09-23): tag `v0.12.1` at candidate `d9c66ab4494bbf2bfbf2098be064331532883731` passed its tag workflow ([run 35040611535](https://github.com/itxje/merdeck/actions/runs/35040611535)), and the non-draft release was published on 2026-09-16 00:44 UTC with exactly `merdeck.tar.gz` and `SHA256SUMS`.

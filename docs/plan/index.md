@@ -40,7 +40,7 @@ Each plan links to a detail file. Update only existing markers; append new plans
 
 - [x] [**20260913-1657-streaming-directory-correction Bounded directory primitive correction**](20260913-1657-streaming-directory-correction.md) `2026-09-13`
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `2026-09-13`
-- [-] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `2026-09-13`
+- [x] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `2026-09-13`
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `2026-09-14`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `2026-09-14`
 - [x] [**20260914-2308-release-mobile-drawer Release the mobile file drawer fix**](20260914-2308-release-mobile-drawer.md) `2026-09-14`
@@ -52,10 +52,10 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `2026-09-15`
 - [x] [**20260915-0503-source-pane-e2e-ordering Stabilize source-pane browser ordering**](20260915-0503-source-pane-e2e-ordering.md) `2026-09-15`
 - [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `2026-09-15`
-- [-] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `2026-09-15`
+- [x] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `2026-09-15`
 - [x] [**20260915-0924-split-angle-marker Restore split encoded-angle markers safely**](20260915-0924-split-angle-marker.md) `2026-09-15`
 - [x] [**20260916-0011-html-document-support Add HTML document support**](20260916-0011-html-document-support.md) `2026-09-16`
-- [-] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `2026-09-16`
+- [x] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `2026-09-16`
 - [x] [**20260916-0043-ai-editing-chat Add an AI editing chat**](20260916-0043-ai-editing-chat.md) `2026-09-16`
 - [x] [**20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor**](20260916-0228-release-html-ai-editor.md) `2026-09-16`
 - [x] [**20260916-0425-open-access-agents Allow agent providers with open access**](20260916-0425-open-access-agents.md) `2026-09-16`

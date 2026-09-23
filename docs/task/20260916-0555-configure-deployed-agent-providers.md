@@ -1,6 +1,6 @@
 # 20260916-0555-configure-deployed-agent-providers Configure deployed agent providers
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: coordinator/20260916-0555
 - **createdAt**: 2026-09-16 05:55
@@ -25,3 +25,4 @@ Configuring deployed agent providers.
 - Risks: open access intentionally lets every client that can reach this internal service invoke either configured provider. The existing exact-Origin, executable-path, root, process and approval boundaries remain unchanged.
 - Scope: deployment configuration and live verification only. No repository runtime logic, provider protocol, token, public binding, provider installation or unrelated deployment is changed.
 - Alternative: leaving providers unconfigured keeps the UI hidden and does not meet the approved AI-editor deployment goal.
+- Closed (2026-09-23): the deployment configuration carries `MERDECK_OPEN_ACCESS`, `MERDECK_CODEX_PATH`, `MERDECK_CLAUDE_PATH` and `MERDECK_AGY_PATH`; the live `0.18.4` instance answers `/api/agents/capabilities` with `enabled: true` and the configured engines, and the panel has been in daily use since.

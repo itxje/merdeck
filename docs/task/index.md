@@ -77,7 +77,7 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260913-1802-directory-frontend Implement directory navigation and frontend acceptance**](20260913-1802-directory-frontend.md) `P1`
 - [x] [**20260913-2030-explorer-order Sort the loaded explorer window**](20260913-2030-explorer-order.md) `P2`
 - [x] [**20260913-2045-directory-search Search a folder and its subfolders**](20260913-2045-directory-search.md) `P1`
-- [-] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
+- [x] [**20260913-2142-markdown-document Render whole Markdown documents**](20260913-2142-markdown-document.md) `P2`
 - [x] [**20260914-1105-search-file-types List chosen file types from subfolders**](20260914-1105-search-file-types.md) `P1`
 - [x] [**20260914-1150-directory-poll-save-race Keep directory polls out of a save's change window**](20260914-1150-directory-poll-save-race.md) `P2`
 - [x] [**20260914-1517-mobile-file-drawer Fix the mobile project-files drawer**](20260914-1517-mobile-file-drawer.md) `P1`
@@ -90,17 +90,17 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260915-0230-compact-mobile-drawer-header Compact the mobile drawer header**](20260915-0230-compact-mobile-drawer-header.md) `P1`
 - [x] [**20260915-0403-release-compact-mobile-drawer-header Release the compact mobile drawer header fix**](20260915-0403-release-compact-mobile-drawer-header.md) `P1`
 - [x] [**20260915-0516-encoded-angle-placeholder Render encoded angle placeholders safely**](20260915-0516-encoded-angle-placeholder.md) `P1`
-- [-] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `P1`
+- [x] [**20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs**](20260915-0903-release-markdown-and-p2-repairs.md) `P1`
 - [x] [**20260915-0924-split-angle-marker Restore split encoded-angle markers safely**](20260915-0924-split-angle-marker.md) `P0`
 - [x] [**20260916-0011-html-document-support Add HTML document support**](20260916-0011-html-document-support.md) `P2`
 - [x] [**20260916-0018-markdown-heading-hierarchy Restore Markdown heading hierarchy**](20260916-0018-markdown-heading-hierarchy.md) `P2`
-- [-] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `P1`
+- [x] [**20260916-0023-release-markdown-heading-fix Release the Markdown heading fix**](20260916-0023-release-markdown-heading-fix.md) `P1`
 - [x] [**20260916-0040-ai-editing-chat Add an AI editing chat**](20260916-0040-ai-editing-chat.md) `P1`
 - [x] [**20260916-0227-table-header-borders Frame document table headers**](20260916-0227-table-header-borders.md) `P2`
 - [x] [**20260916-0228-release-html-ai-editor Release HTML documents and the AI file editor**](20260916-0228-release-html-ai-editor.md) `P1`
 - [x] [**20260916-0425-open-access-agents Allow agent providers with open access**](20260916-0425-open-access-agents.md) `P1`
 - [x] [**20260916-0457-release-open-access-agents Release open-access agent support**](20260916-0457-release-open-access-agents.md) `P1`
-- [-] [**20260916-0555-configure-deployed-agent-providers Configure deployed agent providers**](20260916-0555-configure-deployed-agent-providers.md) `P1`
+- [x] [**20260916-0555-configure-deployed-agent-providers Configure deployed agent providers**](20260916-0555-configure-deployed-agent-providers.md) `P1`
 - [x] [**20260916-1328-fix-html-void-elements Fix safe-HTML void element rendering**](20260916-1328-fix-html-void-elements.md) `P1`
 - [x] [**20260916-1335-release-html-void-elements Release safe-HTML void element fix**](20260916-1335-release-html-void-elements.md) `P1`
 - [x] [**20260916-1346-support-agy-agent-provider Add Antigravity (agy) AI agent provider**](20260916-1346-support-agy-agent-provider.md) `P1`

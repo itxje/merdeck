@@ -1,6 +1,6 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-13 21:42
 - **approvedAt**: 2026-09-15
 - **relatedTask**: 20260913-2142-markdown-document
@@ -65,3 +65,7 @@ Out of scope: editing prose or the whole file, loading images, rendering raw HTM
 - **`micromark` HTML output sanitized with DOMPurify.** Little code, but it adds an `innerHTML` path for file content and loses source positions, so diagrams could only be placed by counting code blocks, which breaks on the fences the service omits.
 - **Render on the server.** Moves HTML generation into the API while the client still has to sanitize it, and enlarges every document response for every consumer.
 - **Whole-file editing** with one editor for the entire document. Useful, but it needs a whole-file save selector and its own conflict semantics; it can follow as a separate proposal once the document view exists.
+
+## Annotations
+
+- Closed (2026-09-23): the remaining external gate passed. Release `v0.12.0` resolves to `e20b6b05f7c9bcfbf44c955999669e379514119b`, its tag workflow [run 35008093035](https://github.com/itxje/merdeck/actions/runs/35008093035) repeated the hosted Linux x64/ext4 native acceptance and succeeded, and the release was published on 2026-09-15 with `merdeck.tar.gz` and `SHA256SUMS`.

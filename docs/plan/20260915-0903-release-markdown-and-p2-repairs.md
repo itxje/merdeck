@@ -1,6 +1,6 @@
 # 20260915-0903-release-markdown-and-p2-repairs Release Markdown documents and P2 repairs
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-15 09:03
 - **approvedAt**: 2026-09-15 09:03 UTC
 - **relatedTask**: 20260915-0903-release-markdown-and-p2-repairs
@@ -38,3 +38,4 @@ A patch release would contradict the documented policy for an API-contract chang
 
 - The owner explicitly directed on 2026-09-15 that completed repairs be tagged and released. This approval applies to the proposal above.
 - Approval recorded 2026-09-15 09:03 UTC; release execution may proceed within the stated scope.
+- Closed (2026-09-23): tag `v0.12.0` at `e20b6b05f7c9bcfbf44c955999669e379514119b` passed its tag workflow ([run 35008093035](https://github.com/itxje/merdeck/actions/runs/35008093035)), and the non-draft release was published on 2026-09-15 18:39 UTC with exactly `merdeck.tar.gz` and `SHA256SUMS`. Later releases superseded it; the record had not been closed.

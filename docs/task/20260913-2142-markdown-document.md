@@ -1,6 +1,6 @@
 # 20260913-2142-markdown-document Render whole Markdown documents
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: markdown-document-20260915
 - **createdAt**: 2026-09-13 21:42
@@ -73,3 +73,4 @@ The integration base `da21051a51e6cd968a4d5f858c0c636d5c63a9e9` was checked out 
 Incremental shared, TypeScript frontend and TypeScript backend review found no remaining CRITICAL/HIGH findings after the documented corrections, including the final Worker-resolution, complete-materialization and dependency-resolution diff. Security tests cover literal raw HTML/comments, inert images, URL classes and no resource requests; accessibility tests cover independent diagram-selection controls and SVG file links; transport and browser cases cover same-revision text, Markdown-without-diagrams, byte preservation, responsive/theme behavior and standalone Mermaid regression.
 
 The task and plan remain **in progress** deliberately: actual Linux x64/ext4 native `bun run check:ci --native` acceptance remains a post-integration release gate. Local overlayfs admission verifies supported/refused behavior but is not a substitute. This is the sole external gate; the `[-]` markers in both indexes therefore correctly mean active release acceptance, not missing local Markdown evidence.
+- Closed (2026-09-23): the remaining external gate passed. Release `v0.12.0` resolves to `e20b6b05f7c9bcfbf44c955999669e379514119b`, its tag workflow [run 35008093035](https://github.com/itxje/merdeck/actions/runs/35008093035) repeated the hosted Linux x64/ext4 native acceptance and succeeded, and the release was published on 2026-09-15 with `merdeck.tar.gz` and `SHA256SUMS`.
