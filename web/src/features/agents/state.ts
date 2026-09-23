@@ -16,6 +16,7 @@ export interface AgentChatState {
 export type AgentChatAction
   = | { type: 'starting', prompt: string }
     | { type: 'conversation.reset' }
+    | { type: 'conversation.cleared' }
     | { type: 'event', event: AgentEvent }
     | { type: 'error', message: string, stop?: boolean }
 
@@ -28,6 +29,8 @@ function append(items: AgentChatItem[], item: AgentChatItem): AgentChatItem[] {
 export function agentChatReducer(state: AgentChatState, action: AgentChatAction): AgentChatState {
   if (action.type === 'conversation.reset')
     return { ...state, active: false, lastEventId: 0 }
+  if (action.type === 'conversation.cleared')
+    return initialAgentChatState
   if (action.type === 'starting')
     return { ...state, active: true, items: append(state.items, { key: `user:${Date.now()}:${state.items.length}`, kind: 'user', text: action.prompt }) }
   if (action.type === 'error')

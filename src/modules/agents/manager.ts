@@ -187,6 +187,7 @@ export class AgentManager {
       throw new AppError('conflict')
     if (this.activeTurns >= this.maximumActiveTurns)
       throw new AppError('rate_limited')
+    this.extend(conversation, owner)
     conversation.active = true
     conversation.turnOutputBytes = 0
     conversation.turnEventCount = 0
@@ -237,6 +238,16 @@ export class AgentManager {
     return { cancelled: true }
   }
 
+  // Ending a conversation on request is the deliberate way to start a fresh one; the panel's New control
+  // calls this, so it also stops a turn still in flight.
+  async end(id: string, owner: AgentPrincipal): Promise<{ closed: true }> {
+    const conversation = this.owned(id, owner)
+    if (conversation.active && !conversation.terminal)
+      await conversation.session.cancel().catch(() => undefined)
+    await this.remove(conversation.id)
+    return { closed: true }
+  }
+
   listen(id: string, owner: AgentPrincipal, after: number, listener: (event: AgentEvent | null) => void): { events: AgentEvent[], unsubscribe: () => void } {
     const conversation = this.owned(id, owner)
     const first = conversation.events[0]?.event.id
@@ -284,11 +295,11 @@ export class AgentManager {
       void this.stopAndTerminate(conversation, 'The provider output limit was exceeded.')
       return
     }
+    // A turn that ends in an error result leaves the provider idle and still holding the exchange, so the
+    // conversation stays usable. Only a vanished provider or a turn cancelled mid-stream terminates it.
     if (event.type === 'turn.completed' || event.type === 'turn.failed')
       this.deactivate(conversation)
     this.append(conversation, event)
-    if (event.type === 'turn.failed')
-      void this.terminate(conversation)
   }
 
   private append(conversation: ConversationRecord, event: UnstoredAgentEvent): void {
@@ -305,6 +316,17 @@ export class AgentManager {
     }
     for (const listener of conversation.listeners)
       listener(stored)
+  }
+
+  // Each turn moves the removal deadline to the requesting principal's own expiry, so a conversation in
+  // use is not collected mid-work and still never outlives the sign-in behind the request.
+  private extend(conversation: ConversationRecord, owner: AgentPrincipal): void {
+    if (owner.expiresAt <= conversation.owner.expiresAt)
+      return
+    conversation.owner.expiresAt = owner.expiresAt
+    clearTimeout(conversation.expiryTimer)
+    const id = conversation.id
+    conversation.expiryTimer = setTimeout(() => void this.remove(id).catch(() => undefined), Math.max(0, owner.expiresAt - this.clock()))
   }
 
   private deactivate(conversation: ConversationRecord): void {

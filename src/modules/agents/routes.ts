@@ -71,6 +71,14 @@ export function agentRoutes(diagrams: DiagramService, sessions: Sessions | undef
     return c.json({ success: true as const, data: await agents.cancel(validateId(c.req.param('id')), owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs)) })
   })
 
+  router.post('/agents/conversations/:id/close', async (c) => {
+    queryInput(new URL(c.req.url), z.strictObject({}))
+    const session = requireSession(sessions, c.req.raw, c.get('origin'))
+    requireMutation(c.req.raw, c.get('origin'), session)
+    await jsonInput(c.req.raw, 256, emptyRequestSchema)
+    return c.json({ success: true as const, data: await agents.end(validateId(c.req.param('id')), owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs)) })
+  })
+
   router.get('/agents/conversations/:id/events', (c) => {
     const session = requireSession(sessions, c.req.raw, c.get('origin'))
     const principal = owner(session, c.get('origin'), () => clock() + options.openAccessTtlMs)

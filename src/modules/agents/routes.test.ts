@@ -171,6 +171,22 @@ describe('agent HTTP boundary', () => {
       body: '{}',
     })
     expect(isolated.status).toBe(404)
+
+    const foreignClose = await app.request(`${origin}/api/agents/conversations/${conversation.id}/close`, {
+      method: 'POST',
+      headers: headers(second, true),
+      body: '{}',
+    })
+    expect(foreignClose.status).toBe(404)
+    const close = () => app.request(`${origin}/api/agents/conversations/${conversation.id}/close`, {
+      method: 'POST',
+      headers: headers(first, true),
+      body: '{}',
+    })
+    const closed = await close()
+    expect(closed.status).toBe(200)
+    expect(await closed.json()).toEqual({ success: true, data: { closed: true } })
+    expect((await close()).status).toBe(404)
   })
 
   test('streams normalized events and reaps the provider on logout', async () => {

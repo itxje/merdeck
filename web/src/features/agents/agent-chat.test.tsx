@@ -221,12 +221,81 @@ it('abandons a failed provider session and accepts events from a replacement con
   client.clear()
 })
 
+it('continues the same conversation after a failed turn', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  const create = vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={session} open blockedReason={undefined} activePath={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  const prompt = await screen.findByLabelText('Agent instruction')
+  const user = userEvent.setup()
+  await user.type(prompt, 'First turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  FakeEventSource.instances[0]!.emit({ id: 2, type: 'turn.started', turnId: 'c'.repeat(48) })
+  FakeEventSource.instances[0]!.emit({ id: 3, type: 'turn.failed', message: 'The provider could not complete the turn.' })
+  expect(await screen.findByText('The provider could not complete the turn.')).toBeVisible()
+
+  await user.type(prompt, 'Second turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('a'.repeat(48), 'Second turn', undefined, 'csrf'))
+  expect(create).toHaveBeenCalledTimes(1)
+  expect(FakeEventSource.instances).toHaveLength(1)
+  client.clear()
+})
+
+it('ends the conversation and clears the transcript from the New control', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  const create = vi.spyOn(agentApi, 'create')
+    .mockResolvedValueOnce({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+    .mockResolvedValueOnce({ id: 'b'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const close = vi.spyOn(agentApi, 'close').mockResolvedValue({ closed: true })
+  const client = createQueryClient()
+  render(
+    <QueryClientProvider client={client}>
+      <AgentChat session={session} open blockedReason={undefined} activePath={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} />
+    </QueryClientProvider>,
+  )
+  const prompt = await screen.findByLabelText('Agent instruction')
+  const fresh = screen.getByRole('button', { name: 'New conversation' })
+  expect(fresh).toBeDisabled()
+  const user = userEvent.setup()
+  await user.type(prompt, 'First turn')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  FakeEventSource.instances[0]!.emit({ id: 2, type: 'turn.started', turnId: 'c'.repeat(48) })
+  await waitFor(() => expect(fresh).toBeDisabled())
+  FakeEventSource.instances[0]!.emit({ id: 3, type: 'assistant.delta', text: 'Done' })
+  FakeEventSource.instances[0]!.emit({ id: 4, type: 'turn.completed' })
+  await waitFor(() => expect(fresh).toBeEnabled())
+
+  await user.click(fresh)
+  await waitFor(() => expect(close).toHaveBeenCalledWith('a'.repeat(48), 'csrf'))
+  expect(screen.queryByText('First turn')).toBeNull()
+  expect(screen.queryByText('Done')).toBeNull()
+  expect(FakeEventSource.instances[0]!.readyState).toBe(FakeEventSource.CLOSED)
+  expect(fresh).toBeDisabled()
+  expect(JSON.parse(sessionStorage.getItem('merdeck-agent-session') ?? '{}').conversation ?? null).toBeNull()
+
+  await user.type(prompt, 'Fresh start')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('b'.repeat(48), 'Fresh start', undefined, 'csrf'))
+  expect(create).toHaveBeenCalledTimes(2)
+  client.clear()
+})
+
 it('reopens the engine and model once a turn settles and sends the replacement pair', async () => {
   vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
   const create = vi.spyOn(agentApi, 'create')
     .mockResolvedValueOnce({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
     .mockResolvedValueOnce({ id: 'b'.repeat(48), provider: 'codex', model: 'gpt-fast' })
   vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const close = vi.spyOn(agentApi, 'close').mockResolvedValue({ closed: true })
   const client = createQueryClient()
   render(
     <QueryClientProvider client={client}>
@@ -252,6 +321,7 @@ it('reopens the engine and model once a turn settles and sends the replacement p
   await user.click(screen.getByRole('button', { name: 'Send' }))
   await waitFor(() => expect(create).toHaveBeenLastCalledWith('codex', 'gpt-fast', 'csrf'))
   await waitFor(() => expect(agentApi.turn).toHaveBeenLastCalledWith('b'.repeat(48), 'Second turn', { path: 'docs/flow.md' }, 'csrf'))
+  expect(close).toHaveBeenCalledWith('a'.repeat(48), 'csrf')
   client.clear()
 })
 

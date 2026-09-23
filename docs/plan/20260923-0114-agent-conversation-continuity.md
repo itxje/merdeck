@@ -1,7 +1,8 @@
 # 20260923-0114-agent-conversation-continuity Keep one conversation across messages and add a New control
 
-- **status**: draft
+- **status**: completed
 - **createdAt**: 2026-09-23 01:14
+- **approvedAt**: 2026-09-23 07:40 UTC
 - **relatedTask**: 20260923-0114-agent-conversation-continuity
 
 ## Context
@@ -63,3 +64,14 @@ handle, `agent-chat.tsx` for the control, and both suites. No contract, storage 
 ## Annotations
 
 - Raised from a report that the panel had no record of the previous message.
+- Approved by the owner on 2026-09-23 and implemented within the stated scope, plus one addition: the close
+  operation the New control needs, `POST /agents/conversations/:id/close`, which the panel also uses to
+  release the previous conversation when the engine or model changes.
+
+## Outcome
+
+A turn that ends in an error result no longer terminates the conversation on either side; only an exited
+provider or a turn cancelled mid-stream (Stop, the turn deadline or the output bound) ends it. Each accepted
+turn moves the removal deadline to the requesting principal's own expiry. The panel header carries a **New**
+control that ends the conversation on the service and clears the transcript. The new endpoint is an API
+addition, so it releases as a minor version.

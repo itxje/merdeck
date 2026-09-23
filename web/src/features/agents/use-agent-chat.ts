@@ -87,7 +87,9 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
           setActive(false)
           onSettled()
         }
-        if (event.type === 'turn.failed' || event.type === 'provider.unavailable')
+        // A failed turn leaves the provider holding the exchange, so the next message continues it; only a
+        // provider that is gone ends the conversation.
+        if (event.type === 'provider.unavailable')
           abandonConversation()
       }
       catch {
@@ -135,9 +137,14 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
     try {
       let target = conversation
       if (!target || target.provider !== effectiveProvider || target.model !== effectiveModel) {
+        const replaced = target
         target = await agentApi.create(effectiveProvider, effectiveModel, csrfToken)
         lastEventRef.current = 0
         setConversation(target)
+        // A new engine or model starts a new conversation; the old one would otherwise hold a provider
+        // process and one of the owner's conversation slots until it expires.
+        if (replaced)
+          void agentApi.close(replaced.id, csrfToken).catch(() => undefined)
       }
       await agentApi.turn(target.id, trimmed, attached ? { path: attached } : undefined, csrfToken)
       return true
@@ -177,6 +184,16 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
     }
   }, [conversation, pending, csrfToken, setActive, onSettled, abandonConversation])
 
+  const startNew = React.useCallback(async () => {
+    if (pending || activeRef.current)
+      return
+    const ending = conversation
+    abandonConversation()
+    dispatch({ type: 'conversation.cleared' })
+    if (ending)
+      await agentApi.close(ending.id, csrfToken).catch(() => undefined)
+  }, [conversation, pending, csrfToken, abandonConversation])
+
   return {
     ...state,
     active: activeRef.current,
@@ -191,7 +208,9 @@ export function useAgentChat({ session, open, blocked, activePath, onActiveChang
     pending,
     connection,
     blocked,
+    conversation,
     send,
     cancel,
+    startNew,
   }
 }

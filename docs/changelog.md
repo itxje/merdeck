@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-23 08:05 [feature]
+
+The assistant panel keeps its conversation across messages. A turn that ended in an error used to end the
+conversation on both sides, so the next message arrived with no record of the exchange behind it; now only
+a provider that has exited, or a turn stopped mid-stream, ends it. Each turn also extends the conversation's
+lifetime, up to the sign-in it belongs to, instead of counting an hour from creation. A **New** control in the
+panel header ends the conversation and clears the transcript, backed by
+`POST /api/agents/conversations/:id/close`, which the panel also uses to release the old conversation when
+the engine or model changes.
+See [20260923-0114-agent-conversation-continuity](task/20260923-0114-agent-conversation-continuity.md).
+
 ## 2026-09-22 21:32 [release]
 
 Published [v0.18.4](https://github.com/itxje/merdeck/releases/tag/v0.18.4): the assistant panel can change

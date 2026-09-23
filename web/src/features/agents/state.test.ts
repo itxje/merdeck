@@ -20,5 +20,6 @@ describe('agent chat state', () => {
     expect(state.lastEventId).toBe(0)
     state = agentChatReducer(state, { type: 'event', event: { id: 1, type: 'assistant.delta', text: 'new session' } })
     expect(state.items.at(-1)).toMatchObject({ kind: 'assistant', text: 'new session' })
+    expect(agentChatReducer(state, { type: 'conversation.cleared' })).toEqual(initialAgentChatState)
   })
 })

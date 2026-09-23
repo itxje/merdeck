@@ -121,10 +121,17 @@ function cancelled(value: unknown): { cancelled: boolean } {
   return typeof item.cancelled === 'boolean' ? { cancelled: item.cancelled } : invalid()
 }
 
+function closed(value: unknown): { closed: true } {
+  const item = object(value)
+  exact(item, ['closed'])
+  return item.closed === true ? { closed: true } : invalid()
+}
+
 export const agentApi = {
   capabilities: (signal?: AbortSignal) => requestApi('/agents/capabilities', decodeAgentCapabilities, signal ? { signal } : {}),
   create: (provider: AgentProvider, model: string, csrfToken?: string) => requestApi('/agents/conversations', decodeAgentConversation, { method: 'POST', body: { provider, model: modelId(model) }, csrfToken }),
   turn: (conversationId: string, prompt: string, context: AgentTurnContext | undefined, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/turns`, accepted, { method: 'POST', body: context ? { prompt, context } : { prompt }, csrfToken }),
   cancel: (conversationId: string, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/cancel`, cancelled, { method: 'POST', body: {}, csrfToken }),
+  close: (conversationId: string, csrfToken?: string) => requestApi(`/agents/conversations/${opaqueId(conversationId)}/close`, closed, { method: 'POST', body: {}, csrfToken }),
   eventsUrl: (conversationId: string, after: number) => `/api/agents/conversations/${opaqueId(conversationId)}/events?after=${encodeURIComponent(String(after))}`,
 }

@@ -289,14 +289,61 @@ describe('agent manager', () => {
     await manager.close()
   })
 
+  test('keeps the conversation usable after a turn that ends in an error result', async () => {
+    const { manager, sessions, owner } = fixture({ terminalRetentionMs: 20 })
+    const conversation = await manager.create('codex', 'default', owner)
+    await manager.startTurn(conversation.id, owner, 'first')
+    sessions[0]?.emit({ type: 'turn.failed', message: 'Failed safely.' })
+    await Bun.sleep(40)
+    expect(sessions[0]?.closed).toBe(0)
+    await manager.startTurn(conversation.id, owner, 'second')
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0]?.prompts).toEqual(['first', 'second'])
+    sessions[0]?.emit({ type: 'turn.completed' })
+    const replay = manager.listen(conversation.id, owner, 0, () => {})
+    expect(replay.events.map(event => event.type)).toEqual(['conversation.started', 'turn.started', 'turn.failed', 'turn.started', 'turn.completed'])
+    replay.unsubscribe()
+    await manager.close()
+  })
+
+  test('ends a conversation on request, stopping a turn in flight', async () => {
+    const { manager, sessions, owner } = fixture()
+    const conversation = await manager.create('codex', 'default', owner)
+    const received: Array<AgentEvent | null> = []
+    manager.listen(conversation.id, owner, 0, event => received.push(event))
+    await manager.startTurn(conversation.id, owner, 'work')
+    await expect(manager.end(conversation.id, { ...owner, id: 'other' })).rejects.toEqual(expect.objectContaining({ code: 'not_found' }))
+    expect(await manager.end(conversation.id, owner)).toEqual({ closed: true })
+    expect(sessions[0]?.cancelled).toBe(1)
+    expect(sessions[0]?.closed).toBe(1)
+    expect(received.at(-1)).toBeNull()
+    await expect(manager.end(conversation.id, owner)).rejects.toEqual(expect.objectContaining({ code: 'not_found' }))
+    const next = await manager.create('codex', 'default', owner)
+    await manager.startTurn(next.id, owner, 'fresh')
+    await manager.close()
+  })
+
+  test('moves the removal deadline with each turn, up to the principal expiry', async () => {
+    let now = 1000
+    const { manager, owner } = fixture({ clock: () => now })
+    const conversation = await manager.create('codex', 'default', { ...owner, expiresAt: now + 1000 })
+    now += 900
+    await manager.startTurn(conversation.id, { ...owner, expiresAt: now + 1000 }, 'keep going')
+    now += 900
+    expect(() => manager.listen(conversation.id, { ...owner, expiresAt: now + 1000 }, 0, () => {}).unsubscribe()).not.toThrow()
+    now += 101
+    expect(() => manager.listen(conversation.id, { ...owner, expiresAt: now + 1000 }, 0, () => {})).toThrow(AppError)
+    await manager.close()
+  })
+
   test('retains terminal replay briefly and then releases its capacity', async () => {
     const { manager, sessions, owner } = fixture({ terminalRetentionMs: 20 })
     const conversation = await manager.create('codex', 'default', owner)
     await manager.startTurn(conversation.id, owner, 'fail')
-    sessions[0]?.emit({ type: 'turn.failed', message: 'Failed safely.' })
+    sessions[0]?.emit({ type: 'provider.unavailable', message: 'Provider exited.' })
     await waitFor(() => sessions[0]?.closed === 1)
     const replay = manager.listen(conversation.id, owner, 0, () => {})
-    expect(replay.events.at(-1)).toMatchObject({ type: 'turn.failed', message: 'Failed safely.' })
+    expect(replay.events.at(-1)).toMatchObject({ type: 'provider.unavailable', message: 'Provider exited.' })
     replay.unsubscribe()
     await Bun.sleep(40)
     expect(() => manager.listen(conversation.id, owner, 0, () => {})).toThrow(AppError)

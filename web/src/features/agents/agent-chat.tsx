@@ -1,6 +1,6 @@
 import type { AgentProvider } from '../../../../src/shared/contracts'
 import type { Session } from '@/features/workspace/api'
-import { Bot, FilePenLine, LoaderCircle, Paperclip, Send, Square, Wrench, X } from 'lucide-react'
+import { Bot, FilePenLine, LoaderCircle, MessageSquarePlus, Paperclip, Send, Square, Wrench, X } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
@@ -182,7 +182,19 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
             <span>{chat.active ? 'Editing project files…' : chat.connection === 'reconnecting' ? 'Reconnecting…' : 'Direct local CLI session'}</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon-sm" aria-label="Close AI file editor" onClick={onClose}><X /></Button>
+        <div className="agent-header-actions">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="New conversation"
+            title="New conversation"
+            disabled={chat.active || chat.pending || (!chat.conversation && !chat.items.length)}
+            onClick={() => void chat.startNew()}
+          >
+            <MessageSquarePlus />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Close AI file editor" onClick={onClose}><X /></Button>
+        </div>
       </header>
       <div className="agent-provider-row">
         <label className="sr-only" htmlFor="agent-provider">Engine</label>
