@@ -89,3 +89,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260923-0114-agent-conversation-continuity Keep one conversation across messages and add a New control**](20260923-0114-agent-conversation-continuity.md) `2026-09-23`
 - [x] [**20260923-0820-provider-permission-channel Route file-write decisions through the adapter again**](20260923-0820-provider-permission-channel.md) `2026-09-23`
 - [x] [**20260923-0820-release-v0.19.0 Release v0.19.0**](20260923-0820-release-v0.19.0.md) `2026-09-23`
+- [x] [**20260923-0900-release-v0.19.1 Release v0.19.1**](20260923-0900-release-v0.19.1.md) `2026-09-23`

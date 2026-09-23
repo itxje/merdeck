@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-23 09:15 [release]
+
+Published [v0.19.1](https://github.com/itxje/merdeck/releases/tag/v0.19.1): the Claude Code adapter decides
+file writes again and refuses sensitive, `.git` and `.claude` paths. Exact commit `2a7eb87` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35839330165), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35840446401) published `merdeck.tar.gz`
+(1383587 bytes) and `SHA256SUMS` on its first attempt; `sha256sum -c` reports OK on the downloaded archive.
+See [20260923-0900-release-v0.19.1](task/20260923-0900-release-v0.19.1.md).
+
 ## 2026-09-23 08:55 [fix]
 
 The Claude Code adapter decides file writes again. The provider had never once asked the service for a
