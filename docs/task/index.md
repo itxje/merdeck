@@ -145,5 +145,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260922-1532-release-v0.18.3 Release v0.18.3**](20260922-1532-release-v0.18.3.md) `P1`
 - [x] [**20260922-2055-agent-file-write-permission Let the assistant write the files it is asked to change**](20260922-2055-agent-file-write-permission.md) `P1`
 - [x] [**20260922-2120-release-v0.18.4 Release v0.18.4**](20260922-2120-release-v0.18.4.md) `P1`
-- [ ] [**20260923-0109-provider-permission-channel Restore the host permission channel as a live boundary**](20260923-0109-provider-permission-channel.md) `P2`
+- [-] [**20260923-0109-provider-permission-channel Restore the host permission channel as a live boundary**](20260923-0109-provider-permission-channel.md) `P2`
 - [x] [**20260923-0114-agent-conversation-continuity Keep one conversation across messages and add a New control**](20260923-0114-agent-conversation-continuity.md) `P1`
