@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-23 08:30 [release]
+
+Published [v0.19.0](https://github.com/itxje/merdeck/releases/tag/v0.19.0): the assistant panel keeps its
+conversation across messages, a failed turn no longer discards the exchange, and a **New** control starts a
+fresh one. Exact commit `d3f3a19` passed
+[native acceptance on main](https://github.com/itxje/merdeck/actions/runs/35834816048), and
+[the tag workflow](https://github.com/itxje/merdeck/actions/runs/35835805225) published `merdeck.tar.gz`
+(1383496 bytes) and `SHA256SUMS` on its first attempt; `sha256sum -c` reports OK on the downloaded archive.
+See [20260923-0820-release-v0.19.0](task/20260923-0820-release-v0.19.0.md).
+
 ## 2026-09-23 08:05 [feature]
 
 The assistant panel keeps its conversation across messages. A turn that ended in an error used to end the
