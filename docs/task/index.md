@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-16
+> Updated: 2026-09-24
 
 ## Usage
 
@@ -149,3 +149,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260923-0114-agent-conversation-continuity Keep one conversation across messages and add a New control**](20260923-0114-agent-conversation-continuity.md) `P1`
 - [x] [**20260923-0820-release-v0.19.0 Release v0.19.0**](20260923-0820-release-v0.19.0.md) `P1`
 - [x] [**20260923-0900-release-v0.19.1 Release v0.19.1**](20260923-0900-release-v0.19.1.md) `P1`
+- [-] [**20260924-1813-wireviz-qet-preview Preview WireViz harnesses and QElectroTech projects through local renderers**](20260924-1813-wireviz-qet-preview.md) `P2`

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-24 18:15 [progress]
+
+Proposed previews for WireViz harness files and QElectroTech projects through optional, locally installed
+renderers: WireViz produces Graphviz DOT that the browser renders with Graphviz WASM, and QElectroTech exports
+one SVG per folio. An earlier draft that rendered both to PNG on the server was discarded in favour of this
+one. See [20260924-1803-wireviz-qet-preview](plan/20260924-1803-wireviz-qet-preview.md).
+
 ## 2026-09-23 09:35 [test]
 
 Stabilized a document-view unit test that failed once on CI for a documentation-only commit: it checked the
