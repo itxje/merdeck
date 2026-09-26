@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 08:34 [fix]
+
+The project-files Up control now clears the selected file type before showing the parent folder, so its All listing is visible on phones. Mermaid previews use a light diagram sheet and matching default colours in both interface themes while preserving authored styles. Inline Markdown diagrams use the same sheet. The earlier mobile swipe report remains a separate pending task. See [20260926-0818-phone-explorer-dark-preview](task/20260926-0818-phone-explorer-dark-preview.md).
+
 ## 2026-09-24 18:15 [progress]
 
 Proposed previews for WireViz harness files and QElectroTech projects through optional, locally installed

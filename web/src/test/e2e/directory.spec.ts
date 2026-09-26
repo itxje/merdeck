@@ -9,6 +9,31 @@ if (!root)
 
 const source = 'flowchart LR\n  Original --> Diagram\n'
 
+test('Up leaves the file-type search and shows every file in the parent folder on a phone', async ({ page }) => {
+  const owned = await mkdtemp(join(root, 'directory-up-filter-'))
+  const top = basename(owned)
+  await mkdir(join(owned, 'mermaid'))
+  await writeFile(join(owned, 'notes.md'), '# Notes\n')
+  await writeFile(join(owned, 'mermaid', 'flow.mmd'), source)
+  try {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await login(page, true)
+    await browse(page, `${top}/mermaid`)
+    const explorer = page.getByRole('dialog', { name: 'Project files', exact: true })
+    await explorer.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await expect(explorer.getByRole('navigation', { name: 'Search results' }).getByRole('button', { name: 'flow.mmd' })).toBeVisible()
+
+    await explorer.getByRole('button', { name: 'Up', exact: true }).click()
+    await expect(page).toHaveURL(url => url.searchParams.get('directory') === top)
+    await expect(explorer.getByRole('navigation', { name: 'Search results' })).toHaveCount(0)
+    await expect(explorer.getByRole('navigation', { name: 'Files and diagrams' }).getByRole('button', { name: 'notes.md', exact: true })).toBeVisible()
+  }
+  finally {
+    await page.close()
+    await rm(owned, { recursive: true, force: true })
+  }
+})
+
 test('directory history, ancestors, deep save and legacy links preserve an independently selected draft', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'directory-'))
   const top = basename(owned)

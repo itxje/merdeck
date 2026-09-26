@@ -64,15 +64,23 @@ it('rejects unsafe classes before initialization or measurement DOM and preserve
   append.mockRestore()
 })
 
-it('themes subgraph containers from the dedicated cluster tokens', async () => {
-  const swatches: Record<string, number[]> = { '--diagram-cluster-bg': [250, 250, 250, 255], '--diagram-cluster-border': [200, 200, 200, 255], '--foreground': [20, 20, 20, 255] }
+it('themes the diagram sheet and subgraph containers from dedicated tokens', async () => {
+  const swatches: Record<string, number[]> = {
+    '--diagram-paper': [255, 255, 255, 255],
+    '--diagram-ink': [20, 20, 20, 255],
+    '--diagram-node': [245, 245, 245, 255],
+    '--diagram-node-border': [170, 170, 170, 255],
+    '--diagram-line': [115, 115, 115, 255],
+    '--diagram-cluster-bg': [250, 250, 250, 255],
+    '--diagram-cluster-border': [200, 200, 200, 255],
+  }
   const context = { fillStyle: '', fillRect: vi.fn(), getImageData: () => ({ data: swatches[context.fillStyle] ?? [120, 120, 120, 255] }) }
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
   const computed = vi.spyOn(window, 'getComputedStyle').mockReturnValue({ getPropertyValue: (name: string) => name } as unknown as CSSStyleDeclaration)
   vi.mocked(mermaid.initialize).mockClear()
   vi.mocked(mermaid.render).mockClear().mockResolvedValue({ svg: '<svg xmlns="http://www.w3.org/2000/svg"><g class="cluster"><rect/></g></svg>', diagramType: 'flowchart' })
   await renderDiagram('flowchart LR\nsubgraph Battery\nA-->B\nend')
-  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ themeVariables: expect.objectContaining({ clusterBkg: '#fafafa', clusterBorder: '#c8c8c8', titleColor: '#141414', tertiaryColor: '#787878' }) }))
+  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ themeVariables: expect.objectContaining({ primaryColor: '#f5f5f5', primaryTextColor: '#141414', lineColor: '#737373', background: '#ffffff', clusterBkg: '#fafafa', clusterBorder: '#c8c8c8', titleColor: '#141414', tertiaryColor: '#ffffff' }) }))
   computed.mockRestore()
 })
 

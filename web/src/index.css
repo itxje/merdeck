@@ -88,6 +88,11 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --diagram-paper: oklch(1 0 0);
+    --diagram-ink: oklch(0.145 0 0);
+    --diagram-node: oklch(0.97 0 0);
+    --diagram-node-border: oklch(0.708 0 0);
+    --diagram-line: oklch(0.556 0 0);
     --diagram-cluster-bg: oklch(0.985 0 0);
     --diagram-cluster-border: oklch(0.87 0 0);
     --text-xs: 11px;
@@ -132,8 +137,6 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
-    --diagram-cluster-bg: oklch(0.205 0 0);
-    --diagram-cluster-border: oklch(0.35 0 0);
 }
 
 @layer base {
@@ -309,7 +312,7 @@ button:disabled { cursor: default; }
 .pane-footer { height: 31px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: var(--text-xs); gap: 10px; flex-shrink: 0; background: var(--background); }
 .source-error { max-height: 145px; overflow: auto; border-top: 1px solid var(--border); padding: 14px 18px; color: var(--destructive); font-size: var(--text-xs); }
 .source-error pre { white-space: pre-wrap; font: var(--text-xs)/1.6 var(--font-mono); margin: 8px 0 0; }
-.preview-surface { flex: 1; min-height: 0; overflow: auto; background-image: radial-gradient(var(--border) .7px, transparent .7px); background-size: 18px 18px; display: grid; place-items: center; padding-bottom: 50px; }
+.preview-surface { flex: 1; min-height: 0; overflow: auto; background-color: var(--diagram-paper); background-image: radial-gradient(color-mix(in oklch, var(--diagram-cluster-border) 55%, var(--diagram-paper)) .7px, transparent .7px); background-size: 18px 18px; box-shadow: inset 0 0 0 1px var(--diagram-cluster-border); display: grid; place-items: center; padding-bottom: 50px; }
 .diagram-space { position: relative; flex-shrink: 0; }
 .diagram-graphic { position: absolute; left: 32px; top: 32px; transform-origin: top left; }
 .diagram-graphic svg { width: 100% !important; height: 100% !important; max-width: none !important; }
@@ -502,7 +505,7 @@ button:disabled { cursor: default; }
 .document-view thead th { background: var(--muted); }
 .document-image, .document-mismatch { display: block; padding: 10px; border: 1px solid var(--border); color: var(--muted-foreground); }
 .document-link { color: var(--primary); text-decoration: underline; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
-.document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
+.document-diagram { margin: 1.5em 0; padding: 12px; border: 2px solid transparent; overflow: auto; background: var(--diagram-paper); }.document-diagram.selected { border-color: var(--ring); }.document-diagram-select { margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 8px; background: var(--background); color: var(--foreground); font: inherit; cursor: pointer; }.document-diagram-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }.document-diagram .diagram-graphic { position: static; display: block; transform: none; width: 100%; height: auto; }.document-diagram .diagram-graphic svg { display: block; width: 100% !important; max-width: 100%; height: auto !important; }
 /* The Markdown preview derives its contents list from the document's own headings and lays it out
    beside one reading measure, matching the HTML preview. */
 .markdown-document-view { --markdown-doc-toc: 15rem; --markdown-doc-measure: 64rem; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; column-gap: 40px; padding: 28px clamp(20px, 3vw, 48px) 72px; width: 100%; box-sizing: border-box; }

@@ -92,7 +92,7 @@ async function render(source: string): Promise<string> {
   const projected = renderSource(source)
   mermaid.initialize({
     ...settings,
-    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--muted'), primaryTextColor: tokenHex('--foreground'), primaryBorderColor: tokenHex('--ring'), lineColor: tokenHex('--muted-foreground'), secondaryColor: tokenHex('--card'), tertiaryColor: tokenHex('--background'), background: tokenHex('--background'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--foreground') },
+    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--diagram-node'), primaryTextColor: tokenHex('--diagram-ink'), primaryBorderColor: tokenHex('--diagram-node-border'), lineColor: tokenHex('--diagram-line'), secondaryColor: tokenHex('--diagram-paper'), tertiaryColor: tokenHex('--diagram-paper'), background: tokenHex('--diagram-paper'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--diagram-ink') },
   })
   const id = `diagram-${++sequence}`
   const host = document.createElement('div')

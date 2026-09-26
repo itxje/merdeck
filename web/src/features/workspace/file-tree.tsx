@@ -214,7 +214,16 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
           ))}
         </nav>
         <span className="tree-rail-actions">
-          <HeadingAction label="Up" disabled={!directory} onClick={() => openDirectory(parentDirectory(directory))}><ArrowUp /></HeadingAction>
+          <HeadingAction
+            label="Up"
+            disabled={!directory}
+            onClick={() => {
+              chooseKinds('all')
+              openDirectory(parentDirectory(directory))
+            }}
+          >
+            <ArrowUp />
+          </HeadingAction>
           <HeadingAction label="New file" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
           <HeadingAction label="New folder" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
           <HeadingAction label="Refresh files" onClick={refresh}><RefreshCw /></HeadingAction>

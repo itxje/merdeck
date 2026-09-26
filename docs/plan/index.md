@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-24
+> Updated: 2026-09-26
 
 ## Usage
 
@@ -91,3 +91,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260923-0820-release-v0.19.0 Release v0.19.0**](20260923-0820-release-v0.19.0.md) `2026-09-23`
 - [x] [**20260923-0900-release-v0.19.1 Release v0.19.1**](20260923-0900-release-v0.19.1.md) `2026-09-23`
 - [ ] [**20260924-1803-wireviz-qet-preview Preview WireViz harnesses and QElectroTech projects through local renderers**](20260924-1803-wireviz-qet-preview.md) `2026-09-24`
+- [x] [**20260926-0818-phone-explorer-dark-preview Reset the file type on Up and give diagrams a stable paper palette**](20260926-0818-phone-explorer-dark-preview.md) `2026-09-26`
