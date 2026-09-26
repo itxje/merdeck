@@ -1,6 +1,6 @@
 # 20260926-1911-mobile-contents-blank Restore the phone document contents drawer
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-26 19:11
 - **approvedAt**: 2026-09-26 19:08 UTC
 - **relatedTask**: 20260926-1911-mobile-contents-blank
@@ -38,3 +38,5 @@ Shared document reader, its CSS, and focused coverage. The Markdown switch chang
 ## Outcome
 
 Clean code commit `606fc79` passed local ARM64/overlay `check:ci` with 582 frontend unit cases, two 96-case browser runs and bundle acceptance. The production-built Linux WebKit visual check shows the contents title and links on screen; its unrelated global audit flags a cancelled navigation request. Linux x64/ext4 native acceptance and affected-iPhone confirmation remain pending.
+
+The combined reader candidate at `856be92` passed the complete local gate again with 582 frontend cases and two 98-case browser runs. Both production browser runs passed the contents viewport assertions. Release and affected-device confirmation remain pending.

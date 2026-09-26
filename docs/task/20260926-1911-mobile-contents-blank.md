@@ -1,6 +1,6 @@
 # 20260926-1911-mobile-contents-blank Restore the phone document contents drawer
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: root/session-20260926-1911
 - **createdAt**: 2026-09-26 19:11
@@ -13,7 +13,7 @@ The owner's clarified request removes the Markdown Document/Diagram switch entir
 
 ## ActiveForm
 
-Investigating the blank iPhone contents drawer.
+Implemented and verified locally; affected-iPhone confirmation follows deployment.
 
 ## Dependencies
 
@@ -28,3 +28,6 @@ Investigating the blank iPhone contents drawer.
 - GREEN: the inline translate override keeps the complete 320px drawer within a 390px viewport; the production-build WebKit screenshot shows the title, close control and chapter links. Both Chromium reader cases pass their full browser audit and new viewport/occlusion assertions. Frontend lint (two existing warnings), typecheck and build pass.
 - An initial no-diagram switch correction and focused test were included in `606fc79`. The later clarification requires complete removal; the document layout task supersedes this partial behavior.
 - Clean code commit `606fc79` passed the complete local ARM64/overlay `check:ci`, including 582 frontend unit cases, two 96-case browser runs and bundle acceptance. Review found no additional issue in the changed reader positioning, conditional switch or focused assertions. Native Linux x64/ext4 acceptance and affected-iPhone confirmation remain pending.
+- The combined reader candidate passed the complete clean-source local `check:ci` again at `856be92`: 582 frontend cases and two 98-case browser runs. The contents assertions passed in both runs. The later document layout task removes the Markdown switch entirely. Native Linux x64/ext4 acceptance, release and affected-iPhone confirmation remain separate delivery steps.
+
+- complete: The contents title and links remain within the phone viewport in production-build browser coverage for both HTML and Markdown.

@@ -2,6 +2,10 @@
 
 ## 2026-09-26 19:48 [completed]
 
+The mobile contents drawer correction passed the full local gate again with the final document reader changes: 582 frontend cases and two 98-case browser runs, including HTML and Markdown contents viewport checks. The Markdown Document/Diagram toolbar is now removed entirely by the document layout task. Linux x64/ext4 native acceptance, release and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).
+
+## 2026-09-26 19:48 [completed]
+
 Completed the shared wider HTML/Markdown layout and removed the Markdown mode toolbar. Actual-document previews, table keyboard scrolling and Markdown source preservation pass. Clean-source local `check:ci` passes on `856be92`: 582 frontend cases and two 98-case browser suites (17 configured skips each), including final evidence export. No release or deployment was performed. See [20260926-1926-document-width-and-markdown-toolbar](task/20260926-1926-document-width-and-markdown-toolbar.md).
 
 ## 2026-09-26 19:30 [progress]
