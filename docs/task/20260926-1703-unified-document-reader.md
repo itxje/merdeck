@@ -1,6 +1,6 @@
 # 20260926-1703-unified-document-reader Unify HTML and Markdown reading layouts
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: release/session-20260926-v0.19.5
 - **createdAt**: 2026-09-26 17:03
@@ -11,7 +11,7 @@ Apply the supplied book-reader layout to both HTML and Markdown. Use a full-heig
 
 ## ActiveForm
 
-Implementation and runtime validation complete; clean-source evidence export remains pending.
+Implementation and clean-source local/native acceptance complete.
 
 ## Dependencies
 
@@ -50,3 +50,11 @@ Frozen installs, lint, types, 582 frontend tests with coverage, backend checks, 
 `check:ci` exits unsuccessfully only at its final evidence export: `Directory evidence requires clean source provenance`. The working tree contains uncommitted image and reader changes, so this does not establish clean-commit delivery acceptance. No tests failed in this run; the earlier directory HTTP 503 did not recur. The task's final aggregate acceptance remains pending a clean source verification. Native Linux x64/ext4 acceptance, commit, release and deployment were not performed. Evidence: `tmp/reader-check.log`; final `git diff --check` passes.
 
 - unclaim: Implementation and all functional checks pass; final aggregate evidence export remains pending because source is uncommitted.
+
+## Clean-source acceptance
+
+Commit `51d9f1a5a48edd50b28ad48ca0422407b423492a` passes the complete local `check:ci`, including evidence export, 582 frontend unit cases and both 96-case browser runs (17 configured skips each). The exact commit also passes [Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/36258536398) on attempt 1. The native report records `sourceClean: true`, architecture `x64`, filesystem `0xef53` and successful source, bundle and compiled modes. This resolves the earlier aggregate acceptance limitation without weakening tests. Local evidence: `tmp/release-v0195-check.log`; downloaded native evidence: `tmp/release-v0195-native-reports/`.
+
+Release publication is tracked separately in [v0.19.5](../task/20260926-1717-release-v0.19.5.md). No running service was updated.
+
+- complete: Both readers pass clean-source local and exact-commit native acceptance, including independent scrolling, contents interaction and preserved source bytes.

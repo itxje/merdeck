@@ -1,6 +1,6 @@
 # 20260926-1703-unified-document-reader Unify HTML and Markdown reading layouts
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-26 17:03
 - **approvedAt**: 2026-09-26 17:03
 - **relatedTask**: 20260926-1703-unified-document-reader
@@ -38,3 +38,9 @@ The user asked to apply the proposed screenshot-based layout and explicitly incl
 The shared reader is implemented for HTML and Markdown, with full-height navigation, independent scrolling, centred prose, wider diagrams and a narrow-pane contents dialog. Existing document parsing and diagram editing remain intact. The real firmware HTML pages and their Markdown source versions pass visual/interactive verification.
 
 All functional quality stages pass, including 582 frontend unit cases and two 96-case browser runs. The aggregate command stops only at evidence export because the source is uncommitted; clean-source acceptance remains pending. No deployment or publication was performed.
+
+## Clean-source acceptance
+
+Commit `51d9f1a5a48edd50b28ad48ca0422407b423492a` passes the complete local `check:ci`, including evidence export, 582 frontend unit cases and both 96-case browser runs (17 configured skips each). The exact commit also passes [Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/36258536398) on attempt 1. The native report records `sourceClean: true`, architecture `x64`, filesystem `0xef53` and successful source, bundle and compiled modes. This resolves the earlier aggregate acceptance limitation without weakening tests. Local evidence: `tmp/release-v0195-check.log`; downloaded native evidence: `tmp/release-v0195-native-reports/`.
+
+Release publication is tracked separately in [v0.19.5](../task/20260926-1717-release-v0.19.5.md). No running service was updated.

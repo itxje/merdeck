@@ -96,6 +96,6 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260926-1135-release-v0.19.3 Release v0.19.3**](20260926-1135-release-v0.19.3.md) `2026-09-26`
 - [-] [**20260926-1213-mobile-files-touch-focus Restore first-open Files scrolling on iOS**](20260926-1213-mobile-files-touch-focus.md) `2026-09-26`
 - [x] [**20260926-1229-release-v0.19.4 Release v0.19.4**](20260926-1229-release-v0.19.4.md) `2026-09-26`
-- [-] [**20260926-1626-html-embedded-diagram-images Render bounded embedded diagram images in HTML previews**](20260926-1626-html-embedded-diagram-images.md) `2026-09-26`
-- [-] [**20260926-1703-unified-document-reader Unify HTML and Markdown reading layouts**](20260926-1703-unified-document-reader.md) `2026-09-26`
-- [-] [**20260926-1717-release-v0.19.5 Release v0.19.5**](20260926-1717-release-v0.19.5.md) `2026-09-26`
+- [x] [**20260926-1626-html-embedded-diagram-images Render bounded embedded diagram images in HTML previews**](20260926-1626-html-embedded-diagram-images.md) `2026-09-26`
+- [x] [**20260926-1703-unified-document-reader Unify HTML and Markdown reading layouts**](20260926-1703-unified-document-reader.md) `2026-09-26`
+- [x] [**20260926-1717-release-v0.19.5 Release v0.19.5**](20260926-1717-release-v0.19.5.md) `2026-09-26`

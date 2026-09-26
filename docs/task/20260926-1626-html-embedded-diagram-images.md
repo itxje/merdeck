@@ -1,6 +1,6 @@
 # 20260926-1626-html-embedded-diagram-images Render bounded embedded diagram images in HTML previews
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: release/session-20260926-v0.19.5
 - **createdAt**: 2026-09-26 16:26
@@ -11,7 +11,7 @@ The SDCR200 and KM2210 HTML documents show no diagram images in Merdeck. Repair 
 
 ## ActiveForm
 
-Implementation and focused validation complete; aggregate acceptance remains pending after an unrelated directory API HTTP 503.
+Implementation and clean-source local/native acceptance complete.
 
 ## Dependencies
 
@@ -58,3 +58,11 @@ Verdict: PASS.
 - unclaim: Implementation, focused checks and extracted-bundle acceptance are complete; aggregate check:ci acceptance remains pending after an unrelated directory HTTP 503 in an existing Markdown case.
 
 - Subsequent shared-reader verification (`tmp/reader-check.log`) passes all 582 frontend unit cases and both 96-case executable/bundle browser suites, including the image regression. Directory HTTP 503 did not recur. The aggregate's remaining limitation is final evidence export requiring clean source; the current image and reader implementation remains uncommitted.
+
+## Clean-source acceptance
+
+Commit `51d9f1a5a48edd50b28ad48ca0422407b423492a` passes the complete local `check:ci`, including evidence export, 582 frontend unit cases and both 96-case browser runs (17 configured skips each). The exact commit also passes [Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/36258536398) on attempt 1. The native report records `sourceClean: true`, architecture `x64`, filesystem `0xef53` and successful source, bundle and compiled modes. This resolves the earlier aggregate acceptance limitation without weakening tests. Local evidence: `tmp/release-v0195-check.log`; downloaded native evidence: `tmp/release-v0195-native-reports/`.
+
+Release publication is tracked separately in [v0.19.5](../task/20260926-1717-release-v0.19.5.md). No running service was updated.
+
+- complete: Clean-source local aggregate and exact-commit Linux x64/ext4 acceptance passed for 51d9f1a; real document images and browser regressions verified.

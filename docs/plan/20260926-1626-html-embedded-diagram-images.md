@@ -1,6 +1,6 @@
 # 20260926-1626-html-embedded-diagram-images Render bounded embedded diagram images in HTML previews
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-26 16:26
 - **approvedAt**: 2026-09-26 16:29
 - **relatedTask**: 20260926-1626-html-embedded-diagram-images
@@ -56,3 +56,9 @@ The user explicitly approved implementation and requested that the contents side
 The image-only allowance and regression coverage are implemented. Both HTML pages move the sidebar upward by 20 pixels, to the same desktop top position as the content. All nine diagrams decode through the actual local reader and in standalone HTML. Focused browser checks and the executable HTML regressions pass. The aggregate local gate is not passed: an existing Markdown file-limit case encountered directory HTTP 503, after an earlier run observed the same response in an external-deletion case. Plan/task acceptance remains open for that full-gate limitation; no unrelated directory code, live service or release was changed.
 
 The extracted bundle subsequently passed all 94 enabled browser cases (17 configured skips), resource checks and cleanup. This includes the HTML regression and both cases that previously encountered directory HTTP 503. The aggregate command itself remains unpassed.
+
+## Clean-source acceptance
+
+Commit `51d9f1a5a48edd50b28ad48ca0422407b423492a` passes the complete local `check:ci`, including evidence export, 582 frontend unit cases and both 96-case browser runs (17 configured skips each). The exact commit also passes [Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/36258536398) on attempt 1. The native report records `sourceClean: true`, architecture `x64`, filesystem `0xef53` and successful source, bundle and compiled modes. This resolves the earlier aggregate acceptance limitation without weakening tests. Local evidence: `tmp/release-v0195-check.log`; downloaded native evidence: `tmp/release-v0195-native-reports/`.
+
+Release publication is tracked separately in [v0.19.5](../task/20260926-1717-release-v0.19.5.md). No running service was updated.
