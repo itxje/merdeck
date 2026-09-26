@@ -35,4 +35,4 @@ The phone/tablet Files dialog focus behavior, removal of the failed overflow ove
 
 ## Outcome
 
-Pending verification.
+The clean code commit `bfe0a9b` passed local ARM64/overlay `check:ci` with two 93-case browser runs and bundle acceptance. Linux WebKit confirmed the focus and overflow geometry, while Chromium confirmed the first swipe. Native iOS scrolling remains unverified, so the task stays open through the release and affected-phone test.

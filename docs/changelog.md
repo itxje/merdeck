@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 12:29 [progress]
+
+The corrected mobile Files candidate passed the local ARM64/overlay `check:ci` on clean commit `bfe0a9b`, including two 93-case browser runs and extracted-bundle acceptance. The first-open touch regression passes in Chromium, and Linux WebKit confirms focus and scroll geometry. Native Linux x64/ext4 acceptance and the affected iPhone gesture remain unverified. See [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).
+
 ## 2026-09-26 12:19 [progress]
 
 The v0.19.3 phone Files drawer still could not scroll on first open. Its forced search-input focus is removed, so touch opening follows the dialog's focus handling; the failed overflow overrides from v0.19.3 are removed. A touch-open regression failed on the old forced focus and passes with this change; six focused Chromium browser cases and one Linux WebKit focus/geometry case pass. Native iPhone scrolling remains unverified. See [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).
