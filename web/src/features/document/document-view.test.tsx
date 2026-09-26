@@ -491,3 +491,19 @@ it('omits the contents list from a document with fewer than two listed headings'
   expect(await screen.findByRole('heading', { name: 'Only' })).toBeVisible()
   expect(screen.queryByRole('navigation', { name: 'Contents' })).toBeNull()
 })
+
+it('offers a contents toggle without removing the Markdown article or its scroll position', async () => {
+  render(<DocumentView path="guide.md" text={'# Guide\n\n## Install\n\nSteps.'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
+  const contents = await screen.findByRole('navigation', { name: 'Contents' })
+  const article = screen.getByRole('article', { name: 'Markdown document' })
+  article.scrollTop = 200
+  expect(article.contains(contents)).toBe(false)
+  const toggle = screen.getByRole('button', { name: 'Toggle contents' })
+  expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.setup().click(toggle)
+  expect(screen.queryByRole('navigation', { name: 'Contents' })).toBeNull()
+  expect(screen.getByRole('article', { name: 'Markdown document' })).toBe(article)
+  expect(article.scrollTop).toBe(200)
+  await userEvent.setup().click(toggle)
+  expect(screen.getByRole('navigation', { name: 'Contents' })).toBeVisible()
+})

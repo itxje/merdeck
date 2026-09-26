@@ -107,3 +107,42 @@ it('preserves semantic layout containers with source identifiers', () => {
     expect.objectContaining({ type: 'element', tag: 'main', sourceId: 'content' }),
   ])
 })
+
+it('admits embedded SVG images beyond the ordinary URL limit with a separate 1 MiB bound', () => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120"><!--${'diagram '.repeat(600)}--><text x="10" y="50">Diagram</text></svg>`
+  const src = `data:image/svg+xml;base64,${btoa(svg)}`
+  expect(src.length).toBeGreaterThan(2048)
+  const image = (url: string) => projectHtml(`<img src="${url}" alt="Diagram">`).children[0]
+  expect(image(src)).toMatchObject({ tag: 'img', src, alt: 'Diagram' })
+
+  const prefix = 'data:image/png;base64,'
+  const atLimit = prefix + 'A'.repeat(1024 * 1024 - prefix.length)
+  expect(image(atLimit)).toHaveProperty('src', atLimit)
+  expect(image(`${atLimit}A`)).not.toHaveProperty('src')
+})
+
+it('keeps ordinary URLs, other media and dangerous schemes under the existing restrictions', () => {
+  const network = `https://example.test/${'a'.repeat(2048)}`
+  const dataImage = `data:image/png;base64,${'A'.repeat(4096)}`
+  const refused = [
+    `<img src="${network}">`,
+    `<a href="${network}">Long link</a>`,
+    `<a href="${dataImage}">Image link</a>`,
+    `<audio src="${dataImage}"></audio>`,
+    `<video src="${dataImage}"></video>`,
+    `<source src="${dataImage}">`,
+    `<img src="data:audio/wav;base64,${'A'.repeat(4096)}">`,
+    '<img src="javascript:alert(1)">',
+    '<img src="vbscript:alert(1)">',
+    '<img src="data:text/html;base64,PHNjcmlwdD4=">',
+    '<img src="data:image/png;base64,AAAA&#10;AAAA">',
+  ]
+  for (const source of refused) {
+    const node = projectHtml(source).children[0]
+    expect(node).not.toHaveProperty('src')
+    expect(node).not.toHaveProperty('href')
+  }
+  const atLimit = network.slice(0, 2048)
+  expect(projectHtml(`<img src="${atLimit}">`).children[0]).toHaveProperty('src', atLimit)
+  expect(projectHtml('<img src="data:image/png;base64,AAAA">', { maxUrlCharacters: 8 }).children[0]).toHaveProperty('src')
+})

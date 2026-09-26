@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -6,6 +7,48 @@ import { expect, login, tableHeaderIsFramed, test } from './support'
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
   throw new Error('An explicit disposable sample root is required')
+
+test('HTML preview loads large embedded SVG diagrams as inert images', async ({ page }) => {
+  test.setTimeout(90000)
+  const name = `html-diagram-${randomUUID()}.html`
+  const path = join(root, name)
+  // Release smoke services cap entire documents at 8192 bytes.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="240"><!--${'diagram '.repeat(600)}--><script>window.diagramPwned = true</script><rect width="640" height="240" fill="#dbeafe"/><text x="20" y="80">Embedded diagram</text></svg>`
+  const src = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+  expect(src.length).toBeGreaterThan(2048)
+  const source = `<!doctype html><nav><a href="#diagram">Diagram</a></nav><main><h1>Embedded diagram document</h1><h2 id="diagram">Diagram</h2><img src="${src}" alt="Architecture diagram" style="max-width:100%;height:auto"></main>`
+  expect(Buffer.byteLength(source)).toBeLessThan(8192)
+  const externalRequests: string[] = []
+  await writeFile(path, source, { flag: 'wx' })
+  try {
+    await page.setViewportSize({ width: 1440, height: 920 })
+    await login(page)
+    const origin = new URL(page.url()).origin
+    page.on('request', (request) => {
+      if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== origin)
+        externalRequests.push(request.url())
+    })
+    await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+    await page.getByRole('button', { name, exact: true }).click()
+    const article = page.getByRole('article', { name: 'HTML document', exact: true })
+    const diagram = article.getByRole('img', { name: 'Architecture diagram', exact: true })
+    await expect(diagram).toBeVisible()
+    await diagram.scrollIntoViewIfNeeded()
+    await expect.poll(() => diagram.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth === 640 && node.naturalHeight === 240)).toBe(true)
+    await page.locator('.document-reader-contents > nav').getByRole('button', { name: 'Diagram', exact: true }).click()
+    await expect(article.getByRole('heading', { name: 'Diagram', exact: true })).toBeInViewport()
+    await expect(article.locator('svg, script')).toHaveCount(0)
+    expect(await page.evaluate(() => Reflect.has(window, 'diagramPwned'))).toBe(false)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(diagram).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    expect(externalRequests).toEqual([])
+    expect(await readFile(path, 'utf8')).toBe(source)
+  }
+  finally {
+    await rm(path, { force: true })
+  }
+})
 
 test('HTML preview stays inert, navigates safely, responds narrowly and preserves exact bytes', async ({ page }) => {
   test.setTimeout(90000)

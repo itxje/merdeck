@@ -164,9 +164,13 @@ it('lifts the contents list beside one body column and frames tables for scrolli
     },
   } } as MessageEvent)
   const article = await screen.findByRole('article', { name: 'HTML document' })
-  // The contents list leads the article, and every other node shares the body column.
-  expect([...article.children].map(child => child.tagName.toLowerCase())).toEqual(['nav', 'div'])
-  expect(article.querySelector('nav#toc')).not.toBeNull()
+  // Contents scroll independently outside the article; all other nodes share its body.
+  expect([...article.children].map(child => child.tagName.toLowerCase())).toEqual(['div'])
+  expect(article.contains(screen.getByRole('navigation'))).toBe(false)
+  expect(screen.getByRole('navigation')).toHaveAttribute('id', 'toc')
+  fireEvent.click(screen.getByRole('button', { name: 'Toggle contents' }))
+  expect(screen.queryByRole('navigation')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Toggle contents' }))
   const body = article.querySelector('.html-document-body')
   expect(body?.querySelector('h1#alpha')).not.toBeNull()
   expect(body?.querySelector('.html-document-table > table')).not.toBeNull()

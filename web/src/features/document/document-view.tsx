@@ -12,6 +12,7 @@ import { annotateFileLinks, linkedFile } from '@/features/preview/file-links'
 import { renderDiagram } from '@/features/preview/renderer'
 import { fileLinks } from '@/features/preview/source-policy'
 import { isExternalLink, resolveProjectLink } from './document-links'
+import { DocumentReader } from './document-reader'
 import { DocumentText } from './document-text'
 
 type RenderNode = Content | ListItem | TableRow | TableCell
@@ -560,12 +561,11 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     return <React.Fragment key={key}>{children}</React.Fragment>
   }
   if (parsed.error)
-    return <article className="document-view markdown-document-view" aria-label="Markdown document"><p role="alert">{parsed.error}</p></article>
+    return <DocumentReader path={path}><article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document"><p role="alert">{parsed.error}</p></article></DocumentReader>
   if (!parsed.tree)
-    return <article className="document-view markdown-document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article>
-  return (
-    <article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document">
-      {contents.length > 1 && (
+    return <DocumentReader path={path}><article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article></DocumentReader>
+  const navigation = contents.length > 1
+    ? (
         <nav aria-label="Contents">
           <ul>
             {contents.map(item => (
@@ -575,12 +575,17 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
             ))}
           </ul>
         </nav>
-      )}
-      <div className="markdown-document-body">
-        {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
-        {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
-        {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
-      </div>
-    </article>
+      )
+    : undefined
+  return (
+    <DocumentReader path={path} contents={navigation}>
+      <article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document">
+        <div className="markdown-document-body">
+          {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
+          {!placementOk && <p className="document-mismatch" role="alert">Diagram placement could not be verified; Mermaid fences are shown as code.</p>}
+          {parsed.tree.children.map((node, index) => render(node, `root-${index}`))}
+        </div>
+      </article>
+    </DocumentReader>
   )
 }

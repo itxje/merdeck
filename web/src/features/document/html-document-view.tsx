@@ -2,6 +2,7 @@ import type { HtmlProjection, HtmlRenderNode } from './html-policy'
 import type { OpenFile } from '@/features/preview/file-links'
 import * as React from 'react'
 import { isExternalLink, resolveProjectLink } from './document-links'
+import { DocumentReader } from './document-reader'
 import { DocumentText } from './document-text'
 import { isHtmlElementTag } from './html-policy'
 
@@ -217,30 +218,25 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
   }
   if (state.error) {
     return (
-      <article className="document-view html-document-view" aria-label="HTML document">
-        <p role="alert">{state.error}</p>
-      </article>
+      <DocumentReader path={path}><article className="document-view html-document-view" aria-label="HTML document"><p role="alert">{state.error}</p></article></DocumentReader>
     )
   }
   if (!state.projection) {
     return (
-      <article className="document-view html-document-view" aria-label="HTML document">
-        <p role="status">Loading document…</p>
-      </article>
+      <DocumentReader path={path}><article className="document-view html-document-view" aria-label="HTML document"><p role="status">Loading document…</p></article></DocumentReader>
     )
   }
-  // The contents list becomes the sidebar and everything else stays in one body column, so the
-  // layout is the same whether a document nests its content or leaves it beside the contents list.
   const nodes = state.projection.children
   const sidebarIndex = nodes.findIndex(node => isRenderElement(node) && node.tag === 'nav')
   return (
-    <article className="document-view html-document-view" aria-label="HTML document">
-      {sidebarIndex >= 0 && render(nodes[sidebarIndex], 'sidebar')}
-      <div className="html-document-body">
-        {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
-        {state.projection.truncated && <p className="document-mismatch" role="status">Preview truncated to stay within safe rendering limits.</p>}
-        {nodes.map((node, index) => index === sidebarIndex ? null : render(node, `root-${index}`))}
-      </div>
-    </article>
+    <DocumentReader path={path} contents={sidebarIndex >= 0 ? render(nodes[sidebarIndex], 'sidebar') : undefined}>
+      <article className="document-view html-document-view" aria-label="HTML document">
+        <div className="html-document-body">
+          {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}
+          {state.projection.truncated && <p className="document-mismatch" role="status">Preview truncated to stay within safe rendering limits.</p>}
+          {nodes.map((node, index) => index === sidebarIndex ? null : render(node, `root-${index}`))}
+        </div>
+      </article>
+    </DocumentReader>
   )
 }

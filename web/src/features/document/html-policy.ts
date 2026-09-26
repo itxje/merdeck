@@ -50,6 +50,7 @@ const defaultLimits: HtmlProjectionLimits = {
 }
 
 const htmlNamespace = 'http://www.w3.org/1999/xhtml'
+const maxInlineImageCharacters = 1024 * 1024
 const dropped = new Set(['base', 'canvas', 'embed', 'frame', 'frameset', 'iframe', 'link', 'meta', 'noembed', 'noframes', 'noscript', 'object', 'script', 'template'])
 const childlessControls = new Set(['input'])
 const mapped = new Map<string, HtmlElementTag>([
@@ -141,11 +142,14 @@ function safeHref(value: string | undefined, max: number): string | undefined {
   return /^(?:[^:/?#]+\/)*[^/?#]+\.(?:md|mmd|mermaid|html|htm)(?:#.*)?$/i.test(value) ? value : undefined
 }
 
-function safeMediaSrc(value: string | undefined, max: number): string | undefined {
+function safeMediaSrc(value: string | undefined, max: number, maxInlineImage = max): string | undefined {
   // eslint-disable-next-line no-control-regex -- URLs containing controls never become capabilities.
-  if (!value || value.length > max || /[\u0000-\u001F\u007F]/.test(value))
+  if (!value || value.length > Math.max(max, maxInlineImage) || /[\u0000-\u001F\u007F]/.test(value))
     return undefined
   const trimmed = value.trim()
+  const limit = /^data:image\/[a-z0-9.+-]+;base64,/i.test(trimmed) ? maxInlineImage : max
+  if (value.length > limit)
+    return undefined
   if (/^javascript:/i.test(trimmed) || /^vbscript:/i.test(trimmed))
     return undefined
   if (/^data:(?:image|audio|video)\/[a-z0-9.+-]+;base64,/i.test(trimmed))
@@ -271,7 +275,7 @@ export function projectHtml(source: string, overrides: Partial<HtmlProjectionLim
       return scoped ? [{ type: 'element', tag: 'style', children: [{ type: 'text', value: scoped }] }] : []
     }
     if (sourceTag === 'img') {
-      const src = safeMediaSrc(attribute(node, 'src'), limits.maxUrlCharacters)
+      const src = safeMediaSrc(attribute(node, 'src'), limits.maxUrlCharacters, maxInlineImageCharacters)
       const alt = attribute(node, 'alt')?.slice(0, 256)
       const title = attribute(node, 'title')?.slice(0, 256)
       const width = attribute(node, 'width')?.slice(0, 32)

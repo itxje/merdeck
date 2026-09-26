@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-26 17:17 [progress]
+
+Preparing v0.19.5 with bounded embedded HTML images and the shared HTML/Markdown reading frame. Prior functional checks passed; the release candidate will now establish clean-source local and exact-commit native acceptance before tagging. See [20260926-1717-release-v0.19.5](task/20260926-1717-release-v0.19.5.md).
+
+## 2026-09-26 17:16 [fix]
+
+HTML and Markdown now share a book-style reading frame: full-height independently scrolling contents, a compact toggle/title toolbar, centred prose, wider diagrams and an accessible narrow-pane contents drawer. Desktop collapse preserves the article and its scroll position; mobile Escape restores focus and chapter selection closes the drawer. All 582 frontend unit cases and both 96-case executable/bundle browser runs pass (17 configured skips per browser run). The final aggregate evidence export requires clean source and refuses this uncommitted checkout; no release or deployment was performed. See [20260926-1703-unified-document-reader](task/20260926-1703-unified-document-reader.md).
+
+## 2026-09-26 16:45 [fix]
+
+HTML previews now admit Base64 image URLs up to 1,048,576 characters on `img`, while ordinary URLs and other media keep the 2048-character bound. Unit boundary tests and browser decoding, inert-SVG, navigation and narrow-layout checks pass. The SDCR200 and KM2210 HTML documents align their contents navigation with the main heading, and all nine embedded diagrams load in the actual reader. The aggregate local gate remains unpassed because existing Markdown/file-operation browser cases encounter an intermittent directory HTTP 503; the HTML cases pass in the executable run and all 94 enabled browser cases pass in the extracted bundle (17 configured skips). No release or deployment was performed. See [20260926-1626-html-embedded-diagram-images](task/20260926-1626-html-embedded-diagram-images.md).
+
 ## 2026-09-26 13:07 [completed]
 
 Published [v0.19.4](https://github.com/itxje/merdeck/releases/tag/v0.19.4) from commit `c48b4a7` after exact-commit Linux x64/ext4 acceptance. The tag workflow's first attempt hit an existing browser-audit race after logout; the identical tag passed verification and publication on attempt 2. The downloaded archive passed `SHA256SUMS`, reports version 0.19.4 and embeds the tagged commit. The live service still reports 0.19.3, so native iPhone first-open scrolling remains unverified. See [20260926-1229-release-v0.19.4](task/20260926-1229-release-v0.19.4.md) and [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).
