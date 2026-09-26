@@ -124,13 +124,9 @@ export async function choose(page: Page, name: string) {
   const base = file.split('/').at(-1)!
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   await page.getByRole('button', { name: new RegExp(`^${escaped}(?: Unsaved changes)?$`) }).first().click()
-  // Markdown opens in its read-only document view; existing source-editor helpers exercise the retained Diagram view.
-  const diagram = page.getByRole('tab', { name: 'Diagram', exact: true })
   if (file.endsWith('.md')) {
     await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toBeVisible()
-    await expect(diagram).toBeEnabled()
-    await diagram.click()
-    await expect(diagram).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tablist', { name: 'Markdown view' })).toHaveCount(0)
   }
   await expect(page.getByLabel('Mermaid source', { exact: true })).toBeAttached()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })
@@ -145,9 +141,20 @@ export async function chooseBlock(page: Page, file: string, number: number) {
   await row.click()
   await expect(row).toHaveAttribute('aria-current', 'true')
 }
+export function activeDiagram(page: Page) {
+  return page.locator('.preview-surface .diagram-graphic svg, .document-diagram.selected .diagram-graphic svg')
+}
 export async function live(page: Page) {
-  await expect(page.getByText('Live preview', { exact: true })).toBeVisible({ timeout: 15000 })
-  await expect(page.locator('.diagram-graphic svg')).toBeVisible()
+  const article = page.getByRole('article', { name: 'Markdown document', exact: true })
+  if (await article.count()) {
+    const figure = article.locator('.document-diagram.selected')
+    await expect(figure.locator('figcaption')).toHaveCount(0, { timeout: 15000 })
+    await expect(activeDiagram(page)).toBeVisible({ timeout: 15000 })
+  }
+  else {
+    await expect(page.getByText('Live preview', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(activeDiagram(page)).toBeVisible()
+  }
 }
 export async function settledDialog(page: Page) {
   const dialog = page.getByRole('dialog')

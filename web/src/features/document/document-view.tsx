@@ -448,10 +448,12 @@ export function DocumentView({ text, path, blocks, sources, selected, onSelect, 
     )
     const [header, ...body] = table.children
     return (
-      <table key={key}>
-        {header && <thead>{row(header, true, 'header')}</thead>}
-        <tbody>{body.map((item, index) => row(item, false, String(item.position?.start.offset ?? `body-${index}`)))}</tbody>
-      </table>
+      <div key={key} className="document-table" role="region" aria-label="Scrollable table" tabIndex={0}>
+        <table>
+          {header && <thead>{row(header, true, 'header')}</thead>}
+          <tbody>{body.map((item, index) => row(item, false, String(item.position?.start.offset ?? `body-${index}`)))}</tbody>
+        </table>
+      </div>
     )
   }
   const render = (node: RenderNode, key: string): React.ReactNode => {

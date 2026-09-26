@@ -83,14 +83,13 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     await expect(article).toContainText('Complete document')
 
     await chooseBlock(page, name, 2)
-    await expect(page.getByRole('tab', { name: 'Document', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tablist', { name: 'Markdown view' })).toHaveCount(0)
     const secondFigure = article.locator('.document-diagram').nth(1)
     await expect(secondFigure).toHaveClass(/selected/)
     await expect(secondFigure.getByRole('button', { name: 'Select Diagram 2', exact: true })).toHaveAttribute('aria-pressed', 'true')
     await expect(secondFigure.locator('svg')).toBeVisible()
     await expect(secondFigure.locator('button [data-file-link], [role="button"] [data-file-link]')).toHaveCount(0)
 
-    await page.getByRole('tab', { name: 'Diagram', exact: true }).click()
     const editor = page.getByLabel('Mermaid source', { exact: true })
     const showSource = page.getByRole('button', { name: 'Show source', exact: true })
     if (await showSource.isVisible())
@@ -106,7 +105,6 @@ test('complete Markdown remains inert, navigable, responsive, and byte-preservin
     const returned = await (await page.request.get(`/api/diagrams/document?path=${encodeURIComponent(name)}`)).json()
     expect(returned.data.text).toBe((prefix + first + middle + updated + ending).slice(1))
 
-    await page.getByRole('tab', { name: 'Document', exact: true }).click()
     await expect(secondFigure.locator('svg')).toBeVisible()
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(page.locator('html')).not.toHaveClass('dark')

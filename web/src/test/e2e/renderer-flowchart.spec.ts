@@ -5,7 +5,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { encodedAnglePlaceholderSource } from '../encoded-angle-placeholder'
 import { originalSolarSha256, originalSolarSource } from '../original-solar'
-import { choose, chooseBlock, expect, live, login, test } from './support'
+import { activeDiagram, choose, chooseBlock, expect, live, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -26,7 +26,7 @@ const pairs = ['PV:PV_BRK', 'PV_BRK:PV_SW', 'PV_SW:MPPT', 'MPPT:BATTERM', 'SHORE
 const compact = (value: string) => value.replace(/\s/g, '')
 
 async function geometry(page: Page) {
-  const svg = page.locator('.diagram-graphic svg')
+  const svg = activeDiagram(page)
   await expect(svg.locator('g.node')).toHaveCount(24)
   await expect(svg.locator('g.cluster')).toHaveCount(4)
   expect(labels).toHaveLength(24)
@@ -125,7 +125,7 @@ test('encoded angle placeholder renders as visible inert text and preserves exac
     await expect(editor).toHaveValue(initial)
     await editor.fill(encodedAnglePlaceholderSource)
     await live(page)
-    const svg = page.locator('.diagram-graphic svg')
+    const svg = activeDiagram(page)
     await expect.poll(async () => compact((await svg.textContent()) ?? '')).toContain('mica-board-<board>')
     await expect(svg.locator('foreignObject,script,image,a,use,style,animate,animateMotion,animateTransform,set,filter,[href],[src],[style],[onload],[onerror]')).toHaveCount(0)
     expect(await page.evaluate(() => Reflect.has(window, 'pwned') || Reflect.has(window, 'encodedAngleExecuted'))).toBe(false)
@@ -246,9 +246,8 @@ test('individual Markdown saves preserve original source and unrelated BOM, CRLF
     for (const body of writes)
       expect(JSON.parse(body)).toMatchObject({ path: name, source: originalSolarSource, selector: { kind: 'markdown' } })
     await page.reload()
-    await expect(page.getByRole('tab', { name: 'Diagram', exact: true })).toBeEnabled()
-    await page.getByRole('tab', { name: 'Diagram', exact: true }).click()
-    await expect(page.getByRole('tab', { name: 'Diagram', exact: true })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toBeVisible()
+    await expect(page.getByRole('tablist', { name: 'Markdown view' })).toHaveCount(0)
     for (const index of [1, 2]) {
       await chooseBlock(page, name, index)
       await expect(editor).toHaveValue(originalSolarSource)

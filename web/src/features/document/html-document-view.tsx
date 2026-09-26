@@ -192,7 +192,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     if (node.tag === 'table') {
       // A wide table scrolls inside its own frame and keeps its table role for assistive technology.
       return (
-        <div key={key} className="html-document-table">
+        <div key={key} className="html-document-table" role="region" aria-label="Scrollable table" tabIndex={0}>
           <table id={id} ref={ref as React.Ref<HTMLTableElement>} style={style}>{children}</table>
         </div>
       )

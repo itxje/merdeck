@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 19:30 [progress]
+
+HTML and Markdown now share an 80rem maximum content width, with prose, tables and diagrams aligned to the same edges. Markdown opens directly in its reader without the Document/Diagram toolbar; inline selection and source editing remain available. Both formats contain wide tables in keyboard-scrollable frames. Focused unit/browser and actual-document preview checks pass; clean-source aggregate acceptance is pending. See [20260926-1926-document-width-and-markdown-toolbar](task/20260926-1926-document-width-and-markdown-toolbar.md).
+
 ## 2026-09-26 19:26 [progress]
 
 The mobile contents candidate passed clean-source ARM64/overlay `check:ci`: 582 frontend unit cases, two 96-case browser runs, and bundle acceptance. The previously offscreen HTML/Markdown contents drawer passes viewport and occlusion assertions in the production browser run. Linux x64/ext4 native acceptance and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).

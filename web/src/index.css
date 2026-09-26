@@ -247,12 +247,6 @@ button:disabled { cursor: default; }
 .unopened-dot[data-shown] { background: var(--muted-foreground); opacity: .55; }
 .tree-bottom { padding: 16px 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; font-size: var(--text-xs); }
 .editor-workspace { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-/* The Markdown view switch is a row of the reading area, not a pair of pills pressed into its
-   corner: it keeps a gutter, ends in the same rule the panes use, and its list is tall enough to
-   hold its own triggers. The triggers take the 44px touch floor below the phone breakpoint, and a
-   fixed 32px list left them overflowing it upward into the header. */
-.view-switch { flex: none; padding: 6px 14px; border-bottom: 1px solid var(--border); }
-.view-switch [data-slot="tabs-list"] { height: auto; min-height: 32px; }
 .agent-pane { position: relative; width: var(--agent-width); flex: 0 0 var(--agent-width); min-width: 0; border-left: 1px solid var(--border); background: var(--background); display: flex; flex-direction: column; }
 .agent-pane[hidden] { display: none; }
 .agent-resizer { position: absolute; z-index: 2; left: -4px; top: 0; bottom: 0; width: 7px; cursor: col-resize; touch-action: none; }
@@ -385,10 +379,6 @@ button:disabled { cursor: default; }
   .phone-tabbar:empty { display: none !important; }
   .phone-tabbar [data-slot="tabs"] { flex: 1; min-width: 0; }
   .phone-tabbar [data-slot="tabs-list"] { width: 100%; height: 44px; }
-  /* Two tabs across the width read as one control at arm's length, where two small pills in the
-     corner read as leftovers. The height follows the 44px triggers, as the rule above allows. */
-  .view-switch { padding: 6px 12px; }
-  .view-switch [data-slot="tabs-list"] { width: 100%; }
   /* Narrow screens keep one full-width pane behind the tabs, whatever the desktop split. */
   .panes > [data-separator], .source-rail, .pane-collapse { display: none !important; }
   .panes { display: grid !important; grid-template-columns: minmax(0, 1fr); }
@@ -524,8 +514,9 @@ button:disabled { cursor: default; }
 .html-document-view :not(pre) > code { padding: .1em .28em; border-radius: var(--radius-sm); background: var(--muted); font-size: .9em; overflow-wrap: break-word; }
 .html-document-view :is(td, th) code { padding: 0; background: none; }
 /* A wide table scrolls inside its own frame instead of stretching the document. */
-.html-document-view .html-document-table { margin: 0 0 1.2em; max-width: 100%; overflow-x: auto; }
-.html-document-view table { margin: 0; }
+.document-view :is(.document-table, .html-document-table) { margin: 0 0 1.2em; width: 100%; max-width: 100%; overflow-x: auto; }
+.document-view :is(.document-table, .html-document-table):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.document-view :is(.document-table, .html-document-table) > table { width: 100%; margin: 0; }
 .html-document-view th, .html-document-view td { padding: 8px 12px; vertical-align: top; overflow-wrap: break-word; }
 .html-document-view th { background: var(--muted); font-weight: 600; text-align: left; }
 .html-document-view img, .html-document-view video, .html-document-view audio { max-width: 100%; height: auto; }
@@ -551,9 +542,9 @@ button:disabled { cursor: default; }
 .document-reader-page { grid-column: -2; grid-row: 2; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
 /* Authored HTML targets a whole window; the host owns its scrolling viewport and outer measure. */
 .document-reader .document-view { display: block !important; flex: 1; min-width: 0; min-height: 0; width: 100% !important; height: 100%; box-sizing: border-box; margin: 0 !important; padding: 32px clamp(20px, 4vw, 64px) 72px !important; overflow: auto; overscroll-behavior: contain; background: var(--background); color: var(--foreground); }
-.document-reader :is(.markdown-document-body, .html-document-body) { width: 100% !important; min-width: 0; max-width: 72rem !important; margin: 0 auto !important; }
+.document-reader :is(.markdown-document-body, .html-document-body) { width: 100% !important; min-width: 0; max-width: 80rem !important; margin: 0 auto !important; }
 .document-reader .html-document-body > main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-.document-reader :is(.markdown-document-body, .html-document-body, .html-document-body > main) > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, dl) { max-width: 48rem !important; margin-left: auto !important; margin-right: auto !important; }
+.document-reader :is(.markdown-document-body, .html-document-body, .html-document-body > main) > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, dl) { max-width: 100% !important; margin-left: auto !important; margin-right: auto !important; }
 .document-reader :is(.markdown-document-body, .html-document-body) > :first-child { margin-top: 0; }
 .document-contents-drawer { inset: 0 auto 0 0 !important; transform: none !important; width: min(320px, 88vw) !important; max-width: none !important; height: 100dvh; max-height: 100dvh; border-radius: 0 !important; display: flex !important; flex-direction: column; gap: 0 !important; padding: 0 !important; }
 .document-contents-drawer > [data-slot="dialog-title"] { flex: none; padding: 20px 48px 20px 22px; border-bottom: 1px solid var(--border); }

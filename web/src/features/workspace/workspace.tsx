@@ -72,8 +72,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [entryDialog, setEntryDialog] = React.useState<{ action: EntryAction, key: number } | null>(null)
   const [entryOpen, setEntryOpen] = React.useState(false)
   const [pane, setPane] = React.useState('preview')
-  // View selection belongs to a Markdown document, never to the previously opened file.
-  const [markdownViews, setMarkdownViews] = React.useState<Record<string, 'document' | 'diagram'>>({})
   const [syntaxError, setSyntaxError] = React.useState('')
   const linesRef = React.useRef<HTMLPreElement>(null)
   const sourceRef = React.useRef<HTMLTextAreaElement>(null)
@@ -113,12 +111,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
-  const markdownView = file?.baseline.kind === 'markdown' ? markdownViews[path] ?? 'document' : 'document'
-  const effectiveMarkdownView = file?.baseline.kind === 'markdown' && !selected ? 'document' : markdownView
-  const chooseMarkdownView = React.useCallback((value: 'document' | 'diagram') => {
-    if (file?.baseline.kind === 'markdown')
-      setMarkdownViews(views => views[path] === value ? views : { ...views, [path]: value })
-  }, [file?.baseline.kind, path])
   const source = file?.sources[block] ?? ''
   const changed = !!selected && source !== selected.source
   const sourceBytes = new TextEncoder().encode(source).length
@@ -434,14 +426,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                   {(selected && file) || file?.baseline.kind === 'markdown' || file?.baseline.kind === 'html'
                     ? (
                         <>
-                          {file?.baseline.kind === 'markdown' && file.baseline.blocks.length > 0 && (
-                            <Tabs className="view-switch" value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
-                              <TabsList aria-label="Markdown view">
-                                <TabsTrigger value="document">Document</TabsTrigger>
-                                <TabsTrigger value="diagram" disabled={!selected}>Diagram</TabsTrigger>
-                              </TabsList>
-                            </Tabs>
-                          )}
                           {file?.baseline.kind === 'html'
                             ? <HtmlDocumentView text={file.baseline.text} path={path} onOpenFile={openResolvedLinkedFile} />
                             : !selected && file?.baseline.kind === 'markdown'
@@ -515,7 +499,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                       </ResizablePanel>
                                       <ResizableHandle withHandle aria-label="Resize source and preview" />
                                       <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
-                                        {file?.baseline.kind === 'markdown' && effectiveMarkdownView === 'document'
+                                        {file?.baseline.kind === 'markdown'
                                           ? <DocumentView text={file.baseline.text} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onSelect={index => select(path, index)} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} />
                                           : <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />}
                                       </ResizablePanel>

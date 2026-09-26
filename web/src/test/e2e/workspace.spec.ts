@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { readFile, realpath, rename, statfs, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { choose, chooseBlock, expect, live, login, settledDialog, test } from './support'
+import { activeDiagram, choose, chooseBlock, expect, live, login, settledDialog, test } from './support'
 
 test.use({ trace: 'off' })
 const project = process.env.MERDECK_SMOKE_ROOT
@@ -11,8 +11,9 @@ if (!project || !tokenFile)
 const root = project
 let original = ''
 async function fitBounds(page: Page) {
-  await page.getByRole('button', { name: 'Fit', exact: true }).click()
-  const bounds = await page.locator('.diagram-graphic svg').evaluate((svg) => {
+  if (await page.getByRole('button', { name: 'Fit', exact: true }).count())
+    await page.getByRole('button', { name: 'Fit', exact: true }).click()
+  const bounds = await activeDiagram(page).evaluate((svg) => {
     const box = (svg as SVGSVGElement).viewBox.baseVal
     const content = (svg as SVGSVGElement).getBBox()
     return { fits: content.x >= box.x && content.y >= box.y && content.x + content.width <= box.x + box.width && content.y + content.height <= box.y + box.height, width: svg.getBoundingClientRect().width }
@@ -107,8 +108,8 @@ test('real files, independent Markdown drafts, save snapshots, conflicts, respon
   await live(page)
 
   await editor.fill('flowchart LR\n  A -->')
-  await expect(page.getByText('Unable to render', { exact: true })).toBeVisible()
-  await expect(page.getByText('Last valid preview', { exact: true })).toBeVisible()
+  await expect(page.locator('.document-diagram.selected').getByRole('alert')).toBeVisible()
+  await expect(page.locator('.document-diagram.selected').getByText(/Showing the last valid diagram/)).toBeVisible()
   await editor.fill('flowchart LR\n  A[Recovered] --> B[Preview]')
   await live(page)
   for (const malicious of [
@@ -120,8 +121,8 @@ test('real files, independent Markdown drafts, save snapshots, conflicts, respon
   ]) {
     await editor.fill(malicious)
     await expect(page.getByText('Rendering…', { exact: true })).toHaveCount(0)
-    await expect(page.getByText('Unable to render', { exact: true })).toBeVisible()
-    await expect(page.getByText('Last valid preview', { exact: true })).toBeVisible()
+    await expect(page.locator('.document-diagram.selected').getByRole('alert')).toBeVisible()
+    await expect(page.locator('.document-diagram.selected').getByText(/Showing the last valid diagram/)).toBeVisible()
     expect(await page.evaluate(() => Reflect.has(window, 'pwned'))).toBe(false)
     expect(await page.locator('.diagram-graphic script,.diagram-graphic image,.diagram-graphic a,.diagram-graphic foreignObject,[onload],[onerror]').count()).toBe(0)
   }

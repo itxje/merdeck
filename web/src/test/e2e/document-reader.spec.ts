@@ -76,3 +76,49 @@ for (const format of ['html', 'markdown'] as const) {
     }
   })
 }
+
+for (const format of ['html', 'markdown'] as const) {
+  test(`${format} reader aligns wide prose and tables with contained narrow scrolling`, async ({ page }, info) => {
+    const token = 'UnbrokenCell'.repeat(10)
+    const source = format === 'html'
+      ? `<main><h1>Width guide</h1><p>Prose and tables share the same reading width.</p><table><thead><tr><th>Project</th><th>Scope</th></tr></thead><tbody><tr><td>Example</td><td>Readable content</td></tr></tbody></table><h2>Wide data</h2><table><thead><tr><th>First</th><th>Second</th></tr></thead><tbody><tr><td>${token}</td><td>${token}</td></tr></tbody></table></main>`
+      : `# Width guide\n\nProse and tables share the same reading width.\n\n| Project | Scope |\n| --- | --- |\n| Example | Readable content |\n\n## Wide data\n\n| First | Second |\n| --- | --- |\n| ${token} | ${token} |`
+    const name = `reader-width-${randomUUID()}.${format === 'html' ? 'html' : 'md'}`
+    const path = join(root, name)
+    await writeFile(path, source, { flag: 'wx' })
+    try {
+      await page.setViewportSize({ width: 1920, height: 1080 })
+      await login(page)
+      await page.getByRole('button', { name: 'Refresh files', exact: true }).click()
+      await page.getByRole('button', { name, exact: true }).click()
+      const article = page.getByRole('article', { name: format === 'html' ? 'HTML document' : 'Markdown document', exact: true })
+      const heading = article.getByRole('heading', { name: 'Width guide', exact: true })
+      await expect(heading).toBeVisible()
+      const paragraph = article.getByText('Prose and tables share the same reading width.', { exact: true })
+      const table = article.getByRole('table').first()
+      const headingBox = (await heading.boundingBox())!
+      const paragraphBox = (await paragraph.boundingBox())!
+      const tableBox = (await table.boundingBox())!
+      expect(paragraphBox.width).toBeGreaterThan(900)
+      expect(tableBox.x).toBeCloseTo(headingBox.x, 0)
+      expect(tableBox.x).toBeCloseTo(paragraphBox.x, 0)
+      expect(tableBox.width).toBeCloseTo(paragraphBox.width, 0)
+      await page.screenshot({ path: info.outputPath(`${format}-wide-content.png`) })
+      await page.setViewportSize({ width: 390, height: 844 })
+      const frame = article.getByRole('table').nth(1).locator('..')
+      await frame.scrollIntoViewIfNeeded()
+      await expect(frame).toHaveCSS('overflow-x', 'auto')
+      expect(await frame.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+      await frame.focus()
+      await page.keyboard.press('ArrowRight')
+      await expect.poll(() => frame.evaluate(el => el.scrollLeft)).toBeGreaterThan(0)
+      expect(await article.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await page.screenshot({ path: info.outputPath(`${format}-narrow-table.png`) })
+      expect(await readFile(path, 'utf8')).toBe(source)
+    }
+    finally {
+      await rm(path, { force: true })
+    }
+  })
+}
