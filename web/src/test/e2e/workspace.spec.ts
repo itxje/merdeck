@@ -13,6 +13,8 @@ let original = ''
 async function fitBounds(page: Page) {
   if (await page.getByRole('button', { name: 'Fit', exact: true }).count())
     await page.getByRole('button', { name: 'Fit', exact: true }).click()
+  await expect(activeDiagram(page)).toBeVisible()
+  await expect.poll(() => activeDiagram(page).evaluate(svg => svg.getBoundingClientRect().width)).toBeGreaterThan(20)
   const bounds = await activeDiagram(page).evaluate((svg) => {
     const box = (svg as SVGSVGElement).viewBox.baseVal
     const content = (svg as SVGSVGElement).getBBox()

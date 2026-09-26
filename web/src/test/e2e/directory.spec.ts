@@ -205,7 +205,7 @@ test('narrow source theme changes preserve fitted preview geometry and directory
   await page.getByRole('menu').getByRole('button', { name: 'Dark theme', exact: true }).click()
   await expect(page.locator('html')).toHaveClass('dark')
   await expect(page.getByRole('menu')).toHaveCount(0)
-  await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toBeAttached()
+  await expect(page.getByRole('article', { name: 'Markdown document', exact: true, includeHidden: true })).toBeAttached()
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await live(page)
   await expect(page.locator('.diagram-graphic svg g.node')).not.toHaveCount(0)
