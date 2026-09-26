@@ -14,7 +14,7 @@ The released v0.19.5 shared document reader opens its contents through a Base UI
 1. Reproduce the narrow contents sheet in the repository browser harness, inspect computed layout and rendered pixels, and add a regression that fails on the observed blank presentation.
 2. Correct the root layout or stacking behavior with the smallest change in the shared reader. Preserve the independent article/contents scrolling and keyboard dismissal.
 3. Verify Markdown and HTML on phone-sized Chromium and WebKit, run the relevant frontend checks and the repository gate, then record the iPhone validation limit.
-4. Hide the Markdown Document/Diagram switch when the file has no Mermaid blocks, as shown by the owner's disabled Diagram tab. Preserve the switch for Markdown files with diagrams.
+4. The initial no-diagram Markdown switch correction is superseded by the owner's clarified request to remove the Markdown switch entirely. Track that change in the separate document layout task.
 
 ## Risks
 
@@ -23,7 +23,7 @@ The released v0.19.5 shared document reader opens its contents through a Base UI
 
 ## Scope
 
-Shared document reader, its CSS, the redundant no-diagram Markdown switch, and focused coverage. No backend, document parsing, file explorer or dependency change.
+Shared document reader, its CSS, and focused coverage. The Markdown switch change is tracked in the document layout task. No backend, document parsing, file explorer or dependency change.
 
 ## Alternatives
 
@@ -33,6 +33,7 @@ Shared document reader, its CSS, the redundant no-diagram Markdown switch, and f
 
 - 2026-09-26 19:08: The owner reported the blank mobile contents drawer, authorizing correction of the released behavior.
 - 2026-09-26 19:11: The owner added that the Markdown Document/Diagram switch in a screenshot with Diagram disabled is not needed. The no-diagram condition is the narrow interpretation while a preference question remains pending.
+- 2026-09-26 19:27: The owner clarified that the Markdown switch is unnecessary as a whole. The document layout task owns complete removal.
 
 ## Outcome
 
