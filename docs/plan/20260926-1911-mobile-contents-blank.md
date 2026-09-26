@@ -36,4 +36,4 @@ Shared document reader, its CSS, the redundant no-diagram Markdown switch, and f
 
 ## Outcome
 
-Pending verification.
+Clean code commit `606fc79` passed local ARM64/overlay `check:ci` with 582 frontend unit cases, two 96-case browser runs and bundle acceptance. The production-built Linux WebKit visual check shows the contents title and links on screen; its unrelated global audit flags a cancelled navigation request. Linux x64/ext4 native acceptance and affected-iPhone confirmation remain pending.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 19:26 [progress]
+
+The mobile contents candidate passed clean-source ARM64/overlay `check:ci`: 582 frontend unit cases, two 96-case browser runs, and bundle acceptance. The previously offscreen HTML/Markdown contents drawer passes viewport and occlusion assertions in the production browser run. Linux x64/ext4 native acceptance and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).
+
 ## 2026-09-26 19:17 [progress]
 
 The v0.19.5 phone contents sheet is blank because the production CSS build discards its `translate: none` override while keeping the shared dialog's `-50%` translate, placing half the sheet offscreen. A WebKit viewport regression failed on the released layout; the narrow dialog now sets its translate inline, and production-build WebKit screenshots show its title and links. The owner also requested removal of the redundant Document/Diagram switch shown on a Markdown file with Diagram disabled; no-diagram Markdown now omits it while diagram-bearing Markdown retains it. Focused Chromium browser cases and 12 workspace component cases pass; full repository verification and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).
