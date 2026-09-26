@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-26 10:04 [release]
+
+Published [v0.19.2](https://github.com/itxje/merdeck/releases/tag/v0.19.2) from `17f28ce`, delivering the
+phone parent-directory All listing and a light Mermaid sheet in dark mode. The exact commit passed
+[native Linux x64/ext4 acceptance](https://github.com/itxje/merdeck/actions/runs/36233148024). The
+[tag workflow](https://github.com/itxje/merdeck/actions/runs/36233751606) passed verification and publication
+on its second attempt after one file-management browser test received a directory HTTP 503 on the first.
+Downloaded `merdeck.tar.gz` passed `SHA256SUMS` and reported version 0.19.2. See
+[20260926-0932-release-v0.19.2](task/20260926-0932-release-v0.19.2.md).
+
 ## 2026-09-26 08:34 [fix]
 
 The project-files Up control now clears the selected file type before showing the parent folder, so its All listing is visible on phones. Mermaid previews use a light diagram sheet and matching default colours in both interface themes while preserving authored styles. Inline Markdown diagrams use the same sheet. The earlier mobile swipe report remains a separate pending task. See [20260926-0818-phone-explorer-dark-preview](task/20260926-0818-phone-explorer-dark-preview.md).

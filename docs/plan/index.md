@@ -92,4 +92,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260923-0900-release-v0.19.1 Release v0.19.1**](20260923-0900-release-v0.19.1.md) `2026-09-23`
 - [ ] [**20260924-1803-wireviz-qet-preview Preview WireViz harnesses and QElectroTech projects through local renderers**](20260924-1803-wireviz-qet-preview.md) `2026-09-24`
 - [x] [**20260926-0818-phone-explorer-dark-preview Reset the file type on Up and give diagrams a stable paper palette**](20260926-0818-phone-explorer-dark-preview.md) `2026-09-26`
-- [-] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `2026-09-26`
+- [x] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `2026-09-26`
