@@ -555,7 +555,7 @@ button:disabled { cursor: default; }
 .document-reader .html-document-body > main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
 .document-reader :is(.markdown-document-body, .html-document-body, .html-document-body > main) > :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, dl) { max-width: 48rem !important; margin-left: auto !important; margin-right: auto !important; }
 .document-reader :is(.markdown-document-body, .html-document-body) > :first-child { margin-top: 0; }
-.document-contents-drawer { inset: 0 auto 0 0 !important; translate: none !important; transform: none !important; width: min(320px, 88vw) !important; max-width: none !important; height: 100dvh; max-height: 100dvh; border-radius: 0 !important; display: flex !important; flex-direction: column; gap: 0 !important; padding: 0 !important; }
+.document-contents-drawer { inset: 0 auto 0 0 !important; transform: none !important; width: min(320px, 88vw) !important; max-width: none !important; height: 100dvh; max-height: 100dvh; border-radius: 0 !important; display: flex !important; flex-direction: column; gap: 0 !important; padding: 0 !important; }
 .document-contents-drawer > [data-slot="dialog-title"] { flex: none; padding: 20px 48px 20px 22px; border-bottom: 1px solid var(--border); }
 .document-contents-drawer > [data-slot="dialog-close"] { min-width: 44px; min-height: 44px; }
 .document-contents-drawer > .document-reader-contents { flex: 1; padding-bottom: max(24px, env(safe-area-inset-bottom)); }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 19:17 [progress]
+
+The v0.19.5 phone contents sheet is blank because the production CSS build discards its `translate: none` override while keeping the shared dialog's `-50%` translate, placing half the sheet offscreen. A WebKit viewport regression failed on the released layout; the narrow dialog now sets its translate inline, and production-build WebKit screenshots show its title and links. The owner also requested removal of the redundant Document/Diagram switch shown on a Markdown file with Diagram disabled; no-diagram Markdown now omits it while diagram-bearing Markdown retains it. Focused Chromium browser cases and 12 workspace component cases pass; full repository verification and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).
+
 ## 2026-09-26 17:42 [completed]
 
 Published [v0.19.5](https://github.com/itxje/merdeck/releases/tag/v0.19.5) from `51d9f1a`, delivering bounded embedded HTML images and the shared HTML/Markdown reader with independent contents/content scrolling and a narrow-pane contents drawer. Clean-source local and exact-commit Linux x64/ext4 acceptance passed. The tag workflow passed verification and publication on its first attempt. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. This closes the image and reader aggregate acceptance gaps; no running service was updated. See [20260926-1717-release-v0.19.5](task/20260926-1717-release-v0.19.5.md).

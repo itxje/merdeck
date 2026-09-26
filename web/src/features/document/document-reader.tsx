@@ -51,7 +51,9 @@ export function DocumentReader({ path, contents, children }: { path: string, con
         <div className="document-reader-page">{children}</div>
       </div>
       {narrow && hasContents && (
-        <DialogContent className="document-contents-drawer" aria-describedby={undefined}>
+        /* The popup's centering utility uses the independent translate property. Keep its override
+           inline because the production CSS build drops translate:none next to transform:none. */
+        <DialogContent className="document-contents-drawer" aria-describedby={undefined} style={{ translate: 'none' }}>
           <DialogTitle>Contents</DialogTitle>
           <div
             className="document-reader-contents"

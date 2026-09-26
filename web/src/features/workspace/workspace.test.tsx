@@ -118,14 +118,13 @@ it('keeps the source pane in Markdown Document view and reports guarded document
   client.clear()
 })
 
-it('keeps a Markdown document without diagrams in Document view', async () => {
+it('omits the Markdown view switch when the document has no diagrams', async () => {
   const current = { ...markdownDocument('docs/notes.md', '# Notes\n\nNo diagrams.'), blocks: [] }
   mockMarkdownWorkspace(current)
   const client = createQueryClient()
   const { unmount } = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={current.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
   expect(await screen.findByRole('heading', { name: 'Notes' })).toBeVisible()
-  expect(screen.getByRole('tab', { name: 'Document' })).toHaveAttribute('aria-selected', 'true')
-  expect(screen.getByRole('tab', { name: 'Diagram' })).toHaveAttribute('aria-disabled', 'true')
+  expect(screen.queryByRole('tablist', { name: 'Markdown view' })).toBeNull()
   expect(screen.queryByLabelText('Mermaid source', { exact: true })).toBeNull()
   unmount()
   client.clear()

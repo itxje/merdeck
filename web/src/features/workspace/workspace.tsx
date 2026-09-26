@@ -434,7 +434,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                   {(selected && file) || file?.baseline.kind === 'markdown' || file?.baseline.kind === 'html'
                     ? (
                         <>
-                          {file?.baseline.kind === 'markdown' && (
+                          {file?.baseline.kind === 'markdown' && file.baseline.blocks.length > 0 && (
                             <Tabs className="view-switch" value={effectiveMarkdownView} onValueChange={value => chooseMarkdownView(value as 'document' | 'diagram')}>
                               <TabsList aria-label="Markdown view">
                                 <TabsTrigger value="document">Document</TabsTrigger>

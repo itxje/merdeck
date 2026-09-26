@@ -8,7 +8,7 @@ if (!root)
   throw new Error('An explicit disposable sample root is required')
 
 for (const format of ['html', 'markdown'] as const) {
-  test(`${format} reader separates contents scrolling and offers an accessible narrow drawer`, async ({ page }) => {
+  test(`${format} reader separates contents scrolling and offers an accessible narrow drawer`, async ({ page }, info) => {
     const chapters = Array.from({ length: 30 }, (_, index) => ({ id: `chapter-${index + 1}`, title: `Chapter ${index + 1}` }))
     const prose = 'Read the document while its contents stay available. Follow the next chapter for more detail.'
     const source = format === 'html'
@@ -49,6 +49,18 @@ for (const format of ['html', 'markdown'] as const) {
       const drawer = page.getByRole('dialog', { name: 'Contents', exact: true })
       await expect(drawer).toBeVisible()
       await expect(drawer).toHaveCSS('opacity', '1')
+      await page.screenshot({ path: info.outputPath(`${format}-contents-open.png`) })
+      const title = drawer.getByRole('heading', { name: 'Contents', exact: true })
+      const first = drawer.getByRole('button', { name: 'Chapter 1', exact: true })
+      await expect(title).toBeVisible()
+      await expect(first).toBeVisible()
+      const titleBox = await title.boundingBox()
+      const firstBox = await first.boundingBox()
+      expect(titleBox).not.toBeNull()
+      expect(firstBox).not.toBeNull()
+      expect(firstBox!.x).toBeGreaterThanOrEqual(0)
+      expect(firstBox!.x + firstBox!.width).toBeLessThanOrEqual(390)
+      expect(await title.evaluate(el => document.elementFromPoint(el.getBoundingClientRect().left + 4, el.getBoundingClientRect().top + 4)?.closest('[role="dialog"]') === el.closest('[role="dialog"]'))).toBe(true)
       await page.keyboard.press('Escape')
       await expect(drawer).toHaveCount(0)
       await expect(open).toBeFocused()

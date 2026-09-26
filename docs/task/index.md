@@ -160,3 +160,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260926-1626-html-embedded-diagram-images Render bounded embedded diagram images in HTML previews**](20260926-1626-html-embedded-diagram-images.md) `P1`
 - [x] [**20260926-1703-unified-document-reader Unify HTML and Markdown reading layouts**](20260926-1703-unified-document-reader.md) `P1`
 - [x] [**20260926-1717-release-v0.19.5 Release v0.19.5**](20260926-1717-release-v0.19.5.md) `P1`
+- [-] [**20260926-1911-mobile-contents-blank Restore the phone document contents drawer**](20260926-1911-mobile-contents-blank.md) `P1`
