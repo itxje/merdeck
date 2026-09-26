@@ -494,8 +494,14 @@ it('omits the contents list from a document with fewer than two listed headings'
 
 it('offers a contents toggle without removing the Markdown article or its scroll position', async () => {
   render(<DocumentView path="guide.md" text={'# Guide\n\n## Install\n\nSteps.'} blocks={[]} sources={[]} selected={0} onSelect={vi.fn()} onOpenFile={vi.fn()} />)
-  const contents = await screen.findByRole('navigation', { name: 'Contents' })
   const article = screen.getByRole('article', { name: 'Markdown document' })
+  const resetScroll = vi.fn((options: ScrollToOptions) => {
+    article.scrollTop = options.top ?? article.scrollTop
+  })
+  Object.defineProperty(article, 'scrollTo', { configurable: true, value: resetScroll })
+  const contents = await screen.findByRole('navigation', { name: 'Contents' })
+  await waitFor(() => expect(resetScroll).toHaveBeenCalledWith({ top: 0 }))
+  resetScroll.mockClear()
   article.scrollTop = 200
   expect(article.contains(contents)).toBe(false)
   const toggle = screen.getByRole('button', { name: 'Toggle contents' })
@@ -504,6 +510,7 @@ it('offers a contents toggle without removing the Markdown article or its scroll
   expect(screen.queryByRole('navigation', { name: 'Contents' })).toBeNull()
   expect(screen.getByRole('article', { name: 'Markdown document' })).toBe(article)
   expect(article.scrollTop).toBe(200)
+  expect(resetScroll).not.toHaveBeenCalled()
   await userEvent.setup().click(toggle)
   expect(screen.getByRole('navigation', { name: 'Contents' })).toBeVisible()
 })
