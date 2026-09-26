@@ -153,4 +153,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260926-0812-mobile-drawer-touch-scroll Restore touch scrolling in the mobile file drawer**](20260926-0812-mobile-drawer-touch-scroll.md) `P1`
 - [x] [**20260926-0818-phone-explorer-dark-preview Reset the file type on Up and make the dark preview coherent**](20260926-0818-phone-explorer-dark-preview.md) `P1`
 - [x] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `P1`
-- [-] [**20260926-1135-release-v0.19.3 Release v0.19.3**](20260926-1135-release-v0.19.3.md) `P1`
+- [x] [**20260926-1135-release-v0.19.3 Release v0.19.3**](20260926-1135-release-v0.19.3.md) `P1`
