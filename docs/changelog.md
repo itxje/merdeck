@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 11:14 [fix]
+
+The phone Files drawer now keeps its directory and search-result lists as explicit native vertical touch-scroll surfaces from first mount, including the empty-to-populated transition. This addresses the reported iOS case where the list would not swipe until a refresh or type change. Narrow drawer layout and first-open Chromium touch checks pass; native iPhone validation is still required. See [20260926-0812-mobile-drawer-touch-scroll](task/20260926-0812-mobile-drawer-touch-scroll.md).
+
 ## 2026-09-26 10:04 [release]
 
 Published [v0.19.2](https://github.com/itxje/merdeck/releases/tag/v0.19.2) from `17f28ce`, delivering the
