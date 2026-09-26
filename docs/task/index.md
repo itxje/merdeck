@@ -150,6 +150,6 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260923-0820-release-v0.19.0 Release v0.19.0**](20260923-0820-release-v0.19.0.md) `P1`
 - [x] [**20260923-0900-release-v0.19.1 Release v0.19.1**](20260923-0900-release-v0.19.1.md) `P1`
 - [-] [**20260924-1813-wireviz-qet-preview Preview WireViz harnesses and QElectroTech projects through local renderers**](20260924-1813-wireviz-qet-preview.md) `P2`
-- [-] [**20260926-0812-mobile-drawer-touch-scroll Restore touch scrolling in the mobile file drawer**](20260926-0812-mobile-drawer-touch-scroll.md) `P1`
+- [x] [**20260926-0812-mobile-drawer-touch-scroll Restore touch scrolling in the mobile file drawer**](20260926-0812-mobile-drawer-touch-scroll.md) `P1`
 - [x] [**20260926-0818-phone-explorer-dark-preview Reset the file type on Up and make the dark preview coherent**](20260926-0818-phone-explorer-dark-preview.md) `P1`
 - [x] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `P1`
