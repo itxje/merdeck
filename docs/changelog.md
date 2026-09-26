@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 13:07 [completed]
+
+Published [v0.19.4](https://github.com/itxje/merdeck/releases/tag/v0.19.4) from commit `c48b4a7` after exact-commit Linux x64/ext4 acceptance. The tag workflow's first attempt hit an existing browser-audit race after logout; the identical tag passed verification and publication on attempt 2. The downloaded archive passed `SHA256SUMS`, reports version 0.19.4 and embeds the tagged commit. The live service still reports 0.19.3, so native iPhone first-open scrolling remains unverified. See [20260926-1229-release-v0.19.4](task/20260926-1229-release-v0.19.4.md) and [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).
+
 ## 2026-09-26 12:29 [progress]
 
 The corrected mobile Files candidate passed the local ARM64/overlay `check:ci` on clean commit `bfe0a9b`, including two 93-case browser runs and extracted-bundle acceptance. The first-open touch regression passes in Chromium, and Linux WebKit confirms focus and scroll geometry. Native Linux x64/ext4 acceptance and the affected iPhone gesture remain unverified. See [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).

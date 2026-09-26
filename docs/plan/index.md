@@ -95,4 +95,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `2026-09-26`
 - [x] [**20260926-1135-release-v0.19.3 Release v0.19.3**](20260926-1135-release-v0.19.3.md) `2026-09-26`
 - [-] [**20260926-1213-mobile-files-touch-focus Restore first-open Files scrolling on iOS**](20260926-1213-mobile-files-touch-focus.md) `2026-09-26`
-- [-] [**20260926-1229-release-v0.19.4 Release v0.19.4**](20260926-1229-release-v0.19.4.md) `2026-09-26`
+- [x] [**20260926-1229-release-v0.19.4 Release v0.19.4**](20260926-1229-release-v0.19.4.md) `2026-09-26`
