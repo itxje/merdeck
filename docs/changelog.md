@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 19:53 [progress]
+
+Preparing v0.19.6 with the mobile contents positioning fix, the shared wider HTML/Markdown reading measure and scrollable tables, and removal of the Markdown view toolbar. The implementation already passed clean-source local acceptance; the exact release candidate now proceeds to native Linux x64/ext4 verification before tagging. See [20260926-1953-release-v0.19.6](task/20260926-1953-release-v0.19.6.md).
+
 ## 2026-09-26 19:48 [completed]
 
 The mobile contents drawer correction passed the full local gate again with the final document reader changes: 582 frontend cases and two 98-case browser runs, including HTML and Markdown contents viewport checks. The Markdown Document/Diagram toolbar is now removed entirely by the document layout task. Linux x64/ext4 native acceptance, release and affected-iPhone confirmation remain pending. See [20260926-1911-mobile-contents-blank](task/20260926-1911-mobile-contents-blank.md).
