@@ -204,12 +204,14 @@ test('file drawer omits its redundant header while retaining named usable contro
       const search = dialog.getByRole('textbox', { name: 'Filter files', exact: true })
       await expect(dialog.getByText('Select a file or a diagram block. Your drafts stay in this tab.', { exact: true })).toHaveCount(0)
       await expect(dialog.getByRole('heading', { name: 'Project files', exact: true })).toHaveClass(/sr-only/)
+      await expect(dialog.getByRole('button', { name: 'Root', exact: true })).toBeFocused()
+      await search.focus()
       await expect(search).toBeFocused()
       const measurement = await measureDrawer(dialog)
       await writeFile(info.outputPath(`drawer-${width}.json`), JSON.stringify(measurement, null, 2))
       await page.screenshot({ path: info.outputPath(`drawer-${width}.png`), fullPage: true, animations: 'disabled' })
       assertContained(measurement)
-      // The explorer heading actions precede the filter, which still receives the initial focus.
+      // The explorer heading actions precede the filter when it is deliberately focused.
       await page.keyboard.press('Shift+Tab')
       await expect(dialog.getByRole('button', { name: 'Restart', exact: true })).toBeFocused()
       await page.keyboard.press('Tab')

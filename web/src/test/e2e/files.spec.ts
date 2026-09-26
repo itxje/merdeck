@@ -156,7 +156,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await page.setViewportSize({ width: 390, height: 844 })
     await page.getByRole('button', { name: 'Open project files', exact: true }).click()
     const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
-    await expect(drawer.getByRole('textbox', { name: 'Filter files', exact: true })).toBeFocused()
+    await expect(drawer.getByRole('button', { name: 'Root', exact: true })).toBeFocused()
     const actions = drawer.getByRole('button', { name: `Actions for ${folder}`, exact: true })
     await expect(actions).toHaveCSS('opacity', '1')
     await actions.click()

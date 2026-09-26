@@ -28,7 +28,6 @@ interface Props {
   onAction: (action: EntryAction) => void
   kinds: FileFilter
   chooseKinds: (next: FileFilter) => void
-  filterRef?: React.Ref<HTMLInputElement>
   // With a search source the filter box and a chosen file type search this folder and its subfolders instead of the loaded window.
   search?: SearchView | undefined
   onQueryChange?: ((query: string) => void) | undefined
@@ -135,7 +134,7 @@ function RowName({ value }: { value: string }) {
   )
 }
 
-export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, filterRef, search, onQueryChange }: Props) {
+export function FileTree({ listing, directory, browse, drafts, path, block, select, refresh, canChange, onAction, kinds, chooseKinds, search, onQueryChange }: Props) {
   const crumbsRef = React.useRef<HTMLElement>(null)
   const focusDirectoryRef = React.useRef(false)
   const openDirectory = (next: string) => {
@@ -233,7 +232,6 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
       <div className="tree-search">
         <Search aria-hidden="true" />
         <Input
-          ref={filterRef}
           aria-label="Filter files"
           placeholder={search ? 'Search this folder and below…' : 'Find in loaded files…'}
           value={filter}

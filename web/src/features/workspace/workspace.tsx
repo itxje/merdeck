@@ -71,7 +71,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   const [reviewOpen, setReviewOpen] = React.useState(false)
   const [entryDialog, setEntryDialog] = React.useState<{ action: EntryAction, key: number } | null>(null)
   const [entryOpen, setEntryOpen] = React.useState(false)
-  const drawerFilterRef = React.useRef<HTMLInputElement>(null)
   const [pane, setPane] = React.useState('preview')
   // View selection belongs to a Markdown document, never to the previously opened file.
   const [markdownViews, setMarkdownViews] = React.useState<Record<string, 'document' | 'diagram'>>({})
@@ -583,9 +582,9 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
             </>
           )}
       <Dialog open={treeOpen && !!state.session} onOpenChange={setTreeOpen}>
-        <DialogContent className="file-drawer" initialFocus={drawerFilterRef}>
+        <DialogContent className="file-drawer">
           <DialogTitle className="sr-only">Project files</DialogTitle>
-          <FileTree {...treeProps} filterRef={drawerFilterRef} />
+          <FileTree {...treeProps} />
         </DialogContent>
       </Dialog>
       <EntryDialog entry={entryDialog} open={entryOpen && !!state.session} onOpenChange={setEntryOpen} onSubmit={submitEntry} />

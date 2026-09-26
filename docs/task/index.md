@@ -154,3 +154,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260926-0818-phone-explorer-dark-preview Reset the file type on Up and make the dark preview coherent**](20260926-0818-phone-explorer-dark-preview.md) `P1`
 - [x] [**20260926-0932-release-v0.19.2 Release v0.19.2**](20260926-0932-release-v0.19.2.md) `P1`
 - [x] [**20260926-1135-release-v0.19.3 Release v0.19.3**](20260926-1135-release-v0.19.3.md) `P1`
+- [-] [**20260926-1212-mobile-files-first-open-scroll Repair first-open Files scrolling on iOS**](20260926-1212-mobile-files-first-open-scroll.md) `P1`

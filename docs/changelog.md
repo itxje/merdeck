@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 12:19 [progress]
+
+The v0.19.3 phone Files drawer still could not scroll on first open. Its forced search-input focus is removed, so touch opening follows the dialog's focus handling; the failed overflow overrides from v0.19.3 are removed. A touch-open regression failed on the old forced focus and passes with this change; six focused Chromium browser cases and one Linux WebKit focus/geometry case pass. Native iPhone scrolling remains unverified. See [20260926-1212-mobile-files-first-open-scroll](task/20260926-1212-mobile-files-first-open-scroll.md).
+
 ## 2026-09-26 12:00 [release]
 
 Published [v0.19.3](https://github.com/itxje/merdeck/releases/tag/v0.19.3) from `16d580f`, delivering the phone Files drawer's first-open touch-scroll repair. The exact commit passed [Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/36239299434), and the [tag workflow](https://github.com/itxje/merdeck/actions/runs/36239940780) passed verification and publication. The downloaded archive passed `SHA256SUMS`, contained the tagged commit and reported version 0.19.3. The release does not update a running service; see [20260926-1135-release-v0.19.3](task/20260926-1135-release-v0.19.3.md).
