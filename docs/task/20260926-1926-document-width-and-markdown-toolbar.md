@@ -1,6 +1,6 @@
 # 20260926-1926-document-width-and-markdown-toolbar Align document widths and remove Markdown view tabs
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: reader/session-20260926-width
 - **createdAt**: 2026-09-26 19:26
@@ -11,7 +11,7 @@ Remove the Markdown Document/Diagram toolbar as requested, keep the document rea
 
 ## ActiveForm
 
-Implementation and focused validation complete; running the clean-source aggregate gate.
+Implementation, visual review and clean-source local aggregate acceptance complete.
 
 ## Dependencies
 
@@ -31,3 +31,13 @@ Full-tier work across workspace composition, document rendering, shared styles a
 - Review: checked workspace view-state removal, table semantics and keyboard focus, constrained HTML rendering, contents state and source-save tests. No actionable findings. Full clean-source aggregate acceptance remains pending; no release or deployment is included.
 
 - The first clean-source aggregate passed 582 frontend cases and 96 browser cases but failed two adapted browser assertions: role lookup excluded the deliberately hidden preview while Source was active, and SVG width was measured during resize before the inline layout settled. The tests now explicitly include the hidden article and await visible nonzero geometry before retaining their original assertions. Both affected cases pass with the browser audit (`tmp/reader-width-adapted.log`). No production behavior changed in this correction. The full aggregate is repeated on the corrected test commit.
+
+## Final acceptance
+
+Clean-source commit `856be92dc789787983b3c407918a72242d76cbb0` passes frozen installs, the complete local `check:ci` and `git diff --check`. All 582 frontend cases pass with coverage. The executable and extracted bundle each pass 98 browser cases, with 17 configured skips and zero failures; resource verification, cleanup and clean-source evidence export pass. The initial two test-adaptation failures are resolved without changing production logic or dropping their assertions. Evidence: `tmp/reader-width-check.log` (exit 0).
+
+The actual project Markdown README and KM2210 HTML previews confirm aligned wider prose, tables and diagrams. Keyboard table scrolling is contained on narrow screens, and Markdown source/independent-block saves preserve unrelated bytes. Code review verdict: PASS, no actionable findings.
+
+This is local ARM64/overlay acceptance. No remote native Linux x64/ext4 run, new release or running-service update was performed for this change. The separately tracked affected-iPhone contents confirmation remains outside this task.
+
+- complete: Shared wider readers, aligned scrollable tables and removed Markdown mode toolbar verified by actual previews and complete clean-source local check:ci.

@@ -1,6 +1,6 @@
 # 20260926-1926-document-width-and-markdown-toolbar Align document widths and remove Markdown view tabs
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-26 19:26
 - **approvedAt**: 2026-09-26 19:26
 - **relatedTask**: 20260926-1926-document-width-and-markdown-toolbar
@@ -28,3 +28,11 @@ Hiding only a disabled switch does not satisfy the requested matching HTML/Markd
 ## Authorization
 
 The user explicitly requested removing the Markdown toolbar, fixing the table layout and widening HTML and Markdown together. These concrete instructions authorize implementation without another confirmation.
+
+## Final acceptance
+
+Clean-source commit `856be92dc789787983b3c407918a72242d76cbb0` passes frozen installs, the complete local `check:ci` and `git diff --check`. All 582 frontend cases pass with coverage. The executable and extracted bundle each pass 98 browser cases, with 17 configured skips and zero failures; resource verification, cleanup and clean-source evidence export pass. The initial two test-adaptation failures are resolved without changing production logic or dropping their assertions. Evidence: `tmp/reader-width-check.log` (exit 0).
+
+The actual project Markdown README and KM2210 HTML previews confirm aligned wider prose, tables and diagrams. Keyboard table scrolling is contained on narrow screens, and Markdown source/independent-block saves preserve unrelated bytes. Code review verdict: PASS, no actionable findings.
+
+This is local ARM64/overlay acceptance. No remote native Linux x64/ext4 run, new release or running-service update was performed for this change. The separately tracked affected-iPhone contents confirmation remains outside this task.

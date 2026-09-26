@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-26 19:48 [completed]
+
+Completed the shared wider HTML/Markdown layout and removed the Markdown mode toolbar. Actual-document previews, table keyboard scrolling and Markdown source preservation pass. Clean-source local `check:ci` passes on `856be92`: 582 frontend cases and two 98-case browser suites (17 configured skips each), including final evidence export. No release or deployment was performed. See [20260926-1926-document-width-and-markdown-toolbar](task/20260926-1926-document-width-and-markdown-toolbar.md).
+
 ## 2026-09-26 19:30 [progress]
 
 HTML and Markdown now share an 80rem maximum content width, with prose, tables and diagrams aligned to the same edges. Markdown opens directly in its reader without the Document/Diagram toolbar; inline selection and source editing remain available. Both formats contain wide tables in keyboard-scrollable frames. Focused unit/browser and actual-document preview checks pass; clean-source aggregate acceptance is pending. See [20260926-1926-document-width-and-markdown-toolbar](task/20260926-1926-document-width-and-markdown-toolbar.md).
