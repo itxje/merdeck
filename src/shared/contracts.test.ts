@@ -1,0 +1,89 @@
+import { describe, expect, test } from 'bun:test'
+import { agentModelIdSchema, agentTurnRequestSchema, closeDirectoryRequestSchema, contentVersionSchema, createAgentConversationRequestSchema, createEntryRequestSchema, deleteEntryRequestSchema, diagramSelectorSchema, directoryQuerySchema, directoryRequestSchema, directoryRevisionRequestSchema, directorySearchRequestSchema, loginRequestSchema, moveEntryRequestSchema, readDocumentRequestSchema, relativePathSchema, saveDiagramRequestSchema } from './contracts'
+import { AppError, errorStatus, safeError } from './errors'
+
+const version = 'a'.repeat(64)
+describe('transport boundaries', () => {
+  test('accepts supported root-relative names without normalizing them', () => {
+    for (const path of ['flow.mmd', 'docs/flow diagram.md', 'docs/.visible.mermaid'])
+      expect(relativePathSchema.parse(path)).toBe(path)
+    expect(readDocumentRequestSchema.parse({ path: 'file.md' })).toEqual({ path: 'file.md' })
+  })
+  test('rejects absolute, traversal, encoded, control and foreign separator paths', () => {
+    for (const path of ['', '/etc/passwd', '../file.md', 'a/../b.md', './file.md', 'a//b.md', 'a/', 'C:/file.md', 'a\\b.md', '%2e%2e/file.md', '%252e/file.md', 'a\0.md', 'a\n.md'])
+      expect(relativePathSchema.safeParse(path).success).toBe(false)
+  })
+  test('requires a full version and explicit selector on saves', () => {
+    const request = { path: 'file.md', expectedVersion: version, selector: { kind: 'markdown' as const, id: 'md:0:20:40' }, source: 'flowchart TD\nA-->B' }
+    expect(saveDiagramRequestSchema.parse(request)).toEqual(request)
+    expect(saveDiagramRequestSchema.safeParse({ ...request, expectedVersion: 'mtime:123' }).success).toBe(false)
+    expect(saveDiagramRequestSchema.safeParse({ ...request, selector: undefined }).success).toBe(false)
+    expect(saveDiagramRequestSchema.safeParse({ ...request, force: true }).success).toBe(false)
+    expect(saveDiagramRequestSchema.safeParse({ ...request, source: '' }).success).toBe(true)
+    expect(diagramSelectorSchema.safeParse({ kind: 'standalone', id: 'x' }).success).toBe(false)
+    expect(diagramSelectorSchema.safeParse({ kind: 'standalone' }).success).toBe(true)
+    expect(contentVersionSchema.safeParse('A'.repeat(64)).success).toBe(false)
+    expect(loginRequestSchema.safeParse({ token: 'short' }).success).toBe(false)
+  })
+  test('pairs agent engines with one bounded model identifier', () => {
+    expect(createAgentConversationRequestSchema.parse({ provider: 'codex', model: 'gpt-5.6-terra' })).toEqual({ provider: 'codex', model: 'gpt-5.6-terra' })
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'claude', model: 'opus[1m]' }).success).toBe(true)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'agy', model: 'gemini-flash' }).success).toBe(true)
+    for (const model of ['', '--model=evil', 'model name', 'x'.repeat(101), 'safe\nunsafe'])
+      expect(agentModelIdSchema.safeParse(model).success).toBe(false)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex' }).success).toBe(false)
+    expect(createAgentConversationRequestSchema.safeParse({ provider: 'codex', model: 'default', extra: true }).success).toBe(false)
+  })
+  test('carries an optional previewed file with an agent turn', () => {
+    expect(agentTurnRequestSchema.parse({ prompt: 'Rename the node' })).toEqual({ prompt: 'Rename the node' })
+    expect(agentTurnRequestSchema.parse({ prompt: 'Rename the node', context: { path: 'docs/flow.md' } }))
+      .toEqual({ prompt: 'Rename the node', context: { path: 'docs/flow.md' } })
+    for (const path of ['', '../escape.md', '/etc/passwd', 'a\0.md'])
+      expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: { path } }).success).toBe(false)
+    expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: { path: 'flow.mmd', line: 3 } }).success).toBe(false)
+    expect(agentTurnRequestSchema.safeParse({ prompt: 'Edit', context: {} }).success).toBe(false)
+  })
+  test('maps conflicts/deletions and redacts unexpected errors', () => {
+    expect(errorStatus.conflict).toBe(409)
+    expect(errorStatus.deleted).toBe(410)
+    expect(errorStatus.unsupported).toBe(415)
+    expect(new AppError('conflict', version).toResponse()).toMatchObject({ code: 'conflict', currentVersion: version })
+    expect(new AppError('deleted', version).toResponse()).not.toHaveProperty('currentVersion')
+    expect(safeError(new Error('/private/path SECRET')).toResponse()).toEqual({ code: 'internal_error', message: 'An unexpected error occurred.' })
+    const error = new AppError('forbidden')
+    expect(safeError(error)).toBe(error)
+  })
+  test('entry requests name their kind, carry no content and require versions only for files', () => {
+    expect(createEntryRequestSchema.parse({ kind: 'file', path: 'docs/new.mmd' })).toEqual({ kind: 'file', path: 'docs/new.mmd' })
+    expect(createEntryRequestSchema.safeParse({ kind: 'directory', path: 'docs/new' }).success).toBe(true)
+    expect(createEntryRequestSchema.safeParse({ kind: 'file', path: '../new.mmd' }).success).toBe(false)
+    expect(createEntryRequestSchema.safeParse({ kind: 'file', path: 'new.mmd', content: 'x' }).success).toBe(false)
+    expect(moveEntryRequestSchema.safeParse({ kind: 'file', from: 'a.mmd', to: 'b.mmd' }).success).toBe(false)
+    expect(moveEntryRequestSchema.safeParse({ kind: 'file', from: 'a.mmd', to: 'b.mmd', expectedVersion: version }).success).toBe(true)
+    expect(moveEntryRequestSchema.safeParse({ kind: 'directory', from: 'a', to: 'b', expectedVersion: version }).success).toBe(false)
+    expect(deleteEntryRequestSchema.safeParse({ kind: 'file', path: 'a.mmd' }).success).toBe(false)
+    expect(deleteEntryRequestSchema.safeParse({ kind: 'directory', path: 'a' }).success).toBe(true)
+    expect(deleteEntryRequestSchema.safeParse({ kind: 'link', path: 'a' }).success).toBe(false)
+    expect([errorStatus.exists, errorStatus.not_empty]).toEqual([409, 409])
+  })
+})
+
+test('directory requests have strict defaults, canonical limits and bound cursor syntax', () => {
+  expect(directoryQuerySchema.parse({})).toEqual({ path: '', limit: 100 })
+  expect(directoryQuerySchema.parse({ path: '', limit: '200' })).toEqual({ path: '', limit: 200 })
+  for (const limit of ['', '01', '0', '201', '-1', '+1', '1e2', '1.0', ' 1'])
+    expect(directoryQuerySchema.safeParse({ limit }).success).toBe(false)
+  expect(directoryRequestSchema.safeParse({ path: '', limit: 1, cursor: version }).success).toBe(true)
+  expect(directoryRequestSchema.safeParse({ limit: '1' }).success).toBe(false)
+  expect(directoryRevisionRequestSchema.safeParse({ path: '', cursor: version }).success).toBe(false)
+  expect(closeDirectoryRequestSchema.safeParse({ path: '', cursor: version }).success).toBe(true)
+  expect(closeDirectoryRequestSchema.safeParse({ cursor: version }).success).toBe(false)
+  expect(closeDirectoryRequestSchema.safeParse({ path: '', cursor: version, extra: 1 }).success).toBe(false)
+  expect(relativePathSchema.safeParse('bad-\uD800.md').success).toBe(false)
+  expect(relativePathSchema.safeParse('valid-😀.md').success).toBe(true)
+  expect(directorySearchRequestSchema.parse({ path: '', query: '', kind: 'html' })).toEqual({ path: '', query: '', kind: 'html' })
+  for (const code of ['directory_changed', 'cursor_stale'] as const) {
+    expect(errorStatus[code]).toBe(409)
+    expect(new AppError(code, version).toResponse()).not.toHaveProperty('currentVersion')
+  }
+})

@@ -1,0 +1,407 @@
+# Merdeck
+
+Merdeck is a lightweight file-based Mermaid workspace built with TypeScript, Bun + Hono, and a sibling React + Vite SPA. The MVP implementation was independently reviewed and integrated into `main` on 2026-09-09, and later owner-approved changes are delivered on `main`. This revision provides the file editor with file management and optional access-token sign-in, bounded external-change polling, a direct file service, sample files and a same-origin built interface. The self-contained prototype remains **needs-review**. Single-executable implementation, historical ARM64/overlay checks and actual hosted ext4/Linux x64 source/executable acceptance are verified. Final independent implementation review passed with no remaining actionable findings. The published release is [**v0.11.0**](https://github.com/itxje/merdeck/releases/tag/v0.11.0), with directory navigation, bounded pagination and a search of subfolders by name or file type. Its exact commit passed [full Linux x64/ext4 native acceptance](https://github.com/itxje/merdeck/actions/runs/34837535372) and [release verification](https://github.com/itxje/merdeck/actions/runs/34838379897). Runtime needs no database, external account or remote repository; GitHub hosts source and optional release automation.
+
+## Setup
+
+Use Bun **1.4.2** and a stable Node **24.x** release. `.node-version` recommends 24.20.0 for repeatable development; both private manifests accept Node 24.x. If the system Bun differs, install a project-local copy without changing the global runtime:
+
+```bash
+git clone git@github.com:itxje/merdeck.git
+cd merdeck
+mkdir -p .cache/runtime
+npm install --prefix .cache/runtime --no-save --package-lock=false bun@1.4.2
+export PATH="$PWD/.cache/runtime/node_modules/.bin:$PATH"
+bun --version
+node --version
+bun install --frozen-lockfile
+bun install --cwd web --frozen-lockfile
+```
+
+[Compatibility decisions](docs/decisions/2026-09-07-stack-compatibility.md) record exact dependency pins, checked official sources and the TypeScript 6.0.3 lint-compatibility exception. Root and `web/` have independent frozen locks; there is no workspace or database setup. Obtain source through the URL above or an already supplied checkout; source execution needs no GitHub account or network service after installation. The SSH clone itself requires authorized repository access.
+
+Configure the **existing original project directory** directly. It remains writable by external tools; the service does not copy, upload or relocate it. Select a supported storage instance using [the storage contract](#file-storage-and-practical-acceptance). A missing root fails startup; the access token is optional. To create local configuration without printing a token:
+
+```bash
+umask 077
+# Run once; preserve an existing .env.
+cp -n .env.example .env
+chmod 600 .env
+# Edit .env privately: set MERDECK_ROOT to your absolute existing project path.
+# Optionally set MERDECK_TOKEN to 32–256 random printable non-space ASCII characters to require sign-in.
+# Set MERDECK_ALLOWED_ORIGINS=http://127.0.0.1:8787 for default production.
+```
+
+Bun source startup loads root `.env`; explicitly exported environment values also work and take precedence. Use a private editor or a password manager to enter the token; never print it or put it in shell history, URLs, browser storage, `VITE_*`, screenshots or logs. With a token, loopback also requires sign-in, and login exchanges the token for a bounded HttpOnly/SameSite session cookie. Without one the service runs with **open access**: the workspace opens without signing in, and anyone who can reach the service can read, change, move and delete the project's Mermaid and Markdown files. Open access starts only when `MERDECK_HOST` and every allowed origin are loopback (127.0.0.0/8, `::1` or `localhost`); `MERDECK_OPEN_ACCESS=true` deliberately allows it beyond loopback and cannot be combined with a token. Other local users and connections forwarded by tunnels or proxies can reach a loopback service too, so set a token on shared machines. Only the theme preference and pane layout persist in browser storage.
+
+The AI file editor is opt-in in both token and open-access modes. Set `MERDECK_CODEX_PATH`, `MERDECK_CLAUDE_PATH` and/or `MERDECK_AGY_PATH` to an absolute executable path outside `MERDECK_ROOT`, then restart the service. Merdeck uses the CLI's existing file-based login and never accepts provider API keys from the browser. Enabling a provider permits it to read project context and send that context and prompts to its remote service. Provider edits are direct external writes beneath `MERDECK_ROOT`; they do not use Merdeck's expected-version save transaction and are applied without asking for confirmation. Reading and changing files anywhere beneath the root proceeds on the provider's own decision, bounded only by the allowed file tools and the root containment check; Codex command execution still requires an explicit decision. Under open access, anyone who can reach the service can invoke a configured provider and have it change project files. Leave every path unset to keep the feature disabled.
+
+For a disposable demonstration only, copy `examples/project` into a uniquely owned directory on identified supported storage, then explicitly configure that copy as the root. `welcome.mmd`, `sequence.mermaid` and `docs/overview.md` demonstrate standalone extensions and two independent Markdown blocks. This optional sample is not the operator workflow. Automated checks always use their own copies and preserve committed examples.
+
+## Development
+
+Use tmux for servers/watchers. Derive and reuse the session from the project root:
+
+```bash
+session_name="$(basename "$PWD" | tr '.' '-')-$(echo -n "$PWD" | md5sum | cut -c1-6)"
+tmux has-session -t "$session_name" 2>/dev/null || tmux new-session -d -s "$session_name" -c "$PWD" /bin/bash
+```
+
+Create or reuse two named windows, then run each command in its own shell from the repository root:
+
+```bash
+# Create only missing windows; attach to select the appropriate shell.
+tmux list-windows -t "$session_name"
+# If absent:
+# tmux new-window -t "$session_name" -n api -c "$PWD" /bin/bash
+# tmux new-window -t "$session_name" -n web -c "$PWD" /bin/bash
+tmux attach-session -t "$session_name"
+```
+
+In both windows prepend `$PWD/.cache/runtime/node_modules/.bin` to PATH. For development, leave `MERDECK_ALLOWED_ORIGINS` empty in `.env` so the launcher discovers nsl's actual origin, or explicitly set that same origin in both windows. In the API window run `bun run dev`; in the frontend window run `bun run --cwd web dev`. Each process registers independently through supported project-local `nsl run` (there is no `nsl serve` command in pinned 0.1.7). The default name is `merdeck-<six-character-path-hash>`; set the same `MERDECK_DEV_NAME` in both shells to override it. The launcher discovers the actual nsl port, so it does not assume 3355. The existing daemon is reused and must not be stopped if other projects use it.
+
+```bash
+node_modules/.bin/nsl get "merdeck-$(echo -n "$PWD" | md5sum | cut -c1-6)"
+node_modules/.bin/nsl list
+```
+
+The resulting origin serves Vite at `/` and the API at `/api/health`. nsl strips `/api` upstream; the launcher enables `MERDECK_API_MODE=stripped` only with `NODE_ENV=development`. Browser requests remain relative to `/api`. There is no Vite proxy or Vite embedded in Hono. A `.localhost` URL is local-machine access only; no public access is claimed. Stop only these windows/processes through tmux; do not kill shared ports or the shared daemon.
+
+If nsl is unavailable, `bun run dev:bare` starts the API with `/api`, and `bun run --cwd web dev:bare` starts Vite independently on loopback. They use different origins; this fallback does not claim same-origin integration and commits no proxy/CORS workaround. Route changes regenerate `web/src/app/routeTree.gen.ts` during Vite development; commit that generated file. Production build does not rewrite it.
+
+## Checks and production build
+
+Install the [complete CI prerequisites](#contributor-ci-and-executable-checks), select explicit supported/refused fixture parents and their observed types below, then run the aggregate gate in the project tmux session:
+
+```bash
+bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run check:ci && git diff --check
+```
+
+`check` runs backend ESLint, strict type checking and bun:test coverage, then frontend ESLint, strict type checking and Vitest coverage, followed by the production build. Backend discovery is restricted to `src/` so it cannot execute frontend Vitest or Playwright files. Coverage measures the implemented file/auth/HTTP boundaries and frontend state, auth, renderer, theme and HTTP logic, with 80% thresholds. Sourced UI primitives and presentational route/layout composition are excluded from frontend unit coverage; real browser checks exercise the assembled interface. The source-rooted API test bridge includes tests/integration/api in both the root gate and the explicit bun test tests/integration/api --coverage command. Passing source checks alone does not establish native storage or standalone executable acceptance.
+
+`bun run test:e2e` starts three built production services (supported storage, refused storage and open access without a token) in owned windows of the project tmux session, copies samples into unique child fixtures, runs the real browser suite, stops its services and removes its fixtures and token. It does not require nsl. Run `bun run check` first to build both outputs. Install Chromium in project-owned storage:
+
+```bash
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright"
+web/node_modules/.bin/playwright install chromium
+# Set both explicit fixture parents as documented below, inside the project tmux session.
+bun run test:e2e
+```
+
+The runner checks canonical paths, actual filesystem type/device and Bun 1.4.2 before creating fixtures. `MERDECK_TEST_EXPECTED_FS` defaults to `0x794c7630`; `MERDECK_TEST_UNSUPPORTED_FS` defaults to the observed `0x6a656a63`. Override these only to identify the actual test storage; they are test expectations and never alter production write admission. Missing parents, wrong storage, missing built assets/browser, failed startup or failed assertions fail the gate. Readiness subscribes to a service event before startup and requires an actual healthy HTTP response within 15 seconds; it has no fixed startup sleep or blind retry loop. A port allocation race fails explicitly.
+
+Token files are owner-only, traces/video/automatic failure screenshots are disabled, and credentials never enter test URLs or command lines. Explicit screenshots after login and settled dialogs go to ignored root `tmp/`; per-run identity/startup evidence also stays there. Browser fixtures preserve their original bytes and report cleanup. Do not run these tests against operator originals.
+
+For an independently started source service or executable, supply all of `MERDECK_TEST_URL`, `MERDECK_UNSUPPORTED_URL`, `MERDECK_SMOKE_ROOT`, `MERDECK_SMOKE_TOKEN_FILE` and `MERDECK_TEST_DISPOSABLE=true`, plus both fixture-parent/type settings. Both services must use that private token and expose the same API; the sample root must contain copies of `examples/project`. Optionally also supply `MERDECK_OPEN_URL` and its disposable sample root `MERDECK_OPEN_ROOT` for a service without a token; without them the open-access check is skipped. In this explicit mode, the runner verifies health/storage and runs browser checks without starting/stopping supplied services or removing the supplied root/token. The caller owns their tmux lifecycle. This entry point prepares executable/native acceptance; it does not establish either gate by itself.
+
+For production source startup, use a named tmux window at the repository root, with the pinned PATH and private `.env` or exported runtime configuration described above. Confirm the explicit origin matches the chosen listener:
+
+```bash
+bun run build
+NODE_ENV=production MERDECK_API_MODE=prefixed bun run start
+# From another shell, for the configured default origin:
+# curl -fsS http://127.0.0.1:8787/api/health
+```
+
+Stop that window with Ctrl+C (or `tmux send-keys -t "$session_name:production" C-c` when it is named production). Verify its listener stopped before deleting disposable project data or credentials.
+
+The build emits `dist/index.js` and `web/dist/`. Start the server through tmux as above. With the default port, `curl -fsS http://127.0.0.1:8787/api/health` returns a non-sensitive successful health envelope. Production serves the built workspace SPA at `/` and its local assets; missing assets and unknown API routes return safe JSON 404. Start from the built repository containing both dist/index.js and web/dist; no Vite process or nsl is required. Single-executable embedding is implemented and locally verified on ARM64/overlay; its downloaded runtime needs neither Bun nor separate frontend assets. Actual hosted ext4/Linux x64 source and executable acceptance is verified at the exact candidate recorded below. The browser supports original-file edits and independent Markdown block saves. The direct file domain is independently exercisable as described below.
+
+See [architecture and API contracts](docs/architecture.md), [task evidence](docs/task/STACK-001.md), [task sequence](docs/task/index.md) and [authorized plan](docs/plan/PLAN-001.md).
+
+## Using the workspace
+
+Open the service URL. If the operator set an access token, enter it; with open access the workspace opens directly and the status bar shows **Open access**. The status bar also names the running version, such as `Merdeck 0.3.1`; a service started from source reports `Merdeck development`. Select a `.mmd`, `.mermaid` or individual top-level Mermaid block in a `.md` file. Edit the source, inspect the live preview, and use **Save** or Ctrl/Cmd+S. Fit, the zoom buttons, the mouse wheel (zooming around the pointer), dragging and scrolling navigate larger diagrams. In a flowchart, click a node to select its label in the source, or double-click it to edit the label on the diagram; Enter applies the change as an ordinary unsaved draft and Escape cancels it. Drag the divider between the source and the preview to resize them, or use **Hide source** and **Show source** to collapse the source pane; the layout is remembered in this browser. On narrow screens, **Open project files** and the Source/Preview tabs keep each pane usable. The header switch chooses a light, dark or system theme. When the service is redeployed with a different interface, an open page shows **Application update available**. **Reload application** is enabled only once no draft, dialog or pending action would be lost, and **Dismiss update** hides that update.
+
+Open a folder to browse its immediate entries. **Root**, breadcrumb ancestors and **Up** change the browse directory without closing the selected file or losing its drafts. The URL keeps `directory` independently from `path` and `block`, so Back, Forward and refresh restore the location; older file links open their parent directory. Each tab keeps its own location. Opening a file selects its parent directory. Markdown rows load their actual diagram choices only after opening the document; a file with no Mermaid blocks opens its read-only Document view without a source editor. `.html` and `.htm` files open as read-only semantic documents. Their scripts, styles, forms, frames, SVG/MathML and remote resources are never executed or loaded; images and media become labelled text placeholders, and guarded project/document links use workspace navigation.
+
+**Next page** reads another bounded page (up to 100 entries). The explorer keeps the latest five pages and shows their absolute range; **Restart** returns to page one. Pages with no supported entries can still have a continuation. A changed directory refreshes from page one; expired or interrupted listings offer Restart, with a short wait after rate limiting. No displayed count is a whole-project total.
+
+Typing in the search field searches the browsed folder and every subfolder by name, and **.mmd**, **.md** or **.html** below it lists the files of that type in the folder and every subfolder, with or without text. Results replace the folder listing and show paths below the folder; clearing the text with **All** chosen returns to the listing. A search reads names only, lists up to 200 matches and says when it stopped early, so a missing result never proves that a file is absent. The type choice is remembered in this browser and applies to the file drawer. Retained drafts stay reachable when searching, paging or browsing elsewhere. Directory failures do not establish that the selected file was deleted; its own revision check controls saving.
+
+The explorer also manages project files:
+
+- **New file** and **New folder** in its heading create an entry in the current browse directory; the path is editable. New files start with a small example diagram.
+- Each file and folder row has an actions menu, also opened by right-click, with **Rename or move** and **Delete**. F2 and Delete work on a focused row, and folders also offer **New file here** and **New folder here**.
+- A rename can change folders but keeps the file type. A move never replaces an existing file or folder.
+- Only empty folders can be deleted; hidden files count as contents. Deletion is permanent after confirmation.
+- Unsaved drafts follow a moved file or folder, and deleting a file discards its drafts.
+- File changes are unavailable on read-only storage.
+
+Drafts stay separate for each file/block when navigating. External tools may edit the original files directly: clean source refreshes automatically, while dirty source is retained with a warning. **Review current file** compares your draft with the current source. Loading it explicitly discards every draft for that file. A retained draft can resume only against an identical full-file revision after explicit confirmation; there is no force-save. An external rename appears as deletion plus a new file. Missing-file drafts remain selectable in the explorer.
+
+Session expiry keeps unsaved work in the current tab and requires sign-in and review before saving. Confirmed logout clears it. Open access has no sign-in, expiry or logout; if the service restarts with or without a token, unsaved work is locked for review in the same way. Closing or refreshing prompts for unsaved work, but drafts are not persistent recovery storage. Keep the tab open until changes are saved or deliberately discarded.
+
+### AI file editor
+
+Open **AI file editor** from the header, then choose an engine and one of the models reported by that engine's initialized CLI protocol from the single selector row. The bounded catalogue is cached for the service lifetime; if discovery fails, the only choice is **Provider default**. Engine and model stay fixed for that conversation. A conversation is memory-only and bound to the configured origin: token mode additionally binds it to the signed-in session, while open mode uses one shared open-access principal and expires it once the configured session lifetime passes without a turn. A turn that fails leaves the conversation in place, so the next message continues the same exchange; **New** in the panel header ends the conversation and clears the transcript, and changing the engine or model starts a new one. Conversation IDs remain opaque and unlisted. Reloading the tab restores that tab's transcript and resumes the same conversation from the last event it saw; the browser keeps only the transcript and the opaque conversation handle in session storage, never a credential. A conversation the service no longer holds is dropped while the transcript stays readable. Every message carries the file currently open in the workspace, named above the composer and sent to the service as the turn's context; the service composes it into the instruction the provider receives. With no file open the turn carries the prompt alone. Send is disabled while any browser draft is dirty or saving, and application saves and file operations are locked while a turn is active. Each file tool names its target, so the transcript reads as an account of the turn rather than a list of tool names. Provider file-change events and a faster selected-file revision check refresh a clean open document; completion forces a final document and directory reconciliation. Use **Stop** to cancel a turn. File reads and file changes beneath the root run without asking; when Codex requests command approval, review it before choosing **Approve** or **Deny**.
+
+This is direct CLI editing, not an atomic Merdeck save. The provider can edit files beneath the configured project according to its own sandbox, and another local process can still race those writes. The Codex adapter requests workspace-write with tool-network access disabled; the Claude Code adapter exposes only `Read`, `Edit`, `Write`, `Glob` and `Grep`, with commands and web tools unavailable, and decides every write itself: in-project paths are allowed, while paths outside the project, files the provider flags as sensitive and anything beneath `.git` or `.claude` are refused. Provider output is rendered as text, provider IDs and raw stderr stay server-side. Stop and service shutdown reap the child process; **New**, token-mode logout/session expiry and the open-conversation lifetime, counted from the last turn, provide the remaining cleanup boundaries. Do not enable the feature for a project whose content may not be sent to the selected provider.
+
+The preview renders Mermaid with strict host settings and sanitized SVG, and refuses only its security boundary. Bare `<br>`, `<br/>` and `<br />` label breaks are supported case-insensitively as SVG text rows; this render-only normalization preserves editor, draft and saved bytes. The boundary applies in every diagram family, including titles and comments: configuration directives; front matter beyond one leading block carrying a `title`, a `config`, or both, each at most once, where a configuration names one of `flowchart`, `sequence`, `gantt`, `state`, `er`, `class`, `journey`, `pie`, `timeline` or `mindmap` and sets only `true`, `false` or a whole number up to 1,000 (`htmlLabels` stays reserved, and a backslash anywhere in the block is refused); interaction statements, namely `click`, `linkStyle`, class-diagram `callback` and `link`, and sequence `link`, `links`, `properties` and `details`, plus C4 `$link` and `$sprite` parameters; HTML tags, meaning a `<` immediately followed by a letter, `/`, `!` or `?`, other than an inert placeholder such as `<Node>` whose first word is not an element name; HTML entities and Mermaid `#name;` escape codes; Markdown links and images, `url(`, `image-set(`, `@import`, `expression(`, `javascript:` and `vbscript:`; `@{}` shape, edge and participant metadata; math; and styling outside the bounded declarations. A flowchart node may still name another diagram file in the same project with `click <node> "<file>"`, which opens that file in the workspace, and the rendered diagram carries no link of its own. Every family's `classDef` and `style` statements take the same bounded declarations: `fill`, `stroke`, `color` and quadrant `stroke-color` as three-, four-, six- or eight-digit hex, a CSS named colour, `transparent`, `none` or `currentColor`; `stroke-width` up to 10 pixels; one to eight dash lengths up to 100 pixels; `font-weight`; `font-style`; a bounded `font-size`; `opacity`, `fill-opacity` and `stroke-opacity` from 0 to 1; and `rx`, `ry` and quadrant `radius` up to 100. `font-family` and every other property stay refused, a backslash stays refused on raw CSS statements such as a Gantt `todayMarker`, and a class's font weight and style reach its label text. Everything else is text: comparisons and relations using `<`, class `<<annotations>>` and state `<<choice>>`, `&`, addresses, backslashes and ordinary words such as `style` or `CSS`. A Gantt chart's today marker is measured out of the fitted size so a chart whose tasks are far from today still fits its bars. Preview is limited to 100,000 characters and 1,000 edges; larger source remains editable and savable within the configured API byte limit. Syntax errors keep the last valid diagram with an explicit stale label. Read-only storage leaves browsing and draft editing available while disabling saves; ask the operator to verify write support for the configured project.
+
+Relative flowchart node targets work inside and outside subgraphs, including diagrams with title-only front matter. Rendering preserves node positions and source bytes. Pointer clicks, Enter and Space use the workspace's existing file navigation and retain unsaved drafts; pending or rejected previews do not activate stale targets.
+
+Plain double-quoted flowchart node/group labels, single-line sequence notes and ordinary whole-line comments may contain HTTP(S) addresses as text. These addresses do not become links or load resources. Function names such as `base64url(...)` are ordinary text, and quoted class notes support `\n` line breaks without changing source bytes. These exceptions keep other escapes, Markdown resources, HTML, active links, configuration directives and arbitrary CSS refused.
+
+### Files, Markdown and HTML limits
+
+Only case-sensitive `.mmd`, `.mermaid`, `.md`, `.html` and `.htm` regular UTF-8 files are supported, with optional BOM and LF/CRLF. Hidden paths, dependency/build/secret directories, symlinks, hardlinked files and unsupported path characters (including `%`) are excluded or rejected. Directory navigation and direct file operations use `MERDECK_MAX_PATH_DEPTH` (64 by default). The legacy tree API remains bounded to 8,000 entries and depth 4; its scan budget no longer limits the explorer or deep file access. A partial listing cannot prove deletion. File size defaults to 1 MiB; see `.env.example` and [architecture](docs/architecture.md) for configurable limits and exact excluded paths.
+
+Markdown selection includes closed **top-level** backtick or tilde fences with case-sensitive `mermaid` language (additional info words are allowed). Openers/closers allow zero to three spaces; a matching closer is at least as long as the opener. Nested list/blockquote, unclosed and ambiguous tab-indented fences are omitted. Markdown documents render read-only in a Document view, with selectable diagrams placed inline; Diagram keeps the existing single-canvas editor. Raw HTML is literal text, images are inert labelled placeholders, and only safe HTTP(S), mailto and validated project-document links are active. Markdown without diagrams still renders as a document.
+
+HTML documents preserve exact same-read text but expose no source editor or save route. A module Worker parses them with `parse5` and returns only a bounded application-owned tree. React creates the allowlisted headings, paragraphs, lists, tables, quotations and code/text nodes; file attributes are never spread into the page, and no file-derived HTML is mounted. This is a safe semantic reading view, not browser-faithful page rendering.
+
+Saves replace only the selected content byte span, retaining surrounding prose, other blocks, delimiters, BOM and newline conventions. A replacement that could close its own fence is rejected. Block selectors belong to the **full-file** revision and are refreshed after saving; an external edit anywhere in the document can cause a conflict. Invalid diagram syntax remains editable and savable within file limits. See [the full Markdown contract](docs/architecture.md#supported-markdown-and-lossless-editing).
+
+## HTTP API and deployment
+
+Public URLs are `/api/health`, `/api/build`, `/api/session`, `/api/diagrams/tree`, `/api/diagrams/directory`, `/api/diagrams/directory/revision`, `/api/diagrams/directory/close`, `/api/diagrams/search`, `/api/diagrams/document?path=...`, `/api/diagrams/revision?path=...`, `/api/diagrams/source`, `/api/diagrams/entries`, `/api/diagrams/entries/move` and `/api/diagrams/entries/delete`. JSON responses use `{ success, data }` or `{ success: false, error: { code, message, currentVersion? } }`. Health, GET build (the served interface's build identity and check interval) and unauthenticated GET session disclose no project information. With a token, every diagram endpoint requires a valid session. With open access, GET session reports `{ authenticated: true, access: 'open' }` with the same capabilities and no cookie, CSRF token or expiry, and diagram endpoints need no session.
+
+POST session accepts `{ token }` as application/json with an exact configured Origin and returns a signed HttpOnly SameSite=Strict session cookie scoped to `/api`, plus `access: 'token'`, a CSRF token, expiry, polling interval and root write eligibility. Keep the CSRF token in memory. GET session restores that state while the cookie is valid. PUT source, the POST entry routes and DELETE session require both Origin and `X-CSRF-Token`. Logout revokes the session. No bearer or URL-token authentication is supported. The login limit is 10 attempts per minute for the entire process; excess attempts or session capacity return 429 with Retry-After. Sessions expire after one hour by default and survive a restart with the same token and root; a new token signs every browser out. With open access, POST and DELETE session return 405, and PUT source and the POST entry routes require the exact Origin but no CSRF token.
+
+AI routes follow the configured token or open-access mode when at least one provider executable is configured. GET `/api/agents/capabilities` returns provider labels and validated, bounded model metadata discovered from each CLI. POST `/api/agents/conversations` requires an advertised engine/model pair; it and `/turns`, `/approvals/:approvalId`, `/cancel` and `/close` always require the exact configured Origin, plus the session CSRF token in token mode. A turn body carries the bounded prompt and an optional `context` naming one root-relative project path. GET `/events` is a bounded stream bound to the token session or open-access origin principal. Bodies are strict and bounded. Browser-visible IDs are opaque, and no route accepts an executable, working directory, command, provider credential or provider session ID.
+
+GET directory accepts root-relative `path` (empty for root), `limit` (1–200, default 100) and an optional single-use cursor. It returns immediate metadata-only entries, a namespace revision and explicit completion/continuation fields. GET directory/revision probes that directory without reading documents. POST directory/close accepts `{ path, cursor }` to abandon a continuation and uses the same Origin/CSRF boundary as entry mutations. Keep cursors transient: do not reuse them or store them in application URLs, browser storage or cache keys. See the [exact directory contract](docs/plan/20260913-1628-directory-navigation-pagination.md).
+
+The compatibility GET tree returns bounded relative entries and a revision, cached for at most the advertised poll interval (3 seconds by default). GET document returns independent diagram sources and a complete-file SHA-256 version. Markdown and HTML documents additionally return exact BOM-free decoded `text` from the same read; Mermaid documents never return `text`, and HTML documents always have an empty `blocks` array. GET revision performs a fresh selected-file check and returns present/version or deleted. PUT source accepts `{ path, selector, expectedVersion, source }` and returns the updated document, version and selectors (including Markdown `text` under the same rule); HTML source editing is unsupported. Never reuse old Markdown selectors after a successful save. Stale saves return 409, detected deletion 410 and unsupported storage writes 503 with `filesystem_unsupported`. No force-save exists. A truncated tree cannot establish deletion; preserve dirty drafts and check the selected revision explicitly.
+
+The entry routes are:
+- **POST entries** accepts `{ kind: 'file' | 'directory', path }` and creates a file from a fixed example template or an empty folder.
+- **POST entries/move** accepts `{ kind: 'file', from, to, expectedVersion }` or `{ kind: 'directory', from, to }`.
+- **POST entries/delete** accepts `{ kind: 'file', path, expectedVersion }` or `{ kind: 'directory', path }`.
+
+Each route returns `{ kind, path }` for the resulting entry. Bodies are strict JSON of at most 8 KiB and never carry file content. Entries follow the same path rules and depth limit as reads, parent folders must already exist, a rename keeps the file kind, and a folder cannot move into itself.
+
+Outcomes:
+- 409 `exists` for an existing destination.
+- 409 `not_empty` for a folder that still has contents.
+- 404 `not_found` for a missing destination folder.
+- 409 `conflict` for a changed file.
+- 410 `deleted` for a missing source.
+- 403 for excluded names, links or another mount.
+- 503 `filesystem_unsupported` on unsupported storage.
+
+For access from another machine, keep loopback binding and use an SSH tunnel such as `ssh -N -L 8787:127.0.0.1:8787 server`, then open `http://127.0.0.1:8787` locally with that exact allowed origin. Alternatively configure a TLS reverse proxy and an actual resolvable hostname; no public DNS is supplied by this repository. An operator may explicitly set `MERDECK_HOST=0.0.0.0` (or a chosen interface) and exact public `MERDECK_ALLOWED_ORIGINS`; network access restrictions still apply, and a service without a token then starts only with `MERDECK_OPEN_ACCESS=true`; prefer a token. The bind address is not the browser origin. No public bind, proxy, tunnel or deployment is performed by these instructions. These are deployment instructions, not claims of verified remote reachability.
+
+Same-origin Host/Origin validation is active even on loopback. Set `MERDECK_ALLOWED_ORIGINS` to exact public origins for remote access; default binding remains 127.0.0.1. TLS reverse proxies must preserve the original Host and restrict upstream access. Forwarded headers are ignored. HTTPS origins enable Secure cookies and HSTS; `MERDECK_COOKIE_SECURE=true` requires HTTPS, while `auto` is the default. Do not mix HTTP and HTTPS origins in one service. Production CSP blocks remote script/image pulls and allows only the built local resources and required inline styles. A public page shell does not grant access to project data.
+
+The scoped [HTTPS domain deployment](docs/deployment-domain.md) documents verified access to the owner's hosted instance (its hostname is withheld and shown as `merdeck.example.test`), private startup/stop ownership and actual evidence. Corrected live checks on 2026-09-08 passed exact original-source rendering/saving and narrow drawer containment at 390 and 360 pixels. The controlled deployment restart preserves the root. Since AUTH-001 that instance runs with open access at the owner's request, so it asks for no token. Access is verified from the current environment. The matching corrected candidate now also has independently audited hosted x64/ext4 and downloaded-package acceptance, and it is part of the implementation integrated into `main` on 2026-09-09. Earlier failures are retained.
+
+For a reproducible real HTTP check, copy examples/project into an explicitly verified disposable root and set MERDECK_TEST_EXPECTED_FS to its actual filesystem type, start the built service in tmux, and create an owner-readable private token file. Set `MERDECK_SMOKE_URL` to the actual origin, `MERDECK_SMOKE_ROOT` to that sample root and `MERDECK_SMOKE_TOKEN_FILE` to the token file, then run `bun tests/integration/api/smoke.ts`. It uses curl with private request files, validates login/tree/multiple-block load/save, exact surrounding bytes, an external edit, 409 conflict and logout, and restores the disposable Markdown bytes. It checks the built page/asset transport by default; set `MERDECK_SMOKE_STATIC=false` only for a separately served development API. It does not claim browser rendering or full UI acceptance. Never target operator originals with this smoke.
+
+## File storage and practical acceptance
+
+Write admission requires Linux, procfs, and an actual descriptor mount identified as **overlay** (`statfs.type = 0x794c7630`), **ext4** (`statfs.type = 0xef53`) or **virtiofs** (`statfs.type = 0x65735546`). Each admitted family carries the identity model it was measured to support, reported as `storage.identity`: overlay and ext4 answer "still the same file" with the inode (`stable`), and virtiofs answers it with the file's bytes (`content`), because it can report a new inode for a file whose bytes, size and both timestamps are unchanged. On the content model a save compares device, size, both timestamps and the complete-file hash, proves its staged bytes by their own hash and reads the published name back; it gives up exactly one distinction, an external replacement whose bytes and both timestamps are identical. The root, held destination directory and target must share the root device, and each admitted mount record must match the held descriptor device. Missing, malformed or unassociated mount metadata refuses writes. Ext2/ext3 share the ext magic but their mounted types are not admitted. The service checks actual filesystem metadata through descriptor anchors; it does not infer support from a pathname or expose an override. Other Linux filesystems can be read subject to the same containment checks, but saves return safe `filesystem_unsupported` / HTTP 503 before creating a temporary file. The observed host-shared `fakeowner` mount (`0x6a656a63`, device 41) stays unsupported for writes. The admitted virtiofs measurement is recorded in [STORAGE-001](docs/task/STORAGE-001.md) and [STORAGE-002](docs/task/STORAGE-002.md). The tested overlayfs instance was device 70; device numbers are deployment observations, not constants in the implementation. Other overlay configurations still require their own acceptance run. No blanket Linux support is claimed.
+
+Inspect the intended storage with the pinned runtime:
+
+```bash
+bun -e 'import {stat,statfs,realpath} from "node:fs/promises"; const p=await realpath(process.argv[1]); console.log({root:p,device:String((await stat(p,{bigint:true})).dev),filesystemType:"0x"+(await statfs(p,{bigint:true})).type.toString(16)})' /absolute/chosen/root
+```
+
+The file suite creates and removes only its own unique child fixtures. `MERDECK_TEST_FIXTURE_PARENT` must name an existing canonical absolute directory on the verified supported storage. `MERDECK_TEST_UNSUPPORTED_PARENT` names a real unsupported filesystem for refusal checks, such as a tmpfs directory. A checkout on `virtiofs` no longer qualifies, because that family is admitted under the content identity model. Both choices and all fixture type/device observations are printed. Without explicit settings, each parent defaults visibly to checkout `tmp/`, which cannot serve as the refused parent on admitted storage. There is no silent relocation, test-only production bypass, skip or conflict retry. A deployment with only supported storage needs a separately supplied unsupported fixture mount to run this full contract suite; the test does not fake one.
+
+For this host, create a dedicated disposable directory under its verified `/tmp` overlayfs, set the variables to its canonical path and checkout scratch, and run through tmux:
+
+```bash
+mkdir -p tmp
+# /tmp was verified on this host; inspect your chosen storage first.
+file_fixture_parent="$(mktemp -d /tmp/merdeck-file-check-XXXXXX)"
+export MERDECK_TEST_FIXTURE_PARENT="$file_fixture_parent"
+export MERDECK_TEST_EXPECTED_FS=0x794c7630
+export MERDECK_TEST_UNSUPPORTED_PARENT=/dev/shm
+export MERDECK_TEST_UNSUPPORTED_FS=0x1021994
+bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile
+bun run check:files
+bun run check
+git diff --check
+```
+
+`check:files` performs focused strict type checking, all file-domain tests, 20 consecutive standalone saves, 20 consecutive multi-block save pairs, and a direct service smoke in a separate real Bun process. Tests cover stale/concurrent requests, external in-place edits and atomic replacements before final validation, deletion, exact BOM/CRLF/Unicode/unrelated bytes, complete-content observation, traversal/symlinks/root substitutions, revisions/cache invalidation and actual unsupported writes. `check` includes the same file tests through the source-rooted entry and keeps the existing root/web lint, strict type checks, coverage and production builds. Set both parents for either command. Logs report each condition separately; no combined reliability rate is claimed. Run `bun tests/integration/files/domain-smoke.ts` with the same parents for the render-independent read/select/save/external-refresh smoke.
+
+HTTP, UI, browser and compiled-binary acceptance must configure `MERDECK_ROOT` on this same verified storage contract and inspect type/device, rather than place writable sample data on the excluded checkout mount. Development nsl routing and production packaging do not change filesystem eligibility. Copy the committed samples only into a chosen disposable supported directory for these checks; external editors may edit those files directly. Delete only your own fixtures after checks, and retain logs separately. The suite verifies child fixture removal; operators own removal of their explicitly chosen empty parent.
+
+Import `createDiagramService`, `FileConfig` and `FileStorageStatus` from `src/modules/diagrams`. Create one instance per root using validated config. `storageStatus()` returns root eligibility, filesystem type and device without paths. `readDocument(path)`, `documentRevision(path)`, `treeSnapshot({refresh:true})` and `saveDiagram({path, selector, expectedVersion, source})` return the shared typed contracts. Refresh selectors and full-file SHA-256 versions from every successful save. Transport must map `AppError` through the existing safe mapper and expose unsupported storage; hooks are trusted test seams, never request configuration. Always `await service.close()` in cleanup. Directory pagination retains bounded streams and an unref'ed expiry timer; closing rejects new work, disposes streams and waits for accepted saves. `createApp.close()` is also asynchronous and owns its diagram service; a restarted application needs a fresh service instance.
+
+Practical saves preserve direct external editing, use complete-file versions, serialize service writes and atomically replace via a synced sibling file. Changes detected before publication conflict; detected deletion returns `deleted` without recreating it. Dirty drafts must remain local across refresh/errors. **An external writer can still change/delete the target after final validation and before rename, and that change can be overwritten.** This is an explicit limitation, not a universal no-loss promise. HTTP traversal/symlink controls do not isolate an OS actor able to move the root or its ancestors. Post-rename sync errors can leave a visible save with an error response; reload/reconcile before another attempt. ACLs/xattrs and special mode bits are not retained.
+
+The unchanged manual `tests/integration/files/external-writer-window.ts` schedules the exact final-window counterexample. To reproduce on supported storage, run that absolute script path from an exclusively owned scratch directory on verified overlayfs (it creates its own `tmp/` there), in a separate process. Exit zero means the overwrite was reproduced; its interpretation remains **`applicationSafetyPassed=false`**. It is excluded from passing acceptance. The original raw probe and six-case history remain available under `tests/integration/files/inode-*.ts` and [the inode record](docs/decisions/2026-09-07-inode-observations.md); the original failures remain part of that record.
+
+## Directory browsing API implementation status
+
+The directory API has a reviewed native streaming candidate; **integration and production acceptance remain pending**. The rejected Bun `Dir.read()` adapter materialized whole directories. Its replacement uses a fixed 4096-byte `getdents64` buffer through TypeScript `bun:ffi`, with an independently owned anchor and stream descriptor. Existing `/diagrams/tree` compatibility and the 0.8.4 preview remain intact. See the [feature plan](docs/plan/20260913-1628-directory-navigation-pagination.md), [correction decision](docs/decisions/20260913-1705-bounded-directory-primitive.md) and [backend task](docs/task/20260913-1637-directory-backend.md) for exact evidence and pending gates.
+
+Directory navigation requires Linux little-endian LP64 x64/arm64, procfs, Bun 1.4.2 and dynamically loadable glibc >= 2.30 (`libc.so.6`). Missing platform, libc or symbols fail startup safely; no eager fallback is used. The official [FFI documentation](https://bun.com/docs/runtime/ffi) marks this capability experimental and discourages production reliance. Minimum-libc and hardened/JIT-restricted hosts have not been verified. The libc bridge stays loaded for process life, including service restarts; there is no unload race or external helper dependency.
+
+- `GET /api/diagrams/directory?path=docs&limit=100` returns only immediate entries. Omit `path` or use an empty string for the configured root. `limit` is a canonical decimal integer from 1 to 200, default 100. Continue with the same path/limit and the returned `cursor`; a cursor is single-use and must never be automatically retried or logged/persisted.
+- `GET /api/diagrams/directory/revision?path=docs` samples directory metadata without enumeration or file reads. It is a namespace revision, not a file content version. Continue polling the selected document separately.
+- `GET /api/diagrams/search?path=docs&query=relay` searches the names below one folder, including every subfolder, and returns up to 200 matching visible entries with the searched `query` and `kind`, `complete`, `stoppedBy` (`matches`, `visits` or `time`), `visited` and `skipped`. It reads names only, never file contents, applies the same exclusions and path checks as a directory page, and stops at 20,000 names or before the request deadline. `query` is up to 200 characters of text without control characters, matched case-insensitively against the path below the folder. `kind`, `mermaid` or `markdown`, admits only files of that kind before the match budget is counted, so `?path=docs&kind=markdown` lists the Markdown files below `docs`; folders match by text only. A search needs a nonempty `query`, a `kind` or both. An incomplete result never proves that a file is absent.
+- `POST /api/diagrams/directory/close` accepts strict JSON `{path, cursor}` and returns `{closed:true}`; it is idempotent for unknown or expired tokens. Existing Origin and token-mode CSRF protections apply.
+
+Directory rows have `children: "unloaded"`. File rows have `state: "deferred"` and `fileKind`, without blocks, source or a file version. Fetch the existing document endpoint only when needed; oversized, empty and invalid-text Markdown remain discoverable by name. Entries carry complete canonical root-relative paths. Root has `parent: null`; immediate subdirectories have `parent: ""`. The root cannot be changed by a request.
+
+The protocol caps emitted entries at 200, consumed raw records at 1,024 (including dots and invalid/excluded names), response JSON at 256 KiB including the success envelope, and file-content bytes at zero. Physical read-ahead is separately bounded by the retained 4096-byte buffer (at most 170 minimum-sized records). Refills stop at the page boundary; the conservative per-page bound is 1,024 calls and 4 MiB of returned raw records, without whole-directory materialization. A byte-boundary entry is retained for the next page. An empty page may still have a `nextCursor`; only `complete: true` means this traversal reached EOF. At the configured depth boundary, the result has `stoppedBy: "depth"`, no entries/cursor and `complete: false`. `MERDECK_MAX_PATH_DEPTH` defaults to 64 and accepts 1–64; it bounds all direct listing, revision, read, save, create, move and delete operands. `MERDECK_MAX_TREE_DEPTH` controls legacy discovery only.
+
+Enumeration uses native filesystem order through the retained nonrecursive stream; sorting, recursive scans, replay caching and snapshot claims are outside this protocol. At most 32 streams are retained per service and four per authenticated session/origin. Open access shares the origin's open principal and the global cap. Four directory operations may run concurrently. Streams expire after two idle minutes or one hour total, capped by session expiry; a five-second sweep reclaims idle resources. Logical operation deadlines are five seconds. Native getdents64 is synchronous and may block the main thread. After it returns, the adapter yields and rechecks cancellation, deadline and service state before further I/O/publication. Pending kernel I/O cannot be forcibly cancelled: its reservation remains occupied until I/O and closure finish, so slow storage can delay the whole service and cause `rate_limited` or `unavailable` responses. Linux close is attempted once; an ambiguous close error fails the pager closed instead of risking closure of a reused descriptor.
+
+A live continuation observing namespace changes returns HTTP 409 `directory_changed`; consumed, closed, expired or unknown tokens return HTTP 409 `cursor_stale`. Discard that traversal and restart without a cursor; a lost successful response also requires restart. Directory fingerprints include target metadata, ancestor identities and a startup nonce, while excluding ancestor timestamps so unrelated sibling edits do not invalidate a deep directory. Metadata caching/coarseness and changes after final comparison remain external-actor limitations. Do not treat this as a snapshot or globally sorted search. Each deployed filesystem still needs its own observable-mutation acceptance.
+
+Moving a directory to a deeper or longer prefix performs a metadata-only safety audit, using the same native adapter, bounded to 8,192 consumed raw records, 1,024 directories and five seconds, before claiming the destination. A projected descendant beyond the path limits returns `forbidden`; audit exhaustion returns `too_large`; observed churn returns `conflict`. Non-growing prefixes avoid the audit. Hidden/ignored contents are preserved and never followed. Large refused moves can be split into individual file moves or use a non-growing prefix. All original storage admission, descriptor validation, byte-preserving save and external-actor limitations remain.
+
+The normal `check:ci` and `check:ci --native` paths run `scripts/check-directory-streaming.ts`. Under tmux with the explicit fixture variables below, it records source/bundle/compiled actual-adapter traces for 1,003- and 32,771-file first pages, complete traversal plus 10,003 excluded names, single-use cursor churn, actual descriptors, injected EINTR/delayed cancellation, and the bounded growing-prefix move audit. Evidence and hashes remain under ignored `tmp/directory-physical-*`. This adapter harness complements the unchanged actual release executable and published-bundle smoke checks; it does not itself establish hosted acceptance. Raw traces and logs remain local under ignored `tmp/directory-physical-*`. The shared bounded exporter publishes only a strict directory summary with per-mode physical counts, safe status/error codes, architecture/filesystem and verified commit/source/build hashes. It rejects dirty-source proof, nonregular or oversized inputs, isolates stale uploads, and uses neutral `directory-streaming-NN.json` names under `tmp/ci-evidence/`. The workflow retains sanitized `verification-reports-<commit>-<attempt>` artifacts on success and failure only after export succeeds; this artifact is separate from release payloads.
+
+## Ordinary Linux verification preparation
+
+The intended deployment edits the operator's explicitly configured existing project directory. It does not require copying/uploading the project, exclusive directory ownership, or stopping direct external tools. The current policy admits descriptor-verified ext4 and overlayfs with exact mount/type/device checks. **Actual ext4/Linux x64 source and single-executable acceptance passed at candidate 4ca471274d3ffa76469f8b2e87d4abd7055aa764.** The successful hosted run and downloaded package were independently inspected; final implementation review is accepted. This evidence identifies one actual ext4 deployment, not every Linux filesystem or mount configuration. Local overlay scratch and the host-shared checkout remain distinct from that hosted ext4 evidence.
+
+An operator or hosted verification job can run the following from the project tmux session with Bun 1.4.2. Supply actual existing canonical fixture parents; do not substitute an overlay or tmpfs backed by ext4. All destructive checks create exclusive children and leave existing files alone.
+
+```bash
+export MERDECK_TEST_UNSUPPORTED_PARENT=/absolute/actual/unsupported/fixture-parent
+export MERDECK_TEST_UNSUPPORTED_FS=0x6a656a63 # Example observed locally; identify the actual mount.
+bun run check:storage -- /absolute/native/fixture-parent --filesystem ext4
+```
+
+The runner requires both ext4 mount type and statfs `0xef53`, identified through the held directory descriptor. A mismatch, missing target, missing refusal mount, wrong runtime/session, failed assertion or cleanup failure exits nonzero. It never changes production admission. On a real matching native target it runs the unchanged raw identity diagnostic in exactly twenty bounded child processes, retaining every trace. If raw evidence passes but production still refuses ext4, it exits nonzero with that precise remaining gate. The first hosted run failed at that gate under the old overlay-only policy. The candidate correction uses its actual raw evidence. The subsequent hosted run passed the source stages and complete executable/browser aggregate, as recorded below. Do not repeat failed probes unchanged or erase earlier failures.
+
+After actual candidate admission succeeds, the same entry runs `check:files` and focused storage HTTP tests against its native child fixtures. `check:files` now checks the explicit `MERDECK_TEST_EXPECTED_FS` and `MERDECK_TEST_UNSUPPORTED_FS` against actual storage and production capability. These variables are assertions, never application settings or overrides. Repeated standalone and multi-block saves, independent external conflicts, byte preservation, deletion, containment and real unsupported write refusal remain required.
+
+Each native run writes `tmp/storage-check-*/result.json`, stage `.stdout`/`.stderr`/`.exit.json`, raw traces and `admission.json` when reached. The versioned result records expected/observed type, device and mount identity, candidate commit and dirty state, actual Bun runtime/architecture, individual exits, cleanup and failure. `nativeSourceChecks` is `passed` only after the actual raw/file/HTTP stages pass; `nativeAcceptance`, `browser` and `deployedBinary` remain `pending` because this entry does not certify a deployed executable. Runtime `nodeCompatibility` is Bun's compatibility version, not a separately executed Node version. No credentials or project contents are exposed through anonymous status endpoints.
+
+To verify the preparation on locally available supported/unsupported storage, set the same explicit fixture parents/types used for the full gate, then run `bun node_modules/typescript/bin/tsc --project tests/integration/storage/tsconfig.json && bun test ./tests/integration/storage` inside the project tmux session. These tests include an actual non-native CLI rejection and real file-backed HTTP checks; passing them is preparation evidence only.
+
+The complete hosted evidence contract is in [PLAN-005](docs/plan/PLAN-005.md). It reuses the current browser suite (24 cases after the save-observation correction) through the existing-service mode described above, on an actual deployed native root and an actual standalone executable with local frontend assets. A future job or workflow file is preparation only; final readiness requires its real run URL, exact commit, identified native filesystem, binary identity and successful results. The historical final-window diagnostic remains `applicationSafetyPassed=false`.
+
+## License
+
+[All rights reserved](LICENSE).
+
+## Contributor CI and executable checks
+
+Clone the authorized repository with `git clone git@github.com:itxje/merdeck.git`. Source development requires Bun 1.4.2, a stable Node 24.x release and both frozen installs above. Downloaded executables do not require Bun, Node, npm, node_modules, a source checkout or frontend files.
+
+Install `tmux` and `strace` as development verification prerequisites; on a hosted Ubuntu runner the workflow explicitly installs them. Local operators may provide a project-local tracer through an absolute `MERDECK_STRACE`. Install verified actionlint and project-local Chromium:
+
+```bash
+bun scripts/setup-ci-tools.ts
+export PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright"
+web/node_modules/.bin/playwright install chromium
+# On a fresh supported Linux runner, install the browser's system libraries as well:
+# web/node_modules/.bin/playwright install --with-deps chromium
+```
+
+From the prescribed project tmux session, configure the actual supported and refusal fixture parents/types from the storage instructions, then run:
+
+```bash
+bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run check:ci && git diff --check
+```
+
+`check:ci` runs file checks, focused storage tsc/tests, the full source `check` (including procfs/backend/frontend coverage/build), `lint:workflows`, the physical directory application-adapter checks, `test:release`, compilation and binary-only smoke. The smoke invokes `test:e2e` once against the two actual executable instances, then separately checks lazy Mermaid families. It also verifies every emitted resource byte/MIME/security header, versions, checksums, ELF target, empty-runtime-PATH process/file tracing and cleanup. This replaces a redundant source/browser pass inside the aggregate; `test:e2e` remains independently available for source or existing-service checks. `test:release` requires built web/dist and tmux because its induced real compile failure tests use those inputs. It tests strict version/package/refusal rules, safe draft reruns and cleanup without network publication. Reports and screenshots stay under ignored tmp/. Local ARM64/overlay success explicitly leaves native acceptance pending. The current suite has 24 browser cases; earlier 19-case results below remain historical.
+
+Historical local result from CI-001: the complete gate passed on Linux arm64 with actual overlay 0x794c7630 / device 70 and separate host-shared refusal 0x6a656a63 / device 41. All 93 embedded assets, 19 binary browser cases and four lazy Mermaid families passed; strace verified an empty runtime PATH, one executable per service and no source/frontend dependency or extraction. Linux x64 cross-compilation passed; this historical local run did not execute x64 or establish native storage acceptance. The subsequent verified hosted execution is recorded below. Exact commit, checksums, coverage, stopped URLs and cleanup are in [CI-001](docs/task/CI-001.md).
+
+The normal native gate additionally requires an actual **Linux x64** host, procfs, an admitted ext4 fixture parent identified through its held descriptor (not overlay-on-ext4), and a separately identified refusal parent such as tmpfs. Set all four fixture settings above to the actual parents/types, and then:
+
+```bash
+export MERDECK_NATIVE_PARENT=/absolute/actual/ext4/fixture-parent
+export MERDECK_TEST_FIXTURE_PARENT="$MERDECK_NATIVE_PARENT"
+export MERDECK_TEST_EXPECTED_FS=0xef53
+# Set the separate refusal parent and its actual type, e.g. tmpfs 0x1021994.
+bun run check:ci --native
+```
+
+This invokes the real storage runner, source gates and matching executable/browser/asset/tracing checks. Raw-only diagnostics, synthetic mount-policy tests or a successful cross-build cannot satisfy it. The hosted workflow creates exclusive children under the runner's actual temporary storage and separate `/dev/shm` refusal storage, records both identities and fails if they do not meet the contract. It does not create mounts or bypass application admission.
+
+The raw build command requires an explicit tag/target; this example uses a nonpublishing fixture and creates no Git tag:
+
+```bash
+bun run compile --tag v0.0.0-ci.fixture --target bun-linux-arm64
+bun scripts/package-release.ts --tag v0.0.0-ci.fixture --target bun-linux-arm64
+bun scripts/check-release.ts --tag v0.0.0-ci.fixture --target bun-linux-arm64
+```
+
+Select `bun-linux-x64` for the required release target; cross-compilation alone is not execution proof. Use an empty dist/release directory for standalone compile commands; prior output is retained rather than silently overwritten. `check:ci` owns a unique staging directory and retains prior complete results under tmp/. Public attachments are `merdeck.tar.gz` and SHA256SUMS. That archive is architecture-independent: it holds `merdeck.js` and the built `web/` tree, and the host's Bun runs it. The version-named executable stays a checked build output and workflow artifact, and is not published.
+
+## Verified preparation and preview
+
+The documentation preparation used source `4ca471274d3ffa76469f8b2e87d4abd7055aa764` with Bun 1.4.2 and actual Node 24.20.0 on Linux ARM64. Both frozen installs and `bun run build` passed. The documented source production command passed the real HTTP smoke and four existing workspace browser cases (21.6 seconds), including desktop/390 px layouts, independent block saves, byte preservation, clean external refresh, dirty conflicts/deletion, auth recovery and real unsupported-write refusal. The unchanged prototype passed nine HTTP/offline verification groups. No new full coverage or binary gate was run for these documentation-only changes.
+
+Earlier checks remain separate: the ext4-candidate implementation `1a65402ed63c1b0702ad1de3598d9d4b3f170397` passed local ARM64/overlay source and 19 executable browser cases; the frontend correction `4fa0938cd262ea151a9b14efb0b04d669eb28137` passed its own full gate and 24 executable browser cases. These are not a combined ext4/x64 result. Exact coverage, binary checksums, original failures and cleanup remain in [NATIVE-001](docs/task/NATIVE-001.md), [UI-001](docs/task/UI-001.md), [CI-001](docs/task/CI-001.md) and [REVIEW-001](docs/task/REVIEW-001.md).
+
+The preparation preview is the built source application at `http://127.0.0.1:42927`, using a disposable sample on actual overlayfs `0x794c7630`, device 70. Login uses the owner-readable ignored `tmp/doc/token`; never include its contents in messages or logs. The standalone **simulated** prototype is served at `http://merdeck-design-4984b3.localhost:3003/merdeck/Merdeck.html`. Both were inspected in a real browser, and their desktop/tree/editor/preview hierarchy and narrow tabs match; prototype status stays **needs-review**, with `designSystems: []`.
+
+These are temporary development-machine previews, not published application URLs. Only local-machine access was verified. The app binds loopback; the prototype's loopback server uses an existing nsl proxy whose configured bind is `0.0.0.0:3003`. That proxy bind and a `.localhost` name do not prove LAN/public reachability. No tunnel, reverse proxy deployment or remote access was tested. [DOC-001](docs/task/DOC-001.md) records exact commands, local screenshots, retained credentials/fixtures and service stop instructions. Ignored evidence paths exist in the verification checkout and are not bundled with a fresh clone.
+
+## Candidate verification before integration
+
+[Hosted run 34166805672](https://github.com/itxje/diagramdock/actions/runs/34166805672), attempt 1 at clean commit c1078e302cfe43eeaa8fc5bf9286a09273a74ee5, completed with **failure** at the old production admission gate. All twenty raw ext4 controls passed with cleanup, on Linux x64 / Ubuntu image 20260831.293.1 / Bun 1.4.2 / Node v24.20.0; actual ext4 was 0xef53, device 2049, descriptor mount 27 / 8:1, with separate tmpfs refusal 0x1021994, device 26, mount 32 / 0:26. This evidence supports the bounded candidate correction, not native source or executable acceptance. This failed result remains unchanged. The corrected run below supplies separate historical native/source/executable evidence. No release had been published at that checkpoint; the current published version is v0.11.0.
+
+The supplied actual run log, structured stage/audit summaries and downloaded package for [run 34168525432, attempt 1](https://github.com/itxje/diagramdock/actions/runs/34168525432) were read and independently validated. The run completed with **success** at clean candidate `4ca471274d3ffa76469f8b2e87d4abd7055aa764`; **native/Linux x64 acceptance is satisfied** and **publication was skipped**. Artifact `10034988497`, named `checked-linux-x64-4ca471274d3ffa76469f8b2e87d4abd7055aa764`, was present and unexpired in the inspected snapshot.
+
+| Actual successful-run evidence | Observed result |
+| --- | --- |
+| Runtime and positive storage | Linux x64, Bun 1.4.2; ext4 `0xef53`, device `2049`, descriptor mount `27` / `8:1`. |
+| Refusal storage | tmpfs `0x1021994`, device `26`, mount `32` / `0:26`; write rejection is the expected negative case. |
+| Native source | Twenty ordered raw stages plus file and HTTP stages: all 22 exits zero, no signals, cleanup true. |
+| Full gates | 152 backend passes, 54 frontend passes and 18 release passes; lint, types, build and workflow gates passed. These suites overlap other checks; do not sum them. |
+| Executable outside checkout | 24 browser cases passed in 1.2 minutes, all 93 assets checked, flowchart/sequence/class/state lazy rendering passed, zero unexpected errors or external requests. |
+| Emitted syscall audit | One execution per service, empty runtime PATH, zero checkout accesses and no frontend extraction. Refused: 3 paired calls / 404 file accesses / 0 writes. Supported: 251 paired calls / 19,833 accesses / 16 scoped writes. |
+| Complete aggregate | `result=passed`, `nativeAcceptance=passed`, `cleanup=true`. Hosted loopback listeners were disposable tests, not public or retained previews. |
+
+The checked executable is `merdeck-0.0.0-ci.fixture-linux-x64`, 85,485,024 bytes, SHA-256 `9be56bbd7551bdd27806571a133112947aee2deb27b6dbdce3f030c71337f354`. Its matching SHA256SUMS, strict manifest, exact commit/tag/version/target, 93-asset inventory and x86-64 ELF header were validated from the supplied download without local x64 execution. The fixture tag/version is build metadata, not an actual published Git tag or selected first release. The artifact archive (85,506,772 bytes, digest `dc0b9dd49f04f5bdb86fb8156ac4d9252627378eff9f7ba2c059d3339f402b5e`) is distinct from the executable checksum. It contains the executable, checksum and internal manifest.
+
+Successful individual raw probe JSON and raw syscall traces were not uploaded. The statements above come from actual emitted stage/audit summaries and the inspected runner/auditor semantics; they do not claim local replay of missing raw files or queries of hosted listeners. The source-stage `nativeAcceptance=pending` correctly described that stage alone and is superseded by the complete executable aggregate, without rewriting its record. The historical `applicationSafetyPassed=false` diagnostic remains unchanged. [DOC-001](docs/task/DOC-001.md) records focused verification and coverage values.
+
+Final independent review `a0f0f039ed20fd3289717898a8f8d4a349db0555` is accepted: P2 resolved at `e70dd9c`, P3 resolved at documentation `7d6d720`, with native policy/execution/artifact checks passed and no remaining actionable findings. [REVIEW-001](docs/task/REVIEW-001.md) records the assessment. At that historical checkpoint, the reviewed implementation and documentation were complete on the delivery branch, with main integration and a first release still pending. The implementation was subsequently integrated; the current published version is v0.11.0. These earlier results are historical; current directory-feature acceptance is recorded in the release links above.
+
+A maintainer can push a concrete reviewed candidate commit to the dedicated nonpublishing branch without merging main. Replace REVIEWED_COMMIT with that exact full SHA; do not use a fixture tag:
+
+```bash
+git push origin REVIEWED_COMMIT:refs/heads/verify/native-readiness
+# Observe the exact pushed SHA in the resulting "Verify and release" Actions run.
+gh run list --repo itxje/merdeck --branch verify/native-readiness --workflow verify.yml
+gh run view RUN_ID --repo itxje/merdeck --log-failed
+gh run download RUN_ID --repo itxje/merdeck --name verification-failure-1
+```
+
+These commands describe future reviewed candidate updates and failed-run diagnostics; do not rerun the successful candidate solely to update documentation. The two observed run outcomes are recorded above. The exact origin remains `git@github.com:itxje/merdeck.git`. `workflow_dispatch` becomes an additional nonpublishing entry after its default-branch availability requirements are met; the initially empty repository must use the candidate push trigger first. The workflow observes the actual native candidate and separate tmpfs refusal mount; it never infers ext4 from Ubuntu or modifies mounts. Its first real ext4 run retained twenty raw controls and the old admission failure. Attach run URL, exact commit, runner/runtime and filesystem/type/device to the bounded storage correction review. The corrected candidate's actual native/source/binary/browser evidence is verified above; final documentation review is accepted and the separate main-integration approval boundary remains. Do not treat a refused target as native acceptance.
+
+## Version-tag releases and running the executable
+
+**The first release is [`v0.1.0`](https://github.com/itxje/merdeck/releases/tag/v0.1.0), tagged at `be42c59` on 2026-09-11.** For each later release, once a reviewed commit has actually passed the matching Linux x64/native gates, a maintainer selects a version and pushes a tag `vMAJOR.MINOR.PATCH` at that commit. SemVer prerelease suffixes such as `-rc.1` are supported and set the GitHub prerelease flag; leading-zero numeric identifiers, build metadata and malformed versions are rejected. A tag is immutable release identity: do not move it to different bytes. Main commits, candidate branches and manual runs do not publish.
+
+Before 1.0, the maintainer chooses the position to raise by what an operator has to notice. The **patch** position covers ordinary work: fixed defects, interface adjustments, a widened preview policy, documentation. The **minor** position is for a release that changes what a deployment must account for: the published artifact's form, a default configuration value, storage admission, or the API and session contracts. The major position stays at zero until 1.0. An earlier release that used the wrong position is left as published, because a tag is not moved.
+
+After selecting the real version and reviewed commit, the maintainer process is:
+
+```bash
+# Replace both placeholders only after actual native/x64 acceptance and review.
+release_tag=vMAJOR.MINOR.PATCH
+reviewed_release_commit=REVIEWED_COMMIT
+bun scripts/release-version.ts "$release_tag" && \
+git tag -a "$release_tag" "$reviewed_release_commit" -m "Release $release_tag" && \
+git push origin "refs/tags/$release_tag"
+```
+
+The placeholders are deliberately invalid until a version and commit are chosen. The first release, `v0.1.0`, was tagged and pushed with these commands.
+
+The tag workflow repeats all required checks on that exact commit. Only successful native source and binary/browser acceptance permits draft creation, complete attachment upload/checksum verification and final publication. An identical rerun reuses existing matching outputs; conflicts fail without deleting or replacing unrelated assets. A failed upload leaves a draft and can resume with identical artifacts. Only the automated publisher uses the standard GITHUB_TOKEN; no new credentials or registry are required. Local tests and fixture versions never publish.
+
+Download `merdeck.tar.gz` and `SHA256SUMS` from [v0.13.0](https://github.com/itxje/merdeck/releases/tag/v0.13.0). The earlier v0.9.0 tag remains unpublished after failed release checks; it was not moved. Both names stay the same for every release, so `https://github.com/itxje/merdeck/releases/latest/download/merdeck.tar.gz` always names the current one. The directory-navigation archive requires exactly [Bun](https://bun.sh) **1.4.2**, Linux **little-endian LP64 x64 or arm64**, mounted procfs and dynamically linked **glibc >= 2.30** (`libc.so.6`). Other runtimes, architectures and libc implementations are not covered by this support contract. In an empty download directory, use an owned tmux session for persistent execution:
+
+```bash
+sha256sum --check SHA256SUMS
+tar -xzf merdeck.tar.gz
+bun merdeck.js --version
+export MERDECK_ROOT=/absolute/path/to/your/existing/project
+# Read a private random token without putting it in command history:
+read -r -s -p 'Access token: ' MERDECK_TOKEN
+export MERDECK_TOKEN
+export MERDECK_ALLOWED_ORIGINS=http://127.0.0.1:8787
+NODE_ENV=production bun merdeck.js
+```
+
+The archive holds `merdeck.js` and the `web/` tree it serves, with fixed metadata and no stored timestamp, so the same build always produces the same archive bytes. Keep the extraction directory free of a `.env` file: Bun reads one from the working directory, while the configuration above stays explicit. Supply 32–256 printable non-space random token characters. Confirm that the reported `Merdeck VERSION` matches the downloaded release tag without its leading `v`; `--build-info` reports the matching commit/target/runtime. Keep the root and credentials as runtime inputs, never build inputs. Bun reads the exported runtime configuration; keep credentials and the root as runtime inputs, never build inputs. Default listener is `http://127.0.0.1:8787`, accessible on that machine only. Use the existing explicit Host/Origin/TLS guidance for reviewed remote access. Browser login establishes a bounded, signed session in an HttpOnly SameSite cookie with CSRF validation; it survives a restart with the same token and root until it expires, and changing the token signs every browser out. Run one service per original project root and keep external tools editing those original files directly.
+
+The release bundle carries the backend and every interface resource, but still requires exactly Bun 1.4.2 on a Linux little-endian LP64 x64/arm64 host with dynamically linked glibc >= 2.30, mounted procfs and actually admitted project storage. It is not a portable filesystem admission bypass. The verified hosted target is Linux x64/ext4; historical ARM64/overlay checks are separate. The archive carries no machine code of its own; the host's Bun supplies the runtime, so the usual system libraries come from that installation. The unpublished checked executable still needs `/lib64/ld-linux-x86-64.so.2` and the normal `libc`, `libpthread`, `libdl` and `libm`. Bundling the backend and resources is not an all-OS promise; no unverified OS is advertised. Known stale revisions and detected deletion are rejected; the final comparison/rename window and local OS root/ancestor movement limitations remain as documented above. Public repository/release automation does not change the [All rights reserved license](LICENSE).

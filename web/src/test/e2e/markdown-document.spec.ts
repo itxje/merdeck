@@ -1,0 +1,169 @@
+import { randomUUID } from 'node:crypto'
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { chooseBlock, expect, login, tableHeaderIsFramed, test } from './support'
+
+const root = process.env.MERDECK_SMOKE_ROOT
+if (!root)
+  throw new Error('An explicit disposable sample root is required')
+
+test('complete Markdown remains inert, navigable, responsive, and byte-preserving', async ({ page }) => {
+  test.setTimeout(90000)
+  const suffix = randomUUID()
+  const name = `markdown-document-${suffix}.md`
+  const target = `markdown-target-${suffix}.md`
+  const path = join(root, name)
+  const targetPath = join(root, target)
+  const first = 'flowchart LR\nFirst --> Arrow\n'
+  const second = 'flowchart LR\nSecond --> Arrow\n'
+  const prefix = `\uFEFF# Complete document\r\n\r\n## Section heading\r\n\r\n### Subsection heading\r\n\r\n#### Detail heading\r\n\r\n##### Minor heading\r\n\r\n###### Small heading\r\n\r\nA paragraph with [external](https://example.test/safe), [section](#complete-document), and [project](./${target}).\r\n\r\n[bad](javascript:alert(1)) [escape](../outside.md) [encoded](%2e%2e/secret.md)\r\n\r\n| Name | Value |\r\n| :--- | ---: |\r\n| prose | 2 |\r\n\r\n![remote](https://example.test/remote.png)\r\n\r\n<script>window.markdownPwned = true</script>\r\n<img src="https://example.test/onerror.png" onerror="window.markdownPwned = true">\r\n<iframe src="https://example.test/frame"></iframe>\r\n\r\n\`\`\`mermaid\r\n`
+  const middle = '```\r\n\r\nUnrelated CRLF prose.\r\n\r\n```mermaid\r\n'
+  const ending = '```\r\n'
+  const initial = prefix + first + middle + second + ending
+  await writeFile(path, initial, { flag: 'wx' })
+  await writeFile(targetPath, '# Linked target\r\n\r\nOnly prose.\r\n', { flag: 'wx' })
+  const writes: string[] = []
+  page.on('request', (request) => {
+    if (request.method() === 'PUT' && new URL(request.url()).pathname === '/api/diagrams/source')
+      writes.push(request.postData() ?? '')
+  })
+  try {
+    await page.setViewportSize({ width: 1440, height: 920 })
+    await login(page)
+    await page.getByRole('button', { name, exact: true }).click()
+    const article = page.getByRole('article', { name: 'Markdown document', exact: true })
+    await expect(article).toContainText('A paragraph with')
+    const typography = await article.locator('h1, h2, h3, h4, h5, h6').evaluateAll((headings) => {
+      const paragraph = headings[0]?.parentElement?.querySelector('p')
+      if (!paragraph)
+        return null
+      const body = getComputedStyle(paragraph)
+      return {
+        bodySize: Number.parseFloat(body.fontSize),
+        bodyWeight: Number.parseInt(body.fontWeight, 10),
+        headings: headings.map((heading) => {
+          const style = getComputedStyle(heading)
+          return { size: Number.parseFloat(style.fontSize), weight: Number.parseInt(style.fontWeight, 10) }
+        }),
+      }
+    })
+    expect(typography).not.toBeNull()
+    expect(typography?.headings).toHaveLength(6)
+    expect(typography?.headings.every(heading => heading.size > typography.bodySize && heading.weight > typography.bodyWeight)).toBe(true)
+    expect(typography?.headings.every((heading, index, headings) => index === 0 || headings[index - 1]!.size > heading.size)).toBe(true)
+    const table = article.getByRole('table')
+    await expect(table).toBeVisible()
+    expect(await tableHeaderIsFramed(table)).toBe(true)
+    await expect(article.locator('img, iframe, script')).toHaveCount(0)
+    await expect(article).toContainText('<script>window.markdownPwned = true</script>')
+    await expect(article.getByText('Image:remote (https://example.test/remote.png)', { exact: true })).toBeVisible()
+    expect(await page.evaluate(() => Reflect.has(window, 'markdownPwned'))).toBe(false)
+    const external = article.getByRole('link', { name: 'external', exact: true })
+    await expect(external).toHaveAttribute('href', 'https://example.test/safe')
+    await expect(external).toHaveAttribute('target', '_blank')
+    await expect(external).toHaveAttribute('rel', 'noopener noreferrer')
+    await expect(article.getByRole('link', { name: 'bad', exact: true })).toHaveCount(0)
+    await expect(article.getByRole('link', { name: 'escape', exact: true })).toHaveCount(0)
+    await expect(article.getByRole('link', { name: 'encoded', exact: true })).toHaveCount(0)
+    // Diagrams render as they approach the viewport, so the second one is reached before counting both.
+    await article.locator('.document-diagram').nth(1).scrollIntoViewIfNeeded()
+    await expect(article.locator('.document-diagram svg')).toHaveCount(2)
+    await expect(article.locator('.document-diagram svg marker')).not.toHaveCount(0)
+    expect(await article.locator('.document-diagram').evaluateAll((figures) => {
+      const [first, second] = figures as HTMLElement[]
+      return !!first && !!second
+        && getComputedStyle(first.querySelector('.diagram-graphic')!).position === 'static'
+        && first.getBoundingClientRect().bottom <= second.getBoundingClientRect().top
+    })).toBe(true)
+    await expect(article.locator('.document-diagram .diagram-graphic [data-file-link]')).toHaveCount(0)
+    await expect(article.getByRole('button', { name: /Select Diagram/ })).toHaveCount(0)
+    const editor = page.getByLabel('Mermaid source', { exact: true })
+    await expect(editor).toHaveValue(first)
+    const inlineDiagram = await article.locator('.document-diagram').nth(1).locator('svg').boundingBox()
+    expect(inlineDiagram).not.toBeNull()
+    await article.locator('.document-diagram').nth(1).click()
+    await expect(editor).toHaveValue(first)
+    const diagramZoom = page.getByRole('dialog', { name: 'Diagram zoom' })
+    await expect(diagramZoom).toBeVisible()
+    const diagramFrame = await diagramZoom.evaluate(element => ({
+      viewport: element.querySelector('.document-media-zoom-viewport')!.getBoundingClientRect().toJSON(),
+      media: element.querySelector('.document-media-zoom-media svg')!.getBoundingClientRect().toJSON(),
+    }))
+    expect(diagramFrame.viewport.width).toBeGreaterThan(1440 * 0.9)
+    expect(diagramFrame.viewport.height).toBeGreaterThan(920 * 0.8)
+    expect(diagramFrame.media.width).toBeLessThanOrEqual(diagramFrame.viewport.width + 2)
+    expect(diagramFrame.media.height).toBeLessThanOrEqual(diagramFrame.viewport.height + 2)
+    expect(Math.max(diagramFrame.media.width / diagramFrame.viewport.width, diagramFrame.media.height / diagramFrame.viewport.height)).toBeGreaterThan(0.98)
+    expect(diagramFrame.media.height / diagramFrame.media.width).toBeCloseTo(inlineDiagram!.height / inlineDiagram!.width, 2)
+    const scrollBeforeWheel = await page.locator('article.markdown-document-view').evaluate(element => element.scrollTop)
+    await diagramZoom.locator('.document-media-zoom-viewport').hover()
+    await page.mouse.wheel(0, -240)
+    await expect(diagramZoom.getByText('115%')).toBeVisible()
+    for (let index = 0; index < 6; index++)
+      await diagramZoom.getByRole('button', { name: 'Zoom in' }).click()
+    await expect(diagramZoom.getByText('400%')).toBeVisible()
+    const diagramViewport = diagramZoom.locator('.document-media-zoom-viewport')
+    await diagramViewport.evaluate(element => element.scrollLeft = 100)
+    const diagramBounds = await diagramViewport.boundingBox()
+    expect(diagramBounds).not.toBeNull()
+    await page.mouse.move(diagramBounds!.x + diagramBounds!.width / 2, diagramBounds!.y + diagramBounds!.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(diagramBounds!.x + diagramBounds!.width / 2 - 90, diagramBounds!.y + diagramBounds!.height / 2, { steps: 5 })
+    await page.mouse.up()
+    await expect.poll(() => diagramViewport.evaluate(element => element.scrollLeft)).toBeGreaterThan(150)
+    expect(await page.locator('article.markdown-document-view').evaluate(element => element.scrollTop)).toBe(scrollBeforeWheel)
+    await diagramZoom.getByRole('button', { name: 'Close' }).click()
+    await expect(diagramZoom).toHaveCount(0)
+    await article.evaluate(element => element.scrollTo({ top: 0 }))
+    await article.hover({ position: { x: 24, y: 100 } })
+    await page.mouse.wheel(0, 400)
+    await expect.poll(() => article.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+
+    await article.getByRole('button', { name: 'project', exact: true }).click()
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true })).toContainText('Linked target')
+    await page.getByRole('button', { name, exact: true }).click()
+    await expect(article).toContainText('Complete document')
+
+    await chooseBlock(page, name, 2)
+    await expect(page.getByRole('tablist', { name: 'Markdown view' })).toHaveCount(0)
+    const secondFigure = article.locator('.document-diagram').nth(1)
+    await expect(secondFigure).toHaveClass(/selected/)
+    await expect(secondFigure.getByRole('button', { name: /Select Diagram/ })).toHaveCount(0)
+    await expect(secondFigure.locator('svg')).toBeVisible()
+    await expect(secondFigure.locator('button [data-file-link], [role="button"] [data-file-link]')).toHaveCount(0)
+
+    const showSource = page.getByRole('button', { name: 'Show source', exact: true })
+    if (await showSource.isVisible())
+      await showSource.click()
+    await expect(editor).toHaveValue(second)
+    const updated = 'flowchart LR\nSecond --> Saved\n'
+    await editor.fill(updated)
+    const response = page.waitForResponse(item => item.request().method() === 'PUT' && new URL(item.url()).pathname === '/api/diagrams/source')
+    await page.getByRole('button', { name: /^Save/ }).click()
+    expect((await response).status()).toBe(200)
+    expect(JSON.parse(writes[0] ?? '{}')).toMatchObject({ path: name, source: updated, selector: { kind: 'markdown' } })
+    expect(await readFile(path, 'utf8')).toBe(prefix + first + middle + updated + ending)
+    const returned = await (await page.request.get(`/api/diagrams/document?path=${encodeURIComponent(name)}`)).json()
+    expect(returned.data.text).toBe((prefix + first + middle + updated + ending).slice(1))
+
+    await expect(secondFigure.locator('svg')).toBeVisible()
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.locator('html')).not.toHaveClass('dark')
+    await expect(article).toContainText('Complete document')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    // Below the phone breakpoint the theme switch moves into the header's overflow menu.
+    await page.getByRole('button', { name: 'More options', exact: true }).click()
+    await page.getByRole('menu').getByRole('button', { name: 'Dark theme', exact: true }).click()
+    await expect(page.locator('html')).toHaveClass('dark')
+    expect(await tableHeaderIsFramed(table)).toBe(true)
+    await expect(secondFigure.locator('svg')).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.reload()
+    await expect(page.getByRole('article', { name: 'Markdown document', exact: true }).locator('.document-diagram').nth(1).locator('svg')).toBeVisible()
+    expect(await readFile(path, 'utf8')).toBe(prefix + first + middle + updated + ending)
+  }
+  finally {
+    await rm(path, { force: true })
+    await rm(targetPath, { force: true })
+  }
+})

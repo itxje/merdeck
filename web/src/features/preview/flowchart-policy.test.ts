@@ -1,0 +1,300 @@
+import { expect, it } from 'vitest'
+import { encodedAnglePlaceholderSource } from '../../test/encoded-angle-placeholder'
+import { originalSolarSource } from '../../test/original-solar'
+import { validateSource } from './renderer'
+import { fileLinks, renderSource } from './source-policy'
+
+it('accepts the unchanged original 24-node four-group flowchart', () => {
+  expect(() => validateSource(originalSolarSource)).not.toThrow()
+})
+
+it('accepts and projects the exact encoded angle placeholder source without changing its bytes', () => {
+  expect(() => validateSource(encodedAnglePlaceholderSource)).not.toThrow()
+  expect(renderSource(encodedAnglePlaceholderSource)).toContain('\uE000merdeck-angle-')
+  expect(encodedAnglePlaceholderSource).toContain('mica-board-&lt;board&gt;')
+})
+
+it.each([
+  '&LT;board&gt;',
+  '&lt;Board&gt;',
+  '&lt;script&gt;',
+  '&lt;my-widget&gt;',
+  '&lt;board onload=alert(1)&gt;',
+  '&lt;&lt;board&gt;&gt;',
+  '&amp;lt;board&gt;',
+  '&#60;board&#62;',
+  '#60;board#62;',
+  '&lt;board&gt',
+])('refuses every non-allowlisted encoded angle neighbor: %s', (token) => {
+  expect(() => validateSource(`flowchart LR\nA["mica-board-${token}"]`)).toThrow('plain Mermaid')
+})
+
+it.each([
+  'graph LR\nA["Voltage < 250V"] --> B & C',
+  'flowchart TD; A["x<=10; y < limit"] --> B; classDef warm fill:#aBc,stroke:#123456,stroke-width:1.5px,stroke-dasharray:2 4; class A,B warm;',
+  'flowchart LR\nsubgraph Group["Visible group"]\nA & B --> C\nend\nclassDef one,two fill:#fff\nclass A,B one',
+  'flowchart LR\nA:::warm <--> B\nclassDef warm fill:#fff',
+  'flowchart LR\nA --> B\nclassDef warm fill:#fff,stroke:#123,color:#a1B2c3\nclass A,B warm',
+  '%% Ordinary comment\nflowchart LR\nA --> B %% A comment with an unmatched "\nclassDef safe stroke:#ABC,stroke-width:10,stroke-dasharray:100 0 2.5px\nclass A safe',
+  'flowchart TB\nsubgraph Group["Visible group"]\nA --> B\nend\nstyle Group fill:#f5f5f5,stroke:#333,stroke-width:3px',
+  'flowchart LR\nA --> B\nstyle A,B fill:#fff,color:#111,stroke-dasharray:2 4',
+  'flowchart TB\nROOT["Entry"] --> LIMITS["Boundaries"]\nclassDef entry fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e;\nclass ROOT entry;',
+  'flowchart LR\nA --> B\nstyle A fill:#123456;',
+  'flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\nclick B1 "docs/02-runtime.md";',
+])('accepts nearby bounded ordinary grammar: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  'flowchart LR\nA["peer.<ZONE>"] --> B',
+  'flowchart LR\nsubgraph Network["<net>.<product-domain>"]\nA["<label>.<ZONE>"] --> B["<base32(H96(I))>"]\nend\nA --> C["<设备名>-<H96(I) 前 4 位 hex>"]',
+  'flowchart LR\nA["network link"] --> B',
+  'sequenceDiagram\nA->>B: Query peer.<ZONE>',
+  '%% Connect to peer.<ZONE>\nsequenceDiagram\nA->>B: Query',
+])('accepts inert literal placeholders and display text: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+// PREVIEW-011: bounded declarations and text that is not a tag open are outside the security boundary.
+it.each([
+  'classDef safe fill:red',
+  'classDef safe fill:#ffff',
+  'classDef safe color:red',
+  'classDef safe opacity:0',
+  'classDef safe fill:#fff; style A fill:red',
+  'style A fill:red',
+  'style A opacity:0',
+  'A["Value < img src=x >"]',
+  'classDef safe font-weight:bold,font-style:italic,font-size:14px,opacity:0.5,rx:10,ry:10,fill:#ff000080,stroke:transparent',
+])('accepts what the owner moved out of the boundary: %s', (statement) => {
+  expect(() => validateSource(`flowchart LR\nA --> B\n${statement}`)).not.toThrow()
+})
+
+it.each([
+  'classDef safe fill:#fff garbage',
+  'classDef safe fill:#fff!important',
+  'classDef safe fill:#fff,',
+  'classDef safe fill:var(--probe)',
+  'classDef safe fill:rgb(1 2 3)',
+  'classDef safe color:#12345',
+  'classDef safe font-weight:950',
+  'classDef safe font-size:0',
+  'classDef safe font-size:101px',
+  'classDef safe font-size:11em',
+  'classDef safe opacity:1.5',
+  'classDef safe rx:101',
+  'classDef safe filter:blur(1px)',
+  'classDef safe fill:#fff:bad',
+  'classDef safe',
+  'classDef safe background-image:url(/probe)',
+  'classDef safe stroke-width:0',
+  'classDef safe stroke-width:11px',
+  'classDef safe stroke-width:1e2',
+  'classDef safe stroke-width:1px\\;fill:red',
+  'classDef safe stroke-dasharray:0 0',
+  'classDef safe stroke-dasharray:1 2 3 4 5 6 7 8 9',
+  'classDef safe stroke-dasharray:101 2',
+  'classDef safe stroke-dasharray:5px trailing',
+  'classDef safe font-family:probe',
+  'classDef x}body{ fill:#fff',
+  'classDef x:hover fill:#fff',
+  'classDef safe fill:#fff; @import "/probe"',
+  'classDef safe fill:#fff; click A callback',
+  'click A "https://example.test"',
+  'click A "../secret.mmd"',
+  'click A "/etc/passwd"',
+  'click A "notes.txt"',
+  'click A "a.mmd" "A tooltip"',
+  'click A a.mmd',
+  'click A href "a.mmd"',
+  'click A call open()',
+  'click A ""',
+  'style A fill:#fff!important',
+  'style A background-image:url(/probe)',
+  'style A stroke-width:11px',
+  'style A fill:#fff garbage',
+  'style A',
+  'style A, B fill:#fff',
+  'style A fill:#fff; click A callback',
+  'linkStyle 0 stroke:#fff',
+  'classDef safe fill:&#35;fff',
+  'class A safe trailing',
+  'class A,something[onclick] safe',
+  'A:::safe.evil',
+  'A["Value <img"]',
+  'A["Value <br onload=alert(1)>"]',
+  'A["Value &lt;img&gt;"]',
+  'A["Value &#x3c;img"]',
+  'A["Value #60;img"]',
+  'A["Value #0c4a6e;"]',
+  'A["Value#60;"]',
+  'A["Value <br/>#60;img"]',
+  'A["Value < 250V"]\n%%{init:{}}',
+  'A["Value <img>"]',
+  'A["Value <SCRIPT>"]',
+  'A["Value <img src=x>"]',
+  'A["Value <custom-element>"]',
+])('rejects nearby unsafe grammar before rendering: %s', (statement) => {
+  expect(() => validateSource(`flowchart LR\nA --> B\n${statement}`)).toThrow('plain Mermaid')
+})
+
+it.each([
+  'sequenceDiagram\nlink A: Plain text',
+  '%% link A: Plain text\nsequenceDiagram\nA->>B: Query',
+])('keeps link directives refused outside display text: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it.each([
+  '---\ntitle: Mesh client lifecycle\n---\nstateDiagram-v2\n[*] --> Ready',
+  '---\ntitle: A plan\n---\nflowchart LR\nA & B --> C\nclassDef warm fill:#fff\nclass A warm',
+  '---\ntitle:\n---\nflowchart LR\nA --> B',
+])('accepts a title-only front matter: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  '---\nconfig:\n  theme: base\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\ndisplayMode: compact\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Value <b>250V</b>\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Value &lt;b&gt;\n---\nflowchart LR\nA --> B',
+  '---\ntitle: "\\u003cb\\u003e"\n---\nflowchart LR\nA --> B',
+  '---\ntitle: javascript:alert(1)\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\n---\n---\ntitle: Another\n---\nflowchart LR\nA --> B',
+  'flowchart LR\nA --> B\n---\ntitle: A plan\n---',
+  '---\nflowchart LR\nA --> B',
+])('refuses front matter outside the admitted shape: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it.each([
+  '---\nconfig:\n  gantt:\n    useMaxWidth: true\n    barHeight: 20\n    barGap: 6\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\nconfig:\n  flowchart:\n    padding: 8\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  sequence:\n    mirrorActors: false\n  gantt:\n    barGap: 4\n---\nsequenceDiagram\nA<<->>B: Exchange',
+])('accepts a bounded front matter configuration: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  '---\nconfig:\n  gantt:\n    displayMode: compact\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  themeCSS: .node { fill: red }\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  flowchart:\n    htmlLabels: true\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  gantt:\n    barHeight: 5000\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  gantt:\n    barHeight: 20.5\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n  unknownFamily:\n    useMaxWidth: true\n---\nflowchart LR\nA --> B',
+  '---\ntitle: One\ntitle: Two\n---\nflowchart LR\nA --> B',
+  '---\nconfig:\n---\nflowchart LR\nA --> B',
+  '---\nconfig: base\n---\nflowchart LR\nA --> B',
+  '---\ntitle: A plan\n\nconfig:\n  gantt:\n    barGap: 4\n---\nflowchart LR\nA --> B',
+])('refuses a configuration outside the bounded shape: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it.each([
+  'sequenceDiagram\nA<<->>B: Exchange',
+  'sequenceDiagram\nA<<-->>B: Exchange',
+  '---\ntitle: A plan\n---\nsequenceDiagram\nautonumber\nA->>B: One\nA<<->>B: Two\nNote over A,B: Both',
+])('accepts bidirectional sequence messages: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+// PREVIEW-011: a `<` that opens no tag and an `&` that starts no entity are text; Mermaid reports its own syntax errors.
+it.each([
+  '---\ntitle: Value < 250V\n---\nflowchart LR\nA --> B',
+  '---\ntitle: See https://example.test\n---\nflowchart LR\nA --> B',
+  '---\ntitle: Style guide & R&D\n---\nflowchart LR\nA --> B',
+  'sequenceDiagram\nA->>B: Value < 250V',
+  'sequenceDiagram\nA<<->B: Exchange',
+  'sequenceDiagram\nA<->>B: Exchange',
+  'sequenceDiagram\nNote over A,B: A & B',
+  'flowchart LR\nA<<->>B',
+  'stateDiagram-v2\n[*] <<->> Ready',
+])('accepts angle brackets, ampersands and words that are text: %s', (source) => {
+  expect(() => validateSource(source)).not.toThrow()
+})
+
+it.each([
+  'sequenceDiagram\nparticipant A as <b>One',
+  'sequenceDiagram\nA->>B: </b>',
+  'stateDiagram-v2\nA --> B: <img src=x>',
+  'erDiagram\nA ||--o{ B : "<a>"',
+  'classDiagram\nclass A {\n  <script>\n}',
+  'mindmap\n  root\n    <!-- note -->',
+])('refuses HTML tags in every family: %s', (source) => {
+  expect(() => validateSource(source)).toThrow('plain Mermaid')
+})
+
+it('keeps links and the render projection aligned with a configured front matter', () => {
+  const block = '---\ntitle: Index\nconfig:\n  flowchart:\n    padding: 8\n---\n'
+  const source = `${block}flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\n`
+  expect([...fileLinks(source)]).toEqual([['A1', '01-system-architecture.mmd']])
+  const rendered = renderSource(source)
+  expect(rendered).toHaveLength(source.length)
+  expect(rendered.startsWith(block)).toBe(true)
+  expect(rendered).not.toContain('click')
+})
+
+it.each(['&ltimg src=x', '&lt', '&GT', '&amp#60;img', '&quotonclick', '<br/><img'])('refuses incomplete encoding: %s', (text) => {
+  expect(() => validateSource(`flowchart LR\nA["${text}"]`)).toThrow('plain Mermaid')
+})
+
+it.each(['A --> B %% classDef evil background-image:image-set("/probe")', '%% classDef evil font-family:probe', '%% linkStyle 0 stroke:#fff', '%% note; click A "a.mmd"'])('retains global checks on comment tails: %s', (statement) => {
+  expect(() => validateSource(`flowchart LR\n${statement}`)).toThrow('plain Mermaid')
+})
+it('accepts an ordinary comment at end of input', () => {
+  expect(() => validateSource('flowchart LR\nA --> B %% Ordinary comment with an unmatched "')).not.toThrow()
+})
+
+it('names the files a validated source links to, and nothing else', () => {
+  const source = 'flowchart TB\nA1["One"] --> B1["Two"]\nclick A1 "01-system-architecture.mmd"\nclick B1 "docs/02-runtime.md"\n'
+  expect(() => validateSource(source)).not.toThrow()
+  expect([...fileLinks(source)]).toEqual([['A1', '01-system-architecture.mmd'], ['B1', 'docs/02-runtime.md']])
+  expect([...fileLinks('flowchart LR\nA --> B')]).toEqual([])
+  // A click outside a flowchart is refused, so it never becomes a link.
+  expect(() => validateSource('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')).toThrow('plain Mermaid')
+  expect([...fileLinks('stateDiagram-v2\n[*] --> Ready\nclick Ready "a.mmd"')]).toEqual([])
+})
+
+it.each(['\n', '\r\n'])('extracts relative targets after supported title front matter using %j', (newline) => {
+  const source = ['---', 'title: Diagram overview', '---', '%% Ordinary comment', 'flowchart TB', 'A[One] --> B[Two]; click A "details/one.mmd";', 'click B "two.md"'].join(newline)
+  expect(() => validateSource(source)).not.toThrow()
+  expect([...fileLinks(source)]).toEqual([['A', 'details/one.mmd'], ['B', 'two.md']])
+})
+
+it('projects only validated statements and preserves titles, quoted separators, comments and styles', () => {
+  const source = '---\r\ntitle: Diagram overview\r\n---\r\n%% Header with an unmatched "\r\nflowchart LR; A["First; second<br/>row"] --> B; click A "one.mmd" %% Tail with an unmatched "\r\nclick B "docs/two.md"; style A fill:#fff;\r\n%% Final comment "'
+  const projected = source.replace('click A "one.mmd"', ' '.repeat('click A "one.mmd"'.length)).replace('click B "docs/two.md"', ' '.repeat('click B "docs/two.md"'.length))
+  expect(renderSource(source)).toBe(projected)
+  expect([...fileLinks(source)]).toEqual([['A', 'one.mmd'], ['B', 'docs/two.md']])
+  expect([...fileLinks(projected)]).toEqual([])
+  expect(renderSource(projected)).toBe(projected)
+  const sequence = '---\ntitle: Conversation\n---\nsequenceDiagram\nA->>B: Hello\n'
+  expect(renderSource(sequence)).toBe(sequence)
+  expect(renderSource(originalSolarSource)).toBe(originalSolarSource)
+})
+
+it.each([
+  'click A "//example.test/a.mmd"',
+  'click A "javascript:alert.mmd"',
+  'click A "data:example.mmd"',
+  'click A "https://example.test/a.mmd"',
+  'click A "../a.mmd"',
+  'click A "nested/../a.mmd"',
+  'click A "./a.mmd"',
+  'click A "nested//a.mmd"',
+  'click A "nested\\a.mmd"',
+  'click A "%2e%2e/a.mmd"',
+  'click A "a.mmd?x=1"',
+  'click A "a.mmd#node"',
+  'click A "a.svg"',
+  'click A "a.mmd" _blank',
+  'click A call callback()',
+  'click A href "a.mmd"',
+  'click A "a.mmd"; style A transform:translate(1)',
+  '%% click A "a.mmd"',
+  `click A "${'a'.repeat(200)}.mmd"`,
+])('does not project or extract a partially valid source: %s', (statement) => {
+  const source = `---\ntitle: Overview\n---\nflowchart LR\nA --> B\nclick B "safe.mmd"\n${statement}`
+  expect(() => renderSource(source)).toThrow('plain Mermaid')
+  expect([...fileLinks(source)]).toEqual([])
+})

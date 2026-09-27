@@ -1,0 +1,7 @@
+sequenceDiagram
+  participant User
+  participant Service
+  User->>Service: Open diagram
+  Service-->>User: Source and version
+  User->>Service: Save with expected version
+  Service-->>User: Updated version
