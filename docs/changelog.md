@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-28 21:36 [completed]
+
+Published [v0.19.12](https://github.com/itxje/merdeck/releases/tag/v0.19.12) from `f79b9ee`, delivering the sequence diagram palette and the sequence lifeline fit. The main workflow passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture; the tag workflow's first attempt failed in one unrelated browser case on an intermittent directory HTTP 503 (tracked separately) and published on attempt 2 with the same tag and bytes. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260928-2103-release-v0.19.12](task/20260928-2103-release-v0.19.12.md).
+
 ## 2026-09-28 21:01 [completed]
 
 A sequence diagram drawn without bottom participants is fitted to its messages again. Mermaid draws such lifelines to a placeholder depth and clips them with its own frame; the preview measured them into the fitted size, which left a long empty strip under the last message and opened the diagram far too small (34% instead of 55% for one 15-message diagram). The lifelines are now measured out the same way as the Gantt today marker and stay in the diagram down to its fitted edge; diagrams with bottom participants and every other family fit as before. See [20260928-2057-sequence-lifeline-fit](task/20260928-2057-sequence-lifeline-fit.md).
