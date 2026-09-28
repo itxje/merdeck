@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-09-27
+> Updated: 2026-09-28
 
 ## Usage
 
@@ -173,3 +173,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260927-0725-release-v0.19.9 Release v0.19.9**](20260927-0725-release-v0.19.9.md) `P1`
 - [x] [**20260927-0924-document-media-full-viewport Fill the document media zoom viewport**](20260927-0924-document-media-full-viewport.md) `P2`
 - [x] [**20260927-0948-release-v0.19.10 Release v0.19.10**](20260927-0948-release-v0.19.10.md) `P1`
+- [x] [**20260928-2039-sequence-diagram-palette Give sequence diagrams a restrained colour palette**](20260928-2039-sequence-diagram-palette.md) `P2`

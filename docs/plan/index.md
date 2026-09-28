@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-27
+> Updated: 2026-09-28
 
 ## Usage
 
@@ -107,3 +107,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260927-0430-node24-gate Accept supported Node 24 releases in the quality gate**](20260927-0430-node24-gate.md) `2026-09-27`
 - [x] [**20260927-0640-document-media-pan Pan zoomed document media**](20260927-0640-document-media-pan.md) `2026-09-27`
 - [x] [**20260927-0924-document-media-full-viewport Fill the document media zoom viewport**](20260927-0924-document-media-full-viewport.md) `2026-09-27`
+- [x] [**20260928-2039-sequence-diagram-palette Give sequence diagrams a restrained colour palette**](20260928-2039-sequence-diagram-palette.md) `2026-09-28`

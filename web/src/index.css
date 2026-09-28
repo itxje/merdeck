@@ -95,6 +95,14 @@
     --diagram-line: oklch(0.556 0 0);
     --diagram-cluster-bg: oklch(0.985 0 0);
     --diagram-cluster-border: oklch(0.87 0 0);
+    --diagram-actor-bg: oklch(0.961 0.017 256.3);
+    --diagram-actor-border: oklch(0.732 0.052 252.2);
+    --diagram-actor-ink: oklch(0.346 0.074 256);
+    --diagram-lifeline: oklch(0.801 0.024 256.1);
+    --diagram-signal: oklch(0.446 0.037 257.3);
+    --diagram-note: oklch(0.984 0.003 247.9);
+    --diagram-note-border: oklch(0.907 0.016 253.9);
+    --diagram-note-ink: oklch(0.372 0.039 257.3);
     --text-xs: 11px;
     --text-sm: 12px;
     --text-base: 13px;

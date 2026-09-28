@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-28 20:55 [completed]
+
+Sequence diagrams have colour. At the project owner's request, participants on the light diagram sheet now get a pale blue box with a muted blue border and dark blue text, lifelines a quiet grey blue, messages and the autonumber circles a slate tone, and notes and `alt` / `loop` labels a near-white panel with slate text. The colours come from eight new diagram tokens, because the preview's security boundary leaves a sequence diagram no way to style itself; like the other diagram tokens they apply in both interface themes. Flowchart colours, the source policy and the sanitizer are unchanged; state and class diagram notes lose Mermaid's default yellow and share the new note colours. See [20260928-2039-sequence-diagram-palette](task/20260928-2039-sequence-diagram-palette.md) and [its plan](plan/20260928-2039-sequence-diagram-palette.md).
+
 ## 2026-09-27 [maintenance]
 
 The repository history was reset to a single initial commit carrying the tree of v0.19.10, and the earlier

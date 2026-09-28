@@ -84,6 +84,48 @@ it('themes the diagram sheet and subgraph containers from dedicated tokens', asy
   computed.mockRestore()
 })
 
+it('themes sequence participants, messages and notes from dedicated tokens', async () => {
+  const swatches: Record<string, number[]> = {
+    '--diagram-paper': [255, 255, 255, 255],
+    '--diagram-ink': [20, 20, 20, 255],
+    '--diagram-actor-bg': [235, 243, 254, 255],
+    '--diagram-actor-border': [145, 171, 201, 255],
+    '--diagram-actor-ink': [30, 58, 95, 255],
+    '--diagram-lifeline': [180, 191, 206, 255],
+    '--diagram-signal': [71, 85, 105, 255],
+    '--diagram-note': [248, 250, 252, 255],
+    '--diagram-note-border': [217, 225, 235, 255],
+    '--diagram-note-ink': [51, 65, 85, 255],
+  }
+  const context = { fillStyle: '', fillRect: vi.fn(), getImageData: () => ({ data: swatches[context.fillStyle] ?? [120, 120, 120, 255] }) }
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D)
+  const computed = vi.spyOn(window, 'getComputedStyle').mockReturnValue({ getPropertyValue: (name: string) => name } as unknown as CSSStyleDeclaration)
+  vi.mocked(mermaid.initialize).mockClear()
+  vi.mocked(mermaid.render).mockClear().mockResolvedValue({ svg: '<svg xmlns="http://www.w3.org/2000/svg"><rect class="actor"/></svg>', diagramType: 'sequence' })
+  await renderDiagram('sequenceDiagram\nautonumber\nA->>B: Hello\nNote over A,B: Hi')
+  expect(mermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ themeVariables: expect.objectContaining({
+    actorBkg: '#ebf3fe',
+    activationBkgColor: '#ebf3fe',
+    actorBorder: '#91abc9',
+    activationBorderColor: '#91abc9',
+    actorTextColor: '#1e3a5f',
+    actorLineColor: '#b4bfce',
+    signalColor: '#475569',
+    signalTextColor: '#141414',
+    sequenceNumberColor: '#ffffff',
+    noteBkgColor: '#f8fafc',
+    labelBoxBkgColor: '#f8fafc',
+    noteBorderColor: '#d9e1eb',
+    labelBoxBorderColor: '#d9e1eb',
+    noteTextColor: '#334155',
+    labelTextColor: '#334155',
+    loopTextColor: '#334155',
+    primaryColor: '#787878',
+    lineColor: '#787878',
+  }) }))
+  computed.mockRestore()
+})
+
 it('keeps links out of Mermaid input and both sanitization stages while preserving the draft', async () => {
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ fillStyle: '', fillRect: vi.fn(), getImageData: () => ({ data: [120, 120, 120, 255] }) } as unknown as CanvasRenderingContext2D)
   const computed = window.getComputedStyle.bind(window)

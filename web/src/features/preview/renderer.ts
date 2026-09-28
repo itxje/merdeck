@@ -75,6 +75,12 @@ function tokenHex(name: string) {
   context.fillRect(0, 0, 1, 1)
   return `#${Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3).map(value => value.toString(16).padStart(2, '0')).join('')}`
 }
+// Sequence diagrams cannot style themselves (no classDef, and box/rect are refused), so they take dedicated tokens.
+// The note and label-box variables also colour state and class diagram notes.
+function sequenceColors() {
+  const [actor, actorBorder, note, noteBorder, noteInk] = ['--diagram-actor-bg', '--diagram-actor-border', '--diagram-note', '--diagram-note-border', '--diagram-note-ink'].map(tokenHex)
+  return { actorBkg: actor, actorBorder, actorTextColor: tokenHex('--diagram-actor-ink'), actorLineColor: tokenHex('--diagram-lifeline'), activationBkgColor: actor, activationBorderColor: actorBorder, signalColor: tokenHex('--diagram-signal'), signalTextColor: tokenHex('--diagram-ink'), sequenceNumberColor: tokenHex('--diagram-paper'), noteBkgColor: note, noteBorderColor: noteBorder, noteTextColor: noteInk, labelBoxBkgColor: note, labelBoxBorderColor: noteBorder, labelTextColor: noteInk, loopTextColor: noteInk }
+}
 // With HTML labels off, Mermaid writes a class's font weight and style on the label text but marks
 // every word span `normal`, which hides them; a word span of such a label inherits instead.
 function inheritLabelFont(svg: Element) {
@@ -92,7 +98,7 @@ async function render(source: string): Promise<string> {
   const projected = renderSource(source)
   mermaid.initialize({
     ...settings,
-    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--diagram-node'), primaryTextColor: tokenHex('--diagram-ink'), primaryBorderColor: tokenHex('--diagram-node-border'), lineColor: tokenHex('--diagram-line'), secondaryColor: tokenHex('--diagram-paper'), tertiaryColor: tokenHex('--diagram-paper'), background: tokenHex('--diagram-paper'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--diagram-ink') },
+    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--diagram-node'), primaryTextColor: tokenHex('--diagram-ink'), primaryBorderColor: tokenHex('--diagram-node-border'), lineColor: tokenHex('--diagram-line'), secondaryColor: tokenHex('--diagram-paper'), tertiaryColor: tokenHex('--diagram-paper'), background: tokenHex('--diagram-paper'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--diagram-ink'), ...sequenceColors() },
   })
   const id = `diagram-${++sequence}`
   const host = document.createElement('div')
