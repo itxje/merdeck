@@ -174,3 +174,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260927-0924-document-media-full-viewport Fill the document media zoom viewport**](20260927-0924-document-media-full-viewport.md) `P2`
 - [x] [**20260927-0948-release-v0.19.10 Release v0.19.10**](20260927-0948-release-v0.19.10.md) `P1`
 - [x] [**20260928-2039-sequence-diagram-palette Give sequence diagrams a restrained colour palette**](20260928-2039-sequence-diagram-palette.md) `P2`
+- [x] [**20260928-2057-sequence-lifeline-fit Fit a sequence diagram to its messages, not to its placeholder lifelines**](20260928-2057-sequence-lifeline-fit.md) `P2`

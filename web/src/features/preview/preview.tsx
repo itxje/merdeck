@@ -112,7 +112,9 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
       return
     // A Gantt chart marks today even when its tasks are months away, and that one line would
     // otherwise decide the fitted size; the marker is measured out, not removed from the diagram.
-    const markers = [...node.querySelectorAll('.today')]
+    // Without bottom participants Mermaid draws sequence lifelines to a placeholder depth and relies
+    // on its own viewBox to clip them, so they are measured out the same way.
+    const markers = [...node.querySelectorAll('.today, .actor-line')]
     for (const marker of markers)
       marker.setAttribute('display', 'none')
     const content = node.getBBox()

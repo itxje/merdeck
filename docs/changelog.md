@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-28 21:01 [completed]
+
+A sequence diagram drawn without bottom participants is fitted to its messages again. Mermaid draws such lifelines to a placeholder depth and clips them with its own frame; the preview measured them into the fitted size, which left a long empty strip under the last message and opened the diagram far too small (34% instead of 55% for one 15-message diagram). The lifelines are now measured out the same way as the Gantt today marker and stay in the diagram down to its fitted edge; diagrams with bottom participants and every other family fit as before. See [20260928-2057-sequence-lifeline-fit](task/20260928-2057-sequence-lifeline-fit.md).
+
 ## 2026-09-28 20:55 [completed]
 
 Sequence diagrams have colour. At the project owner's request, participants on the light diagram sheet now get a pale blue box with a muted blue border and dark blue text, lifelines a quiet grey blue, messages and the autonumber circles a slate tone, and notes and `alt` / `loop` labels a near-white panel with slate text. The colours come from eight new diagram tokens, because the preview's security boundary leaves a sequence diagram no way to style itself; like the other diagram tokens they apply in both interface themes. Flowchart colours, the source policy and the sanitizer are unchanged; state and class diagram notes lose Mermaid's default yellow and share the new note colours. See [20260928-2039-sequence-diagram-palette](task/20260928-2039-sequence-diagram-palette.md) and [its plan](plan/20260928-2039-sequence-diagram-palette.md).

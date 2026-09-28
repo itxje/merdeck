@@ -197,3 +197,16 @@ it('handles asynchronous link refusal and ignores notes from an abandoned source
   await act(async () => finish('Late refusal'))
   expect(screen.queryByText('Late refusal')).toBeNull()
 })
+
+it('fits a sequence diagram to its messages, not to placeholder lifelines', async () => {
+  // Without bottom participants Mermaid draws lifelines to a placeholder depth and clips them with its own viewBox.
+  Object.defineProperty(SVGElement.prototype, 'getBBox', { configurable: true, value(this: SVGElement) {
+    const lifelines = [...this.querySelectorAll('.actor-line')].filter(line => line.getAttribute('display') !== 'none')
+    return { x: 0, y: 0, width: 800, height: lifelines.length ? 2000 : 1200 }
+  } })
+  vi.mocked(renderDiagram).mockResolvedValue('<svg><rect class="actor actor-top"/><line class="actor-line 200" y1="65" y2="2000"/><text>Hello</text></svg>')
+  const { container } = render(<Preview source={'sequenceDiagram\nA->>B: Hello'} title="Sequence" onError={vi.fn()} />)
+  await waitFor(() => expect(screen.getByText('Live preview')).toBeVisible())
+  expect(container.querySelector('.diagram-graphic svg')).toHaveAttribute('viewBox', '-16 -16 832 1232')
+  expect(container.querySelector('.actor-line')).not.toHaveAttribute('display')
+})
