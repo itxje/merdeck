@@ -1,7 +1,7 @@
 import type { DirectoryPage } from '../../shared/contracts'
 import type { DiagramService, DiagramServiceOptions } from './service'
 import { Buffer } from 'node:buffer'
-import { chmod, link, mkdir, opendir, readdir, readlink, rename, rm, symlink, unlink, writeFile } from 'node:fs/promises'
+import { chmod, link, mkdir, opendir, readdir, readlink, rename, rm, rmdir, symlink, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, expect, test } from 'bun:test'
 import { createFixture, fixtureLimits, removeFixture } from '../../../tests/integration/files/fixtures'
@@ -300,6 +300,27 @@ test('cancellation and deadlines keep reservations until the pending read and cl
   expect((await result).code).toBe('unavailable')
   await closing
   expect(handles).toBe(0)
+})
+
+test('an aborted request fails alone while an unavailable root still ends every traversal', async () => {
+  const root = await fixture()
+  await files(root)
+  const diagrams = await service(root)
+  const page = await diagrams.directoryPage({ path: '', limit: 1 }, context)
+  const controller = new AbortController()
+  controller.abort()
+  const aborted = { ...context, signal: controller.signal }
+  await expect(diagrams.directoryPage({ path: '', limit: 1 }, aborted)).rejects.toMatchObject({ code: 'unavailable' })
+  await expect(diagrams.directoryRevision('', aborted)).rejects.toMatchObject({ code: 'unavailable' })
+  const second = await next(diagrams, page)
+  expect(second.entries).toHaveLength(1)
+  // Restoring the original root after a real failure shows that the failure, not the restored root, ended the cursor.
+  await rename(root, `${root}-moved`)
+  await mkdir(root)
+  await expect(diagrams.directoryRevision('', context)).rejects.toMatchObject({ code: 'unavailable' })
+  await rmdir(root)
+  await rename(`${root}-moved`, root)
+  await expect(next(diagrams, second)).rejects.toMatchObject({ code: 'cursor_stale' })
 })
 
 test('directory operation capacity rejects before consuming a valid cursor', async () => {

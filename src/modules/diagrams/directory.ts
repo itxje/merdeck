@@ -215,6 +215,8 @@ export class DirectoryPager {
       await this.repository.assertAvailable(check)
     }
     catch (error) {
+      // An abort or deadline refuses this operation alone; only a root failure it did not cause ends every traversal.
+      check()
       if (error instanceof AppError && error.code === 'unavailable') {
         for (const state of this.states)
           this.invalidate(state, 'unavailable')

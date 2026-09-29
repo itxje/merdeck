@@ -176,3 +176,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260928-2039-sequence-diagram-palette Give sequence diagrams a restrained colour palette**](20260928-2039-sequence-diagram-palette.md) `P2`
 - [x] [**20260928-2057-sequence-lifeline-fit Fit a sequence diagram to its messages, not to its placeholder lifelines**](20260928-2057-sequence-lifeline-fit.md) `P2`
 - [x] [**20260928-2103-release-v0.19.12 Release v0.19.12**](20260928-2103-release-v0.19.12.md) `P1`
+- [x] [**20260929-0725-directory-abort-isolation Keep one aborted directory request from failing the others**](20260929-0725-directory-abort-isolation.md) `P1`

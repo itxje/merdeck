@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 07:45 [completed]
+
+A directory request that its browser abandons no longer fails other listings. The directory service treated its own abort (or deadline) refusal during the root check as an unavailable project root and ended every traversal, so the page request that replaced a cancelled one after an external rename, deletion or creation answered HTTP 503; this was the intermittent browser acceptance failure seen in several release runs. The root check now re-checks the operation before ending other traversals; a real root failure still ends them all. See [20260929-0725-directory-abort-isolation](task/20260929-0725-directory-abort-isolation.md).
+
 ## 2026-09-28 21:36 [completed]
 
 Published [v0.19.12](https://github.com/itxje/merdeck/releases/tag/v0.19.12) from `f79b9ee`, delivering the sequence diagram palette and the sequence lifeline fit. The main workflow passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture; the tag workflow's first attempt failed in one unrelated browser case on an intermittent directory HTTP 503 (tracked separately) and published on attempt 2 with the same tag and bytes. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260928-2103-release-v0.19.12](task/20260928-2103-release-v0.19.12.md).
