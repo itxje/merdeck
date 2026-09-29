@@ -207,9 +207,10 @@ let outside = false
 let missing = false
 let flagged = false
 let hooks = false
+let idle = false
 let finished = false
 async function finish() {
-  if (!inside || !outside || !missing || !flagged || !hooks || finished) return
+  if (!idle || !inside || !outside || !missing || !flagged || !hooks || finished) return
   finished = true
   console.log(JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 'tool-1', content: 'ok', is_error: false }] } }))
   console.log(JSON.stringify({ type: 'result', subtype: 'success', is_error: false }))
@@ -257,6 +258,10 @@ for await (const chunk of Bun.stdin.stream()) {
     }
     else if (message.type === 'control_response' && message.response?.request_id === 'missing') {
       missing = message.response.response?.behavior === 'deny'
+      await finish()
+    }
+    else if (message.type === 'control_response' && message.response?.request_id === 'idle') {
+      idle = message.response.response?.behavior === 'deny'
       await finish()
     }
   }
