@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 14:30 [completed]
+
+Published [v0.19.15](https://github.com/itxje/merdeck/releases/tag/v0.19.15) from `45f4211`, removing repeated "No Mermaid blocks" hints from the file list. The clean implementation passed the full local ARM64/overlayfs gate; main and tag workflows passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture. The tag workflow published on attempt 1. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260929-1404-release-v0.19.15](task/20260929-1404-release-v0.19.15.md).
+
 ## 2026-09-29 09:31 [completed]
 
 Published [v0.19.14](https://github.com/itxje/merdeck/releases/tag/v0.19.14) from `999cac7`, delivering same-tick change detection for directory listings and file reads, automatic listing recovery from first-page and revision conflicts, and the adapter test correction; it also contains the v0.19.13 changes. Main and tag workflows passed exact-commit Linux x64/ext4 native verification; the tag workflow published on attempt 1. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260929-0910-release-v0.19.14](task/20260929-0910-release-v0.19.14.md).
