@@ -2,6 +2,10 @@
 
 ## 2026-09-29 07:45 [completed]
 
+Diagram titles share one size. Mermaid drew them anywhere from the 14 px body size (sequence, class, entity relationship and requirement diagrams) to 4ex (journey and timeline); every family's title now renders at 18 px, Mermaid's own title size for flowcharts. Quadrant, XY and pie charts take the size as configuration because they lay out around it; the others are sized in the measurement host before styles are copied. A new browser case covers thirteen families and untitled diagrams. See [20260929-0725-uniform-diagram-titles](task/20260929-0725-uniform-diagram-titles.md).
+
+## 2026-09-29 07:45 [completed]
+
 A directory request that its browser abandons no longer fails other listings. The directory service treated its own abort (or deadline) refusal during the root check as an unavailable project root and ended every traversal, so the page request that replaced a cancelled one after an external rename, deletion or creation answered HTTP 503; this was the intermittent browser acceptance failure seen in several release runs. The root check now re-checks the operation before ending other traversals; a real root failure still ends them all. See [20260929-0725-directory-abort-isolation](task/20260929-0725-directory-abort-isolation.md).
 
 ## 2026-09-28 21:36 [completed]

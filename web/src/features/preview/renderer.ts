@@ -8,6 +8,7 @@ import { bareLabelBreak, previewLimit, renderSource, restoreEncodedAnglePlacehol
 
 export { previewLimit, validateSource } from './source-policy'
 let sequence = 0
+const titleSize = 18
 let queue: Promise<unknown> = Promise.resolve()
 const safeProperties = new Set(['fill', 'fill-opacity', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity', 'opacity', 'color', 'font-family', 'font-size', 'font-weight', 'font-style', 'text-anchor', 'dominant-baseline', 'alignment-baseline', 'white-space', 'display', 'text-decoration'])
 const settings: MermaidConfig = {
@@ -21,6 +22,10 @@ const settings: MermaidConfig = {
   theme: 'base',
   fontFamily: 'ui-sans-serif, system-ui, sans-serif',
   flowchart: { htmlLabels: false, curve: 'basis', padding: 16, nodeSpacing: 30, rankSpacing: 40 },
+  // Mermaid sizes each family's title its own way, from the 14 px body size up to 4ex. Quadrant and XY charts
+  // lay out around it and a pie chart takes it as a theme variable; sizeTitles covers the other families.
+  quadrantChart: { titleFontSize: titleSize },
+  xyChart: { titleFontSize: titleSize },
 }
 // Mermaid drops whole-line comments before parsing; blanking them instead keeps token offsets aligned with the draft.
 const commentLine = /^\s*%%(?!\{)[^\n]+\n?/gm
@@ -94,11 +99,17 @@ function inheritLabelFont(svg: Element) {
     }
   }
 }
+// The other families draw their title as a direct child of the diagram, unclassed or with a title class,
+// while every other direct text carries a class of its own.
+function sizeTitles(svg: Element) {
+  for (const title of svg.querySelectorAll<SVGElement>(':scope > text:not([class]), :scope > .titleText, :scope > [class$="TitleText"]'))
+    title.style.fontSize = `${titleSize}px`
+}
 async function render(source: string): Promise<string> {
   const projected = renderSource(source)
   mermaid.initialize({
     ...settings,
-    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--diagram-node'), primaryTextColor: tokenHex('--diagram-ink'), primaryBorderColor: tokenHex('--diagram-node-border'), lineColor: tokenHex('--diagram-line'), secondaryColor: tokenHex('--diagram-paper'), tertiaryColor: tokenHex('--diagram-paper'), background: tokenHex('--diagram-paper'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--diagram-ink'), ...sequenceColors() },
+    themeVariables: { fontSize: '14px', primaryColor: tokenHex('--diagram-node'), primaryTextColor: tokenHex('--diagram-ink'), primaryBorderColor: tokenHex('--diagram-node-border'), lineColor: tokenHex('--diagram-line'), secondaryColor: tokenHex('--diagram-paper'), tertiaryColor: tokenHex('--diagram-paper'), background: tokenHex('--diagram-paper'), clusterBkg: tokenHex('--diagram-cluster-bg'), clusterBorder: tokenHex('--diagram-cluster-border'), titleColor: tokenHex('--diagram-ink'), pieTitleTextSize: `${titleSize}px`, ...sequenceColors() },
   })
   const id = `diagram-${++sequence}`
   const host = document.createElement('div')
@@ -117,6 +128,7 @@ async function render(source: string): Promise<string> {
       throw new Error('No diagram was produced.')
     restoreEncodedAnglePlaceholderText(node, source)
     inheritLabelFont(node)
+    sizeTitles(node)
     for (const element of [node, ...node.querySelectorAll('*')]) {
       const computed = getComputedStyle(element)
       for (const property of safeProperties) {
