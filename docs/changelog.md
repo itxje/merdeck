@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 19:31 [progress]
+
+Preparing v0.19.16 for the resizable Markdown and HTML contents rail. The clean implementation commit `b75c331` passed local ARM64/overlayfs `check:ci`; the exact release candidate still requires native Linux x64/ext4 acceptance before tagging. See [20260929-1931-release-v0.19.16](task/20260929-1931-release-v0.19.16.md).
+
 ## 2026-09-29 18:58 [completed]
 
 Markdown and HTML readers share a resizable contents divider. Pointer drag and arrow keys adjust its bounded width, double click restores 240px, and the preference survives reloads. The article keeps at least 320px of space and the phone contents drawer is unchanged. Focused browser tests and both full browser suites passed; the final `check:ci` evidence export requires a clean committed source tree. See [20260929-1843-resize-document-contents](task/20260929-1843-resize-document-contents.md).
