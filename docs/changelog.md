@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 09:31 [completed]
+
+Published [v0.19.14](https://github.com/itxje/merdeck/releases/tag/v0.19.14) from `999cac7`, delivering same-tick change detection for directory listings and file reads, automatic listing recovery from first-page and revision conflicts, and the adapter test correction; it also contains the v0.19.13 changes. Main and tag workflows passed exact-commit Linux x64/ext4 native verification; the tag workflow published on attempt 1. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260929-0910-release-v0.19.14](task/20260929-0910-release-v0.19.14.md).
+
 ## 2026-09-29 08:53 [completed]
 
 Directory changes made within one filesystem clock tick of an observation are detected. Linux stamps inode times once per tick (4 ms in this container), and kernels before 6.13 give a change in the same tick as an earlier observation the same times, so a file added right after a listing or revision probe could stay out of the explorer until some later change, a continuation could resume across a changed folder, and a same-size write during a read went unnoticed. A directory sample or file read of something changed within the last tick now waits until that tick has passed. Saves were not affected. See [20260929-0831-settled-change-detection](task/20260929-0831-settled-change-detection.md).
