@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 08:53 [completed]
+
+Directory changes made within one filesystem clock tick of an observation are detected. Linux stamps inode times once per tick (4 ms in this container), and kernels before 6.13 give a change in the same tick as an earlier observation the same times, so a file added right after a listing or revision probe could stay out of the explorer until some later change, a continuation could resume across a changed folder, and a same-size write during a read went unnoticed. A directory sample or file read of something changed within the last tick now waits until that tick has passed. Saves were not affected. See [20260929-0831-settled-change-detection](task/20260929-0831-settled-change-detection.md).
+
 ## 2026-09-29 07:45 [completed]
 
 Diagram titles share one size. Mermaid drew them anywhere from the 14 px body size (sequence, class, entity relationship and requirement diagrams) to 4ex (journey and timeline); every family's title now renders at 18 px, Mermaid's own title size for flowcharts. Quadrant, XY and pie charts take the size as configuration because they lay out around it; the others are sized in the measurement host before styles are copied. A new browser case covers thirteen families and untitled diagrams. See [20260929-0725-uniform-diagram-titles](task/20260929-0725-uniform-diagram-titles.md).

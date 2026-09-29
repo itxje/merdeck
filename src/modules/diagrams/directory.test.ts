@@ -205,6 +205,20 @@ test.each(['add', 'delete', 'rename', 'replace'] as const)('namespace %s between
   await expect(next(diagrams, page)).rejects.toMatchObject({ code: 'cursor_stale' })
 })
 
+// Coarse inode timestamps give a change in the same clock tick as a sample the sampled mtime and ctime.
+test('a namespace change right after a freshly changed folder is listed still invalidates the continuation', async () => {
+  const root = await fixture()
+  const diagrams = await service(root)
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const folder = `folder-${attempt}`
+    await mkdir(join(root, folder))
+    await files(join(root, folder))
+    const page = await diagrams.directoryPage({ path: folder, limit: 1 }, context)
+    await writeFile(join(root, folder, 'new.md'), '')
+    await expect(next(diagrams, page)).rejects.toMatchObject({ code: 'directory_changed' })
+  }
+})
+
 test('root validation wins over stale cursors and symlink ancestors are revalidated', async () => {
   const root = await fixture()
   await mkdir(join(root, 'folder'))

@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
 import { link, lstat, mkdir, open, opendir, realpath, rename, rmdir, unlink } from 'node:fs/promises'
 import { isAbsolute, join, resolve } from 'node:path'
-import { setImmediate as yieldEventLoop } from 'node:timers/promises'
+import { setTimeout as delay, setImmediate as yieldEventLoop } from 'node:timers/promises'
 import { relativePathSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { inspectFilesystem, requireWritableFilesystem, retained } from './filesystem'
@@ -87,6 +87,22 @@ function sameIdentity(a: BigIntStats, b: BigIntStats): boolean {
 }
 function unchanged(a: BigIntStats, b: BigIntStats): boolean {
   return sameIdentity(a, b) && a.size === b.size && a.mtimeNs === b.mtimeNs && a.ctimeNs === b.ctimeNs
+}
+// Linux stamps inode times from a clock that advances once per tick, at most 10 ms (CONFIG_HZ >= 100), and
+// trails the realtime clock by at most that tick. While the realtime clock is within a tick of a change time,
+// a later change can carry the same time, so metadata cannot yet prove the inode unchanged. Once it is past,
+// every later change carries a different time. Returns an observation that later metadata comparisons can trust.
+const tickNs = 10_000_000n
+async function settled(stat: BigIntStats, observe: () => Promise<BigIntStats>): Promise<BigIntStats> {
+  const since = () => BigInt(Date.now()) * 1_000_000n - stat.ctimeNs
+  const elapsed = since()
+  // A change time more than a tick ahead (the clock was stepped back) differs from the time of every later
+  // change until the clock returns to it.
+  if (elapsed > tickNs || elapsed < -tickNs)
+    return stat
+  while (since() <= tickNs)
+    await delay(Number((tickNs - since()) / 1_000_000n) + 1)
+  return observe()
 }
 function fsError(error: unknown): AppError {
   if (error instanceof AppError)
@@ -218,7 +234,8 @@ export class FileRepository {
     try {
       if (!forWrite)
         await this.hooks.afterReadOpen?.(relative, handle)
-      const before = await handle.stat({ bigint: true })
+      const observe = () => handle.stat({ bigint: true })
+      const before = await settled(await observe(), observe)
       if (!before.isFile())
         throw new AppError('unsupported')
       if (!forWrite && before.nlink === 0n)
@@ -274,7 +291,8 @@ export class FileRepository {
       const metadata = (stat: BigIntStats) => [...identity(stat), ...[stat.mtimeNs, stat.ctimeNs, stat.size, stat.nlink].map(String)]
       const sample = async (stream?: DirectoryStream) => {
         check()
-        const before = await directory.handle.stat({ bigint: true })
+        const observe = () => directory.handle.stat({ bigint: true })
+        const before = await settled(await observe(), observe)
         const ancestors: string[][] = []
         for (const item of chain) {
           check()
