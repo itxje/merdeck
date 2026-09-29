@@ -111,4 +111,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260929-0831-settled-change-detection Detect changes made within one filesystem clock tick**](20260929-0831-settled-change-detection.md) `2026-09-29`
 - [x] [**20260929-0831-directory-conflict-recovery Recover a listing when its first page or revision probe races a change**](20260929-0831-directory-conflict-recovery.md) `2026-09-29`
 - [x] [**20260929-1843-resize-document-contents Resize document contents rail**](20260929-1843-resize-document-contents.md) `2026-09-29`
-- [-] [**20260929-1931-release-v0.19.16 Release v0.19.16**](20260929-1931-release-v0.19.16.md) `2026-09-29`
+- [x] [**20260929-1931-release-v0.19.16 Release v0.19.16**](20260929-1931-release-v0.19.16.md) `2026-09-29`

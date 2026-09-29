@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 19:59 [completed]
+
+Published [v0.19.16](https://github.com/itxje/merdeck/releases/tag/v0.19.16) from `6a37442`, delivering the resizable Markdown and HTML contents rail. Main and tag workflows passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture; the tag workflow published on attempt 1. The downloaded archive passes `SHA256SUMS` and reports the exact version, tag and commit. See [20260929-1931-release-v0.19.16](task/20260929-1931-release-v0.19.16.md).
+
 ## 2026-09-29 19:31 [progress]
 
 Preparing v0.19.16 for the resizable Markdown and HTML contents rail. The clean implementation commit `b75c331` passed local ARM64/overlayfs `check:ci`; the exact release candidate still requires native Linux x64/ext4 acceptance before tagging. See [20260929-1931-release-v0.19.16](task/20260929-1931-release-v0.19.16.md).
