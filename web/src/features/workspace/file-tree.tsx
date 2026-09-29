@@ -386,7 +386,6 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
                     </Button>
                     <RowMenu name={name} open={menuState.open} onOpenChange={menuState.onOpenChange} items={[rename, remove]} />
                   </div>
-                  {draft && entry.fileKind === 'markdown' && !blocks.length && <p className="tree-hint">No Mermaid blocks</p>}
                   {diagrams && <DiagramList file={entry.path} blocks={blocks} draft={draft} open={open} block={block} select={select} />}
                 </li>
               )
