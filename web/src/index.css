@@ -545,12 +545,14 @@ button:disabled { cursor: default; }
 .html-document-view #topbar, .html-document-view #overlay, .html-document-view #resizer { display: none !important; }
 /* Both document formats share a book-style frame. Only the article and contents rail scroll. */
 .document-reader { flex: 1; min-width: 0; min-height: 0; height: 100%; display: grid; grid-template: 48px minmax(0, 1fr) / minmax(0, 1fr); overflow: hidden; background: var(--background); }
-.document-reader[data-contents="visible"] { grid-template-columns: 240px minmax(0, 1fr); }
+.document-reader[data-contents="visible"] { grid-template-columns: var(--contents-width) 6px minmax(0, 1fr); }
 .document-reader-toolbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; min-width: 0; padding: 2px 16px; border-bottom: 1px solid var(--border); background: var(--background); }
 .document-reader-title { flex: 1; min-width: 0; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: var(--text-base); color: var(--muted-foreground); }
 .document-contents-toggle { min-width: 44px; min-height: 44px; }
 .document-reader-contents { min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 20px 12px 32px; background: var(--sidebar); }
-.document-reader > .document-reader-contents { grid-column: 1; grid-row: 2; border-right: 1px solid var(--border); }
+.document-reader > .document-reader-contents { grid-column: 1; grid-row: 2; }
+.document-reader-resizer { grid-column: 2; grid-row: 2; border-left: 1px solid var(--border); cursor: col-resize; touch-action: none; }
+.document-reader-resizer:hover, .document-reader-resizer:focus-visible { background: var(--ring); outline: none; }
 .document-reader-contents > nav { position: static !important; width: auto !important; max-width: none !important; max-height: none !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; font-size: var(--text-base); line-height: 1.5; }
 .document-reader-contents ul { list-style: none; margin: 0; padding: 0; }
 .document-reader-contents ul ul { padding-left: 12px; }

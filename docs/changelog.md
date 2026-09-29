@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-29 18:58 [completed]
+
+Markdown and HTML readers share a resizable contents divider. Pointer drag and arrow keys adjust its bounded width, double click restores 240px, and the preference survives reloads. The article keeps at least 320px of space and the phone contents drawer is unchanged. Focused browser tests and both full browser suites passed; the final `check:ci` evidence export requires a clean committed source tree. See [20260929-1843-resize-document-contents](task/20260929-1843-resize-document-contents.md).
+
 ## 2026-09-29 14:30 [completed]
 
 Published [v0.19.15](https://github.com/itxje/merdeck/releases/tag/v0.19.15) from `45f4211`, removing repeated "No Mermaid blocks" hints from the file list. The clean implementation passed the full local ARM64/overlayfs gate; main and tag workflows passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture. The tag workflow published on attempt 1. The downloaded archive passed `SHA256SUMS` and reports the exact version, tag and commit. The release does not update a running service. See [20260929-1404-release-v0.19.15](task/20260929-1404-release-v0.19.15.md).

@@ -183,3 +183,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260929-0831-directory-conflict-recovery Recover a listing when its first page or revision probe races a change**](20260929-0831-directory-conflict-recovery.md) `P2`
 - [x] [**20260929-0910-release-v0.19.14 Release v0.19.14**](20260929-0910-release-v0.19.14.md) `P1`
 - [x] [**20260929-1404-release-v0.19.15 Release v0.19.15**](20260929-1404-release-v0.19.15.md) `P1`
+- [x] [**20260929-1843-resize-document-contents Resize document contents rail**](20260929-1843-resize-document-contents.md) `P2`
