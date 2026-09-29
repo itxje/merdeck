@@ -21,8 +21,9 @@ interface Run {
   stopped: boolean
   notice: string
 }
-interface View { run: Run | null, pages: Page[], loading: boolean, stale: boolean, error: unknown, notice: string, retryAt: number }
-const empty: View = { run: null, pages: [], loading: false, stale: false, error: null, notice: '', retryAt: 0 }
+interface View { run: Run | null, pages: Page[], loading: boolean, stale: boolean, error: unknown, notice: string, retryAt: number, changed: boolean }
+const empty: View = { run: null, pages: [], loading: false, stale: false, error: null, notice: '', retryAt: 0, changed: false }
+const directoryChanged = (error: unknown) => error instanceof HttpError && error.code === 'directory_changed'
 const rateDelay = (error: unknown) => error instanceof HttpError && error.status === 429 ? Math.max(1000, (error.retryAfterSeconds ?? 60) * 1000) : null
 
 // Page queries are dispatched only by this run. No observer may refetch a consumed cursor.
@@ -98,7 +99,7 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
       client.removeQueries({ predicate: query => query.queryKey[0] === 'directory-page' && query.queryKey[1] === epoch && query.queryKey[4] === run.id && Number(query.queryKey[5]) <= number - 5 })
       // A fresh successful listing supersedes an older namespace observation.
       client.setQueryData(['directory-revision', epoch, path], { path, revision: data.revision, maxPathDepth: data.maxPathDepth, pollIntervalMs: data.pollIntervalMs })
-      setView({ run, pages: run.pages, loading: false, stale: false, error: null, notice: number === 1 ? run.notice : '', retryAt: 0 })
+      setView({ run, pages: run.pages, loading: false, stale: false, error: null, notice: number === 1 ? run.notice : '', retryAt: 0, changed: false })
     }
     catch (error) {
       if (!run.live || run.stopped || currentRef.current !== run)
@@ -112,7 +113,11 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
         run.pages = []
         client.removeQueries({ queryKey: ['directory-page', epoch, path, limit, run.id] })
       }
-      setView(previous => ({ ...previous, pages: discard ? [] : previous.pages, loading: false, stale: true, error, retryAt: run.retryAt }))
+      // A first page that raced a change consumed nothing, so it is listed again instead of waiting for Restart.
+      if (!cursor && directoryChanged(error))
+        setView(previous => ({ ...previous, pages: [], loading: false, stale: true, error: null, notice: 'Directory changed. Refreshing its files…', retryAt: 0, changed: true }))
+      else
+        setView(previous => ({ ...previous, pages: discard ? [] : previous.pages, loading: false, stale: true, error, retryAt: run.retryAt }))
     }
     finally {
       run.busy = false
@@ -159,13 +164,25 @@ export function useDirectory(path: string, epoch: number, enabled: boolean, csrf
   }, [close, client, epoch, path, limit])
   React.useEffect(() => {
     const run = currentRef.current
-    if (enabled && run?.live && !run.stopped && run.revision && revision.data && revision.data.path === path && revision.data.revision !== run.revision) {
+    // A probe that raced a change observed that change as surely as a new revision.
+    const changed = directoryChanged(revision.error) || (revision.data && revision.data.path === path && revision.data.revision !== run?.revision)
+    if (enabled && run?.live && !run.stopped && run.revision && changed) {
       stop('Directory changed. Refreshing its files…')
       restartNoticeRef.current = 'Directory changed. Listing restarted from page one.'
 
       setRestartNumber(value => value + 1)
     }
-  }, [enabled, path, revision.data, stop])
+  }, [enabled, path, revision.data, revision.error, stop])
+  React.useEffect(() => {
+    if (!view.changed || currentRef.current !== view.run)
+      return
+    // Wait one polling interval, so a folder that keeps changing is listed no more often than it is probed.
+    const timer = window.setTimeout(() => {
+      restartNoticeRef.current = 'Directory changed. Listing restarted from page one.'
+      setRestartNumber(value => value + 1)
+    }, interval)
+    return () => window.clearTimeout(timer)
+  }, [view.changed, view.run, interval])
   React.useEffect(() => {
     const delay = rateDelay(revision.error)
     const run = currentRef.current

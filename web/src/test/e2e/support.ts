@@ -2,6 +2,8 @@ import type { BrowserContext, Locator, Page } from '@playwright/test'
 import { readFile, stat } from 'node:fs/promises'
 import { test as base, expect } from '@playwright/test'
 
+// A listing that races a change answers 409 directory_changed and the workspace lists the folder again.
+const changePaths = new Set(['/api/diagrams/directory', '/api/diagrams/directory/revision'])
 interface Audit {
   allowHttp: (status: number, path: string) => void
   offline: boolean
@@ -9,6 +11,7 @@ interface Audit {
 export const test = base.extend<{ audit: Audit }>({
   audit: [async ({ page }, use, info) => {
     const errors: string[] = []
+    const pending: Promise<void>[] = []
     const allowed = new Set<string>()
     const audit: Audit = { allowHttp: (status, path) => allowed.add(`${status} ${path}`), offline: false }
     // The workspace docks the AI file editor open, which narrows the editor pane and asks the service for
@@ -27,8 +30,20 @@ export const test = base.extend<{ audit: Audit }>({
         errors.push('Unexpected outbound resource request')
     })
     page.on('response', (response) => {
-      if (response.status() >= 400 && !allowed.has(`${response.status()} ${new URL(response.url()).pathname}`))
-        errors.push(`Unexpected HTTP ${response.status()} ${new URL(response.url()).pathname}`)
+      const path = new URL(response.url()).pathname
+      if (response.status() < 400 || allowed.has(`${response.status()} ${path}`))
+        return
+      const unexpected = () => {
+        errors.push(`Unexpected HTTP ${response.status()} ${path}`)
+      }
+      if (response.status() === 409 && changePaths.has(path)) {
+        pending.push(response.json().then((body: { error?: { code?: string } }) => {
+          if (body.error?.code !== 'directory_changed')
+            unexpected()
+        }, unexpected))
+        return
+      }
+      unexpected()
     })
     page.on('requestfailed', (request) => {
       const reason = request.failure()?.errorText ?? ''
@@ -43,11 +58,15 @@ export const test = base.extend<{ audit: Audit }>({
       const location = message.location().url
       if (resource && URL.canParse(location) && allowed.has(`${resource[1]} ${new URL(location).pathname}`))
         return
+      // The response handler admits only a directory_changed body for these.
+      if (resource?.[1] === '409' && URL.canParse(location) && changePaths.has(new URL(location).pathname))
+        return
       if (audit.offline && message.text().includes('net::ERR_INTERNET_DISCONNECTED'))
         return
       errors.push('Unexpected browser console error')
     })
     await use(audit)
+    await Promise.all(pending)
     expect(errors, 'Unexpected browser errors; credentials are deliberately omitted').toEqual([])
     process.stdout.write(`${JSON.stringify({ browserAudit: info.title, unexpectedErrors: errors.length })}\n`)
   }, { auto: true }],

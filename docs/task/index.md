@@ -180,3 +180,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260929-0725-uniform-diagram-titles Give every diagram title one larger size**](20260929-0725-uniform-diagram-titles.md) `P3`
 - [-] [**20260929-0757-release-v0.19.13 Release v0.19.13**](20260929-0757-release-v0.19.13.md) `P1`
 - [x] [**20260929-0831-settled-change-detection Detect changes made within one filesystem clock tick**](20260929-0831-settled-change-detection.md) `P1`
+- [x] [**20260929-0831-directory-conflict-recovery Recover a listing when its first page or revision probe races a change**](20260929-0831-directory-conflict-recovery.md) `P2`
