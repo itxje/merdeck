@@ -1,6 +1,6 @@
 # 20260926-1213-mobile-files-touch-focus Restore first-open Files scrolling on iOS
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-09-26 12:13
 - **approvedAt**: 2026-09-26 12:10 UTC
 - **relatedTask**: 20260926-1212-mobile-files-first-open-scroll
@@ -36,3 +36,5 @@ The phone/tablet Files dialog focus behavior, removal of the failed overflow ove
 ## Outcome
 
 The clean code commit `bfe0a9b` passed local ARM64/overlay `check:ci` with two 93-case browser runs and bundle acceptance. Linux WebKit confirmed the focus and overflow geometry, while Chromium confirmed the first swipe. The candidate passed native Linux x64/ext4 acceptance and shipped as v0.19.4. Native iOS scrolling remains unverified, so the task stays open for affected-phone testing after deployment.
+The owner confirmed on 2026-10-01 that the affected iPhone scrolls the Files list on the first swipe with the
+live 0.19.21 service, which closes the native verification gap.

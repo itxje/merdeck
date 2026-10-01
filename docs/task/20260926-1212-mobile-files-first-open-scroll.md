@@ -1,6 +1,6 @@
 # 20260926-1212-mobile-files-first-open-scroll Repair first-open Files scrolling on iOS
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: root/session-20260926-1212
 - **createdAt**: 2026-09-26 12:12
@@ -28,3 +28,7 @@ Investigating the still-broken first-open iOS scroll.
 - Focused verification: six related Chromium browser cases pass, including the new first-open case. The same first-open focus/geometry case passes on Linux WebKit, which cannot emulate native iOS finger scrolling. Frontend build, lint (two existing warnings) and typecheck pass.
 - Clean code commit `bfe0a9b` passed the local ARM64/overlay `check:ci`, including two 93-case browser runs and extracted-bundle acceptance. Review of the changed focus, CSS and tests found no further local issue. Linux x64/ext4 native acceptance and affected-iPhone confirmation remain pending.
 - The same code shipped in [v0.19.4](https://github.com/itxje/merdeck/releases/tag/v0.19.4) after native x64/ext4 acceptance. The live service still reports v0.19.3; the owner must validate the affected iPhone after deploying the newer build before this task can be closed.
+- Confirmed 2026-10-01: the owner opened Files on the affected iPhone against the live 0.19.21 service and the
+  list scrolled on the first swipe without touching Refresh or a file-type control.
+
+- complete: First-open Files scrolling works on the affected iPhone.
