@@ -1,4 +1,4 @@
-import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DirectorySearch, DocumentRevision, EntryChange, FileKind, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramBlock, DiagramBlockSummary, DiagramDocument, DiagramSelector, DirectoryPage, DirectoryPageEntry, DirectoryRequest, DirectoryRevision, DirectorySearch, DocumentRevision, EntryChange, FileKind, FileLocation, MoveEntryRequest, SaveDiagramRequest, SessionStatus, TreeEntry, TreeSnapshot } from '../../../../src/shared/contracts'
 import { HttpError, requestApi } from '@/shared/lib/http'
 
 export type Session = Extract<SessionStatus, { authenticated: true }>
@@ -137,6 +137,15 @@ export function decodeEntry(value: unknown): EntryChange {
   const item = object(value)
   return item.kind === 'file' || item.kind === 'directory' ? { kind: item.kind, path: path(item.path) } : invalid()
 }
+export function decodeFileLocation(value: unknown): FileLocation {
+  const item = object(value)
+  exact(item, ['path', 'absolutePath'])
+  const relative = path(item.path)
+  const absolute = string(item.absolutePath)
+  if (!absolute.startsWith('/') || absolute.includes('\0') || !absolute.endsWith(`/${relative}`) || absolute.slice(1).split('/').some(part => !part || part === '.' || part === '..'))
+    return invalid()
+  return { path: relative, absolutePath: absolute }
+}
 function directoryPath(value: unknown): string {
   return value === '' ? '' : path(value)
 }
@@ -274,6 +283,10 @@ export const api = {
   }, { method: 'POST', body, csrfToken }),
   tree: (signal: AbortSignal) => requestApi('/diagrams/tree', decodeTree, { signal }),
   document: (file: string, signal: AbortSignal) => requestApi(`/diagrams/document?path=${encodeURIComponent(file)}`, decodeDocument, { signal }),
+  fileLocation: (file: string, signal: AbortSignal) => requestApi(`/diagrams/location?path=${encodeURIComponent(file)}`, (value) => {
+    const location = decodeFileLocation(value)
+    return location.path === file ? location : invalid()
+  }, { signal }),
   revision: (file: string, signal: AbortSignal) => requestApi(`/diagrams/revision?path=${encodeURIComponent(file)}`, decodeRevision, { signal }),
   save: (body: SaveDiagramRequest, csrfToken?: string) => requestApi('/diagrams/source', decodeDocument, { method: 'PUT', body, csrfToken }),
   createEntry: (body: CreateEntryRequest, csrfToken?: string) => requestApi('/diagrams/entries', decodeEntry, { method: 'POST', body, csrfToken }),

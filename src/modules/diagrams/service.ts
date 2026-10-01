@@ -1,7 +1,8 @@
-import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DirectoryRequest, DirectorySearchRequest, DocumentRevision, EntryChange, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
+import type { CloseDirectoryRequest, CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DirectoryRequest, DirectorySearchRequest, DocumentRevision, EntryChange, FileLocation, MoveEntryRequest, SaveDiagramRequest, TreeEntry, TreeSnapshot } from '../../shared/contracts'
 import type { DirectoryContext, DirectoryOptions } from './directory'
 import type { FileConfig, RepositoryHooks } from './repository'
 import { Buffer } from 'node:buffer'
+import { join } from 'node:path'
 import { createEntryRequestSchema, deleteEntryRequestSchema, moveEntryRequestSchema, relativePathSchema, saveDiagramRequestSchema } from '../../shared/contracts'
 import { AppError } from '../../shared/errors'
 import { DirectoryPager } from './directory'
@@ -78,6 +79,13 @@ export class DiagramService {
       throw new AppError('unavailable')
     const { bytes } = await this.repository.read(path)
     return parseDocument(path, bytes, this.config.limits.maxBlocks).document
+  }
+
+  async fileLocation(path: string): Promise<FileLocation> {
+    if (this.closed)
+      throw new AppError('unavailable')
+    await this.repository.read(path)
+    return { path, absolutePath: join(this.config.projectRoot, path) }
   }
 
   async documentRevision(path: string): Promise<DocumentRevision> {

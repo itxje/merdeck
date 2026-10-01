@@ -23,6 +23,7 @@ import { warningMessage } from './drafts'
 import { EntryDialog } from './entry-dialog'
 import { boundedWidth, explorerWidth as explorerBounds, useExplorerWidth } from './explorer-width'
 import { useFileFilter } from './file-filter'
+import { FilePathCopy } from './file-path-copy'
 import { FileTree } from './file-tree'
 import { useDirectorySearch } from './use-directory-search'
 import { useWorkspace } from './use-workspace'
@@ -110,6 +111,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
     setSourceCollapsed(false)
   }, [sourcePanel])
   const file = state.file
+  const filename = path.split('/').at(-1)
   const selected = file?.baseline.blocks[block]
   const diagramContext = file?.baseline.kind === 'markdown' && selected ? `Diagram ${block + 1}${selected.label === `Diagram ${block + 1}` ? '' : ` · ${selected.label}`}` : undefined
   const contextId = React.useId()
@@ -291,33 +293,36 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
               <>
                 <FileCode2 className="desktop-only" />
                 <div className="header-file-copy">
-                  <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : file?.baseline.kind === 'html' ? `${path} · HTML document` : path}>{path}</h1>
-                  {file && (
-                    <div className="header-file-meta">
-                      {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
-                      {selected
-                        ? (
-                            <span className="save-status" role="status">
-                              {file.saving
-                                ? 'Saving…'
-                                : changed
-                                  ? (
-                                      <>
-                                        <span className="dirty-dot" />
-                                        Unsaved
-                                      </>
-                                    )
-                                  : (
-                                      <>
-                                        <Check />
-                                        {file.saved ? 'Saved' : 'Up to date'}
-                                      </>
-                                    )}
-                            </span>
-                          )
-                        : <span className="reading-mode">Reading mode</span>}
-                    </div>
-                  )}
+                  <div className="header-file-text">
+                    <h1 title={filename}>{filename}</h1>
+                    {file && (
+                      <div className="header-file-meta">
+                        {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
+                        {selected
+                          ? (
+                              <span className="save-status" role="status">
+                                {file.saving
+                                  ? 'Saving…'
+                                  : changed
+                                    ? (
+                                        <>
+                                          <span className="dirty-dot" />
+                                          Unsaved
+                                        </>
+                                      )
+                                    : (
+                                        <>
+                                          <Check />
+                                          {file.saved ? 'Saved' : 'Up to date'}
+                                        </>
+                                      )}
+                              </span>
+                            )
+                          : <span className="reading-mode">Reading mode</span>}
+                      </div>
+                    )}
+                  </div>
+                  {file && <FilePathCopy key={path} path={path} session={state.session} />}
                 </div>
               </>
             )}

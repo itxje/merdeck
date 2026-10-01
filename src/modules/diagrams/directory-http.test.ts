@@ -1,5 +1,6 @@
 import type { DirectoryPage } from '../../shared/contracts'
-import { mkdir, readdir, readlink, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readlink, symlink, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { afterEach, expect, test } from 'bun:test'
 import { createFixture, removeFixture } from '../../../tests/integration/files/fixtures'
 import { createApp } from '../../app'
@@ -36,6 +37,37 @@ async function fixture(mode: 'prefixed' | 'stripped', authenticated = false) {
     now += ms
   }, request: (path: string, init?: RequestInit) => app.request(`${origin}${prefix}${path}`, init) }
 }
+
+test.each(['prefixed', 'stripped'] as const)('file location returns an absolute path through the contained %s read boundary', async (mode) => {
+  const f = await fixture(mode)
+  const path = 'folder/流程 guide.md'
+  await writeFile(join(f.config.projectRoot, path), '# Guide')
+  const response = await f.request(`/diagrams/location?path=${encodeURIComponent(path)}`)
+  expect(response.status).toBe(200)
+  expect(response.headers.get('cache-control')).toBe('no-store')
+  expect(await response.json()).toEqual({ success: true, data: { path, absolutePath: join(f.config.projectRoot, path) } })
+  for (const query of ['path=', 'path=../private.md', 'path=%2Fprivate.md', 'path=folder/a.md&extra=true', 'path=folder/a.md&path=folder/b.md'])
+    expect((await f.request(`/diagrams/location?${query}`)).status).toBe(400)
+  expect((await f.request('/diagrams/location?path=folder/missing.md')).status).toBe(410)
+  await symlink(join(f.config.projectRoot, 'folder/a.md'), join(f.config.projectRoot, 'alias.md'))
+  expect((await f.request('/diagrams/location?path=alias.md')).status).toBe(403)
+  expect((await f.request('/diagrams/location?path=folder/a.md', { headers: { Origin: 'http://evil.test' } })).status).toBe(403)
+  const wrongMethod = await f.request('/diagrams/location?path=folder/a.md', { method: 'POST', headers: { Origin: origin } })
+  expect(wrongMethod.status).toBe(405)
+  expect(wrongMethod.headers.get('allow')).toBe('GET')
+})
+
+test('file location does not disclose the service root without a valid session', async () => {
+  const f = await fixture('prefixed', true)
+  const response = await f.request('/diagrams/location?path=folder/a.md')
+  expect(response.status).toBe(401)
+  expect(JSON.stringify(await response.json())).not.toContain(f.config.projectRoot)
+  const login = await f.request('/session', { method: 'POST', headers: { 'Origin': origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
+  const cookie = login.headers.get('set-cookie')!.split(';')[0]!
+  const authenticated = await f.request('/diagrams/location?path=folder/a.md', { headers: { Cookie: cookie } })
+  expect(authenticated.status).toBe(200)
+  expect(await authenticated.json()).toEqual({ success: true, data: { path: 'folder/a.md', absolutePath: join(f.config.projectRoot, 'folder/a.md') } })
+})
 
 test.each(['prefixed', 'stripped'] as const)('strict directory contract on %s mount preserves legacy routing', async (mode) => {
   const f = await fixture(mode)

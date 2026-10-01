@@ -291,6 +291,7 @@ export function useWorkspace(path: string, block: number, directory = '', agent:
   }, [expire])
   const refresh = () => {
     restartDirectory()
+    void client.invalidateQueries({ queryKey: ['file-location'] })
     void client.invalidateQueries({ queryKey: ['revision', epoch, path] })
     void client.invalidateQueries({ queryKey: ['document', epoch, path, observed], exact: true })
     void client.invalidateQueries({ queryKey: ['session'] })

@@ -175,7 +175,7 @@ test('real files, independent Markdown drafts, save snapshots, conflicts, respon
   })
   const revokedPoll = page.waitForResponse(response => response.status() === 401
     && ['/api/diagrams/revision', '/api/diagrams/directory/revision'].includes(new URL(response.url()).pathname))
-  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/revision'])
+  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/location', '/api/diagrams/revision'])
     audit.allowHttp(401, path)
   try {
     await page.getByRole('button', { name: 'Discard drafts and log out' }).click()
@@ -249,7 +249,7 @@ test('clean external refresh, detected stale save and deletion keep original fil
 
 test('lost authentication retains a locked draft and explicit logout clears it', async ({ page, audit }) => {
   test.setTimeout(45000)
-  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/revision'])
+  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/location', '/api/diagrams/revision'])
     audit.allowHttp(401, path)
   await login(page)
   await choose(page, 'welcome.mmd')

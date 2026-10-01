@@ -20,6 +20,7 @@ beforeEach(() => {
   const media = Object.assign(new EventTarget(), { matches: false })
   vi.stubGlobal('matchMedia', () => media)
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+  vi.spyOn(api, 'fileLocation').mockImplementation(async path => ({ path, absolutePath: `/project root/${path}` }))
 })
 it('labels login controls, keeps tokens out of persistence and clears failed submissions', async () => {
   vi.spyOn(api, 'session').mockResolvedValue({ authenticated: false })
@@ -104,6 +105,40 @@ function mockMarkdownWorkspace(document: ReturnType<typeof markdownDocument>) {
   vi.spyOn(api, 'revision').mockResolvedValue({ path: document.path, state: 'present', version: revision })
   return vi.spyOn(api, 'document').mockImplementation(async target => target === document.path ? document : Promise.reject(new HttpError(404, 'not_found', 'Missing file')))
 }
+
+it('keeps directory prefixes out of the header and copies the exact absolute path', async () => {
+  const current = markdownDocument('docs/流程 guide.md', '# Guide')
+  mockMarkdownWorkspace(current)
+  const user = userEvent.setup()
+  const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={current.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByRole('heading', { name: '流程 guide.md' })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: current.path })).toBeNull()
+  const copy = await screen.findByRole('button', { name: 'Copy absolute path' })
+  await waitFor(() => expect(copy).toBeEnabled())
+  await user.click(copy)
+  expect(writeText).toHaveBeenCalledWith('/project root/docs/流程 guide.md')
+  expect(await screen.findByText('Path copied')).toHaveAttribute('role', 'status')
+  view.unmount()
+  client.clear()
+})
+
+it('retries an unavailable file location when the existing refresh control is used', async () => {
+  const current = markdownDocument('docs/guide.md', '# Guide')
+  mockMarkdownWorkspace(current)
+  vi.mocked(api.fileLocation).mockRejectedValueOnce(new HttpError(503, 'unavailable', 'Unavailable'))
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={current.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByText('File path unavailable')).toHaveAttribute('role', 'status')
+  const copy = screen.getByRole('button', { name: 'Copy absolute path' })
+  expect(copy).toBeDisabled()
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Refresh files' }))
+  await waitFor(() => expect(copy).toBeEnabled())
+  expect(api.fileLocation).toHaveBeenCalledTimes(2)
+  view.unmount()
+  client.clear()
+})
 
 it('labels documents without editable blocks as reading mode and omits Save', async () => {
   const document = { ...markdownDocument('docs/read.md', '# Reading guide'), blocks: [] }

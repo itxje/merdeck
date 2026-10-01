@@ -294,7 +294,9 @@ button:disabled { cursor: default; }
 .agent-composer > .agent-attachment { display: flex; align-items: center; gap: 5px; min-width: 0; color: var(--muted-foreground); }
 .agent-attachment svg { flex: none; width: 12px; }
 .agent-attachment code { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-mono); }
-.header-file-copy { min-width: 0; flex: 1; }
+.header-file-copy { min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; }
+.header-file-text { min-width: 0; }
+.header-path-status { color: var(--muted-foreground); font-size: var(--text-xs); white-space: nowrap; }
 .header-file-meta { min-width: 0; display: flex; align-items: center; gap: 10px; margin-top: 3px; font-size: var(--text-sm); color: var(--muted-foreground); }
 .editing-context { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reading-mode { font-size: var(--text-sm); }
@@ -595,6 +597,7 @@ button:disabled { cursor: default; }
   .header-file .desktop-only, .header-actions kbd, .pane-footer .desktop-only { display: none; }
   .header-file-meta { gap: 6px; font-size: var(--text-xs); }
   .header-file h1 { max-width: none; }
+  .header-path-copy { width: 44px; height: 44px; }
   .agent-pane.agent-unavailable { left: auto; right: 12px; bottom: 12px; height: auto; border: 0; }
   .status-bar { font-size: var(--text-sm); }
 }

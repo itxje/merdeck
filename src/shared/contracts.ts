@@ -89,6 +89,10 @@ export interface TreeSnapshot {
 export type DocumentRevision
   = | { path: RelativePath, state: 'present', version: ContentVersion }
     | { path: RelativePath, state: 'deleted' }
+export interface FileLocation {
+  path: RelativePath
+  absolutePath: string
+}
 export interface EntryChange {
   kind: 'file' | 'directory'
   path: RelativePath

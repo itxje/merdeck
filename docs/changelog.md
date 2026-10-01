@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 09:30 [progress]
+
+Compact the active-file header to its filename and a copy icon. The new authenticated location read returns the validated absolute server path; the control prepares it before the clipboard gesture, reports refusal and isolates feedback when selection changes. Focused backend/frontend and real browser copy cases pass; screenshot review preserves the phone filename, save metadata and 44px copy target. Complete preparation and release checks remain pending. See [the header copy task](task/20261001-0922-copy-absolute-file-path.md).
+
 ## 2026-10-01 07:02 [completed]
 
 Published [v0.19.19](https://github.com/itxje/merdeck/releases/tag/v0.19.19) from `416dda4`, removing the explicit MERDECK_CODEX_PATH prerequisite through service-PATH discovery. Canonical executable/root checks and optional overrides remain; Claude and Antigravity configuration is unchanged. Four regressions first failed, then all configuration/API cases passed; controlled-provider editing and both full artifact browser suites pass. Complete local/source/native acceptance, publication and public asset digest/checksum/build identity checks pass. Remote deployment verification remains taskist #52. See [the acceptance record](task/20261001-0618-discover-codex-on-path.md).

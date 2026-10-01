@@ -55,6 +55,10 @@ export function diagramRoutes(config: AppConfig, diagrams: DiagramService, sessi
     const { path } = queryInput(new URL(c.req.url), readDocumentRequestSchema)
     return c.json({ success: true as const, data: await diagrams.readDocument(path) })
   })
+  router.get('/diagrams/location', async (c) => {
+    const { path } = queryInput(new URL(c.req.url), readDocumentRequestSchema)
+    return c.json({ success: true as const, data: await diagrams.fileLocation(path) })
+  })
   router.get('/diagrams/revision', async (c) => {
     const { path } = queryInput(new URL(c.req.url), readDocumentRequestSchema)
     return c.json({ success: true as const, data: await diagrams.documentRevision(path) })

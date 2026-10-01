@@ -63,6 +63,7 @@ Canonical exports are in `src/shared/contracts.ts`; frontend imports must be `im
 | POST `/diagrams/directory/close` | Existing mutation boundary | Idempotent cursor disposal, strict `{path,cursor}` JSON |
 | GET `/diagrams/tree` | Authenticated session unless open access | `TreeSnapshot`; flat relative entries, detected block summaries, revision and truncation flag |
 | GET `/diagrams/document?path=...` | `ReadDocumentRequest` | `DiagramDocument`; file kind, complete-file version and each selectable block's source |
+| GET `/diagrams/location?path=...` | `ReadDocumentRequest`; the existing file-read session/Origin boundary | `FileLocation`; validated relative path and its absolute path beneath the canonical service root after the contained repository read succeeds; no host-path inference |
 | GET `/diagrams/revision?path=...` | `ReadDocumentRequest` | `DocumentRevision`; present with version, or deleted; no content |
 | PUT `/diagrams/source` | `SaveDiagramRequest`, Origin; with a token also Cookie and CSRF token | Updated `DiagramDocument`; never create a missing file |
 | POST `/diagrams/entries` | `CreateEntryRequest`, Origin; with a token also Cookie and CSRF token | `EntryChange`; creates a file from a fixed example template or an empty folder; never replaces an existing name |
@@ -178,6 +179,8 @@ CLI-owned primitives use shadcn/ui base-nova and Base UI exclusively. All colors
 The implemented renderer enforces strict host configuration, rejects source overrides/resources and sanitizes constrained SVG through DOMPurify. Its exact restrictions and observed browser coverage are documented below. Rendering acceptance does not establish filesystem isolation or universal Mermaid syntax support. The [task sequence](task/index.md) retains corrected native delivery and final review dependencies.
 
 ## Browser workspace
+
+The active-file header shows only the filename, alongside a copy icon. A session-scoped, selection-specific Query prepares the validated absolute location before the control becomes enabled, preserving the direct clipboard user gesture. The control is keyed by file path so a late copy completion cannot appear on another file. Successful copies show a check mark and an accessible status; refusal is announced visibly. The phone control has a 44px target beside the filename and existing editing/save metadata.
 
 The root route validates independent `path`, zero-based `block` and `directory` search state. Empty directory means root; old file links derive their parent. Folder entry, breadcrumbs, Up and Root use Router history without changing the selected document. Selecting a file chooses its parent. Each tab owns its route and drafts. The compact header, resizable explorer, source editor, preview, approved folder treatment and light/dark/system tokens remain. Existing base-nova/Base UI controls provide the menus, dialogs, filter, tabs and splitters. The narrow drawer retains keyboard focus; inactive source/preview panes retain layout while hidden so theme rerenders can measure fitted SVG bounds. Prototype status remains needs-review.
 
