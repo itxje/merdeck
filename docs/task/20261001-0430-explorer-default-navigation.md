@@ -33,3 +33,9 @@ Three focused unit regressions first failed against the stored preference and dr
 ## Review
 
 Reviewed controlled single selection, keyboard focus, old preference handling, directory/search switching, retained drafts and narrow layout against the frontend policy. No actionable introduced findings. Complete local and native artifact acceptance remain pending.
+
+## Density acceptance
+
+The first complete local run of `6693722` passed the semantic explorer and corrected conversation cases in both artifacts, but both suites failed the unchanged density assertion: 168px above the first row exceeded the 135px ceiling. Preserve that existing limit and at least eighteen visible rows. Compact desktop rail/search spacing and the direct type controls, while keeping 44px phone targets. Type labels use muted foreground on the background surface and selected foreground on the muted surface for readable contrast. All ten focused browser cases, including the unchanged density regression, now pass. No density threshold was relaxed. Final complete acceptance is still required.
+
+Taskist #51 records the existing filename-stem wrapping at the 180px minimum rail as separate future work; it does not change this request's default behavior or type selection.
