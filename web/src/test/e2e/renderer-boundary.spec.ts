@@ -68,7 +68,7 @@ test('a diagram beyond the former 500-edge limit renders', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 })
     await login(page, true)
     await page.getByRole('complementary', { name: 'Project files', exact: true }).locator(`button[title="${name}"]`).click()
-    await expect(page.getByText('Live preview', { exact: true })).toBeVisible({ timeout: 60000 })
+    await expect(page.getByText('Live preview', { exact: true })).toHaveCount(1, { timeout: 60000 })
     await expect(page.locator('.diagram-graphic svg .flowchart-link')).toHaveCount(600, { timeout: 60000 })
   }
   finally { await rm(path, { force: true }) }

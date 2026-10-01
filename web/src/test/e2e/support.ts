@@ -171,7 +171,7 @@ export async function live(page: Page) {
     await expect(activeDiagram(page)).toBeVisible({ timeout: 15000 })
   }
   else {
-    await expect(page.getByText('Live preview', { exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Live preview', { exact: true })).toHaveCount(1, { timeout: 15000 })
     await expect(activeDiagram(page)).toBeVisible()
   }
 }

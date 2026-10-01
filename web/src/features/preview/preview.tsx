@@ -300,14 +300,10 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
     : error
       ? (svg ? 'Last valid preview' : 'Preview unavailable')
       : source.trim() ? 'Live preview' : 'Empty source'
-  const previewStatusClass = previewStatus === 'Live preview' ? 'preview-live' : previewStatus === 'Last valid preview' ? 'preview-stale' : 'muted'
 
   return (
     <section className="preview-pane" aria-label="Diagram preview">
-      <div className="pane-heading">
-        <span>Preview</span>
-        <span className={`${previewStatusClass} text-xs`} role="status">{previewStatus}</span>
-      </div>
+      <span className="sr-only" role="status">{previewStatus}</span>
       {error && (
         <div className="preview-warning" role="alert">
           <strong>Unable to render</strong>

@@ -163,7 +163,7 @@ test('bare break variants render as SVG rows while neighboring hostile forms ret
     await editor.fill(source)
     await expect(page.getByText('Rendering…', { exact: true })).toHaveCount(0)
     await expect(page.getByText('Unable to render', { exact: true })).toBeVisible()
-    await expect(page.getByText('Last valid preview', { exact: true })).toBeVisible()
+    await expect(page.getByText('Last valid preview', { exact: true })).toHaveCount(1)
     await expect(page.getByText(/Preview uses plain Mermaid only\./)).toBeVisible()
     expect(await page.locator('.diagram-graphic').innerHTML()).toBe(validSvg)
     await expect(editor).toHaveValue(source)

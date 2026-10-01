@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 19:29 [implemented]
+
+Remove the redundant Preview / Live preview heading row so the diagram canvas can use its height. Accessible render status, visible error and loading/empty feedback, and diagram controls remain intact. The updated existing case first failed on the heading assertion, then six preview cases and frontend lint/types passed. Complete local/source/native verification and v0.19.26 delivery remain pending. See [the preview task](task/20261001-1927-remove-preview-heading.md).
+
 ## 2026-10-01 18:02 [release]
 
 Published [v0.19.25](https://github.com/itxje/merdeck/releases/tag/v0.19.25) from `0e476aa`, removing the decorative document icon and Reading mode header label, and matching synchronization and path-copy icon colors to the logo's primary theme token. Focused red/green, complete local/source/native checks, desktop/phone screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261001-1739-simplify-header-brand-colors.md).

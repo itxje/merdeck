@@ -125,3 +125,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `2026-10-01`
 
 - [x] [**20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors**](20261001-1739-simplify-header-brand-colors.md) `2026-10-01`
+
+- [-] [**20261001-1927-remove-preview-heading Remove the redundant preview heading**](20261001-1927-remove-preview-heading.md) `2026-10-01`

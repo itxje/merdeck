@@ -200,3 +200,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `P1`
 
 - [x] [**20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors**](20261001-1739-simplify-header-brand-colors.md) `P2`
+
+- [-] [**20261001-1927-remove-preview-heading Remove the redundant preview heading**](20261001-1927-remove-preview-heading.md) `P2`

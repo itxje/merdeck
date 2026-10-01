@@ -273,7 +273,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(await colorBytesEqual(page, hoveredBg, selectedBg)).toBe(false)
   })
 
-  test(`the live-preview indicator and the last-valid-render warning meet 4.5:1 contrast in the ${colorScheme} scheme, and neither reads in red`, async ({ page }) => {
+  test(`the preview uses its full height and the last-valid-render warning meets 4.5:1 contrast in the ${colorScheme} scheme without reading in red`, async ({ page }) => {
     test.setTimeout(90000)
     await page.emulateMedia({ colorScheme })
     await page.setViewportSize({ width: 1440, height: 900 })
@@ -282,25 +282,26 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await live(page)
     expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(colorScheme === 'dark')
 
-    const status = page.locator('.pane-heading').getByRole('status')
+    const preview = page.getByRole('region', { name: 'Diagram preview', exact: true })
+    const status = preview.getByRole('status', { name: '' })
     await expect(status).toHaveText('Live preview')
-    const [primaryColor, warningColor, destructiveColor] = await Promise.all([
-      customPropertyColor(page, '--primary'),
+    await expect(status).toHaveClass('sr-only')
+    const [paneBounds, canvasBounds] = await Promise.all([
+      preview.boundingBox(),
+      page.getByRole('region', { name: 'Scrollable diagram canvas', exact: true }).boundingBox(),
+    ])
+    expect(paneBounds).not.toBeNull()
+    expect(canvasBounds?.y).toBe(paneBounds?.y)
+    const [warningColor, destructiveColor] = await Promise.all([
       customPropertyColor(page, '--warning'),
       customPropertyColor(page, '--destructive'),
     ])
-    expect(await status.evaluate(element => getComputedStyle(element).color)).toBe(primaryColor)
-    expect(await textContrast(page, status)).toBeGreaterThanOrEqual(4.5)
 
     const source = page.getByLabel('Mermaid source', { exact: true })
     await source.fill('this is not valid mermaid syntax {{{')
     const warning = page.locator('.preview-warning')
     await expect(warning).toBeVisible({ timeout: 15000 })
     await expect(status).toHaveText('Last valid preview')
-    const warningTextColor = await status.evaluate(element => getComputedStyle(element).color)
-    expect(warningTextColor).toBe(warningColor)
-    expect(warningTextColor).not.toBe(destructiveColor)
-    expect(await textContrast(page, status)).toBeGreaterThanOrEqual(4.5)
 
     const bannerColor = await warning.evaluate(element => getComputedStyle(element).color)
     expect(bannerColor).toBe(warningColor)
