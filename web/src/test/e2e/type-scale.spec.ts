@@ -77,7 +77,6 @@ test('the application shell uses readable primary text and compact metadata', as
   await expect.poll(() => px(page.locator('.status-bar'))).toBe(12)
   await expect.poll(() => px(page.locator('.tree-bottom').first())).toBe(11)
   await expect.poll(() => px(page.locator('.pane-heading').first())).toBe(15)
-  await expect.poll(() => px(page.locator('.header-file h1'))).toBe(15)
   await expect.poll(() => px(page.getByRole('button', { name: /^Save/ }))).toBe(13)
 
   // Below 1100px width the docked explorer rail becomes the project-files drawer; the composer

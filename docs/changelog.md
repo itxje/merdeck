@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01 10:27 [completed]
+
+The header no longer shows the open file's name: the save status and the path copy button now sit on one row
+beside the brand, and the copy button has no tooltip. The name remains a visually hidden heading for assistive
+technology, and the explorer still highlights the open file. See
+[20261001-1027-single-row-file-header](task/20261001-1027-single-row-file-header.md).
+
 ## 2026-10-01 10:02 [completed]
 
 Published [v0.19.20](https://github.com/itxje/merdeck/releases/tag/v0.19.20) from `ea466b2`. The active-file header shows the filename and an icon that copies its exact absolute server path. Validated, session-scoped path preparation preserves the clipboard gesture; selection changes isolate feedback. Success shows a check mark, refusal is announced, and the phone control keeps a 44px target beside the existing save context. Focused red/green, complete local/source/native, publication and public digest/checksum/build-identity verification pass. See [the acceptance record](task/20261001-0922-copy-absolute-file-path.md).

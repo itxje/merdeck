@@ -294,7 +294,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                 <FileCode2 className="desktop-only" />
                 <div className="header-file-copy">
                   <div className="header-file-text">
-                    <h1 title={filename}>{filename}</h1>
+                    <h1 className="sr-only">{filename}</h1>
                     {file && (
                       <div className="header-file-meta">
                         {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Check, Copy } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { api, sessionCsrf } from './api'
 
 export function FilePathCopy({ path, session }: { path: string, session: Session }) {
@@ -33,12 +32,9 @@ export function FilePathCopy({ path, session }: { path: string, session: Session
   }
   return (
     <>
-      <Tooltip>
-        <TooltipTrigger render={<Button className="header-path-copy" variant="ghost" size="icon-sm" aria-label="Copy absolute path" disabled={!location.isSuccess || copying} onClick={() => void copy()} />}>
-          {feedback === 'Path copied' ? <Check /> : <Copy />}
-        </TooltipTrigger>
-        <TooltipContent side="bottom">{location.isPending ? 'Loading file path…' : location.isError ? 'File path unavailable' : 'Copy absolute path'}</TooltipContent>
-      </Tooltip>
+      <Button className="header-path-copy" variant="ghost" size="icon-sm" aria-label="Copy absolute path" disabled={!location.isSuccess || copying} onClick={() => void copy()}>
+        {feedback === 'Path copied' ? <Check /> : <Copy />}
+      </Button>
       <span className={location.isError || feedback === 'Copy failed' ? 'header-path-status' : 'sr-only'} role="status">{location.isError ? 'File path unavailable' : feedback}</span>
     </>
   )
