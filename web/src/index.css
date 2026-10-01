@@ -27,6 +27,7 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-success: var(--success);
     --color-warning-foreground: var(--warning-foreground);
     --color-warning: var(--warning);
     --color-accent-foreground: var(--accent-foreground);
@@ -69,6 +70,7 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
+    --success: oklch(0.52 0.16 145);
     --warning: oklch(0.55 0.12 75);
     --warning-foreground: oklch(0.985 0 0);
     --border: oklch(0.922 0 0);
@@ -127,6 +129,7 @@
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
+    --success: oklch(0.76 0.16 145);
     --warning: oklch(0.8 0.13 80);
     --warning-foreground: oklch(0.145 0 0);
     --border: oklch(1 0 0 / 10%);
@@ -303,6 +306,17 @@ button:disabled { cursor: default; }
 .header-file > svg { width: 18px; color: var(--muted-foreground); }
 .save-status { flex: none; white-space: nowrap; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: var(--text-sm); }
 .save-status svg { width: 13px; height: 13px; }
+.file-sync-status { position: relative; width: 22px; height: 22px; justify-content: center; }
+.file-sync-status .sync-arrows { display: block; width: 20px; height: 20px; }
+.file-sync-status .sync-marker { position: absolute; right: -4px; bottom: -3px; display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--background); outline: 2px solid var(--background); }
+.file-sync-status[data-sync-state="synced"] { color: var(--success); }
+.file-sync-status[data-sync-state="failed"] { color: var(--destructive); }
+.file-sync-status[data-sync-state="pending"] .sync-marker { right: -1px; bottom: -1px; width: 6px; height: 6px; }
+.file-sync-status[data-sync-state="saving"] .sync-arrows { animation: sync-status-spin 1s linear infinite; }
+@keyframes sync-status-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .file-sync-status[data-sync-state="saving"] .sync-arrows { animation: none; }
+}
 .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); }
 .header-actions kbd { opacity: .6; font-size: var(--text-xs); margin-left: 12px; }
 .panes { flex: 1; min-height: 0; }

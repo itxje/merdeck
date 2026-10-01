@@ -1,6 +1,6 @@
 import type { EntryAction } from './entries'
 import type { EntryOperation } from './use-workspace'
-import { Bot, Check, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, MoreHorizontal, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Bot, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, MoreHorizontal, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 import * as React from 'react'
 import { useDefaultLayout, usePanelRef } from 'react-resizable-panels'
 import { ThemeToggle } from '@/app/theme-toggle'
@@ -24,6 +24,7 @@ import { EntryDialog } from './entry-dialog'
 import { boundedWidth, explorerWidth as explorerBounds, useExplorerWidth } from './explorer-width'
 import { useFileFilter } from './file-filter'
 import { FilePathCopy } from './file-path-copy'
+import { FileSyncStatus } from './file-sync-status'
 import { FileTree } from './file-tree'
 import { useDirectorySearch } from './use-directory-search'
 import { useWorkspace } from './use-workspace'
@@ -299,25 +300,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                       <div className="header-file-meta">
                         {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
                         {selected
-                          ? (
-                              <span className="save-status" role="status" title={!file.saving && !changed && !file.saved ? 'Up to date' : undefined}>
-                                {file.saving
-                                  ? 'Saving…'
-                                  : changed
-                                    ? (
-                                        <>
-                                          <span className="dirty-dot" />
-                                          Unsaved
-                                        </>
-                                      )
-                                    : (
-                                        <>
-                                          <Check className={file.saved ? undefined : 'block!'} aria-hidden="true" />
-                                          {file.saved ? 'Saved' : <span className="sr-only">Up to date</span>}
-                                        </>
-                                      )}
-                              </span>
-                            )
+                          ? <FileSyncStatus file={file} />
                           : <span className="reading-mode">Reading mode</span>}
                       </div>
                     )}

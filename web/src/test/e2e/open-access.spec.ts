@@ -22,7 +22,7 @@ test('opens the workspace without an access token and saves through it', async (
   const editor = page.getByLabel('Mermaid source', { exact: true })
   await editor.fill(`${await editor.inputValue()}  Save --> Open[Open access]\n`)
   await editor.press('Control+s')
-  await expect(page.getByText('Saved', { exact: true })).toBeVisible()
+  await expect(page.locator('.save-status')).toHaveAttribute('data-sync-state', 'synced')
   expect(await readFile(join(root!, 'welcome.mmd'), 'utf8')).toContain('Save --> Open[Open access]')
   await page.reload()
   await expect(explorer).toBeVisible()

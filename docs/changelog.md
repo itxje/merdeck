@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 15:22 [implemented]
+
+Use circular arrows for project-file synchronization, with a green check for synchronized content, a gray dot for pending edits, rotating arrows during saves and a red exclamation for failed synchronization or required review. The header uses whole-file dirty state, preserves accessible live descriptions and shows no hover/click text. Eight focused state cases, eighteen real-browser cases, frontend lint/types, build and phone screenshot review pass. Complete local and release acceptance remain pending. See [the file synchronization task](task/20261001-1514-file-sync-status.md).
+
 ## 2026-10-01 14:35 [release]
 
 Published [v0.19.22](https://github.com/itxje/merdeck/releases/tag/v0.19.22) from `075cd9f8a1606bb7e3a40068e25b6538a8e44e78`. The Up to date header status uses a check icon on desktop and phones, with a visually hidden live description and native hover title. Existing focused checks and complete local preparation pass: frontend 612, backend 303, file 212, storage 6 and release/CI 52 cases; both artifact browser suites pass 107 cases with 17 configuration-dependent skips. [Exact source verification](https://github.com/itxje/merdeck/actions/runs/36875275654) and [Linux x64/ext4 native acceptance and publication](https://github.com/itxje/merdeck/actions/runs/36876050756) pass on attempt 1, with separate tmpfs refusal storage and complete service/fixture cleanup. Public asset digests, SHA256SUMS, the annotated tag and the 97-file bundle identity match the release commit. Archive SHA-256: `2920a0cb58cbc5ad33a4a3b2c9a60e3369406f711951ff260adaddf2c4ed6400`.

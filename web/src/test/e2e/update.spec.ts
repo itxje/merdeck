@@ -44,7 +44,7 @@ test('an open page from an older build reloads only when no work would be lost',
     await expect(reload).toBeDisabled()
     await expect(notice).toContainText('before reloading')
     await editor.press('Control+s')
-    await expect(page.getByText('Saved', { exact: true })).toBeVisible()
+    await expect(page.locator('.save-status')).toHaveAttribute('data-sync-state', 'synced')
     await expect(reload).toBeEnabled()
     const checked = page.waitForResponse(response => new URL(response.url()).pathname === '/api/build')
     const reloaded = page.waitForEvent('load')

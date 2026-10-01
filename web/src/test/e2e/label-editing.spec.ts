@@ -41,7 +41,7 @@ test('flowchart node labels are located in the source and edited on the diagram'
     await label.press('Enter')
     await expect(label).toBeHidden()
     await expect(editor).toHaveValue(initial.replace('Start here', 'Begin now'))
-    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
+    await expect(page.locator('.save-status')).toHaveAttribute('data-sync-state', 'pending')
     await expect(node('Start')).toContainText('Begin now')
     await expect(surface).toHaveAttribute('data-editable', 'ready')
 

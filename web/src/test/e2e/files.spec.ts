@@ -67,7 +67,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     expect(await readdir(join(root, folder))).toEqual(['renamed.mmd'])
     await expect(page.getByRole('button', { name: /^Save/ })).toBeEnabled()
     await page.getByRole('button', { name: /^Save/ }).click()
-    await expect(page.getByText('Saved', { exact: true })).toBeVisible()
+    await expect(page.locator('.save-status')).toHaveAttribute('data-sync-state', 'synced')
     expect(await readFile(join(root, folder, 'renamed.mmd'), 'utf8')).toBe(draft)
 
     await fileAction(page, explorer, 'New folder')

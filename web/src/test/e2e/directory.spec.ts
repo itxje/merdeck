@@ -63,7 +63,7 @@ test('directory history, ancestors, deep save and legacy links preserve an indep
     const saved = `${source}%% Deep save\n`
     await editor.fill(saved)
     await page.getByRole('button', { name: /^Save/ }).click()
-    await expect(page.getByText('Saved', { exact: true })).toBeVisible()
+    await expect(page.locator('.save-status')).toHaveAttribute('data-sync-state', 'synced')
     expect(await readFile(join(root, deep, 'deep.mmd'), 'utf8')).toBe(saved)
     await browse(page, '')
     await expect(explorer.getByText('RETAINED DRAFTS', { exact: true })).toHaveCount(0)
