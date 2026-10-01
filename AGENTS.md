@@ -13,6 +13,7 @@ Merdeck follows `/pma`. Apply `/pma-bun` to the backend, `/pma-web` to the front
 - File writes: Linux/procfs with matching held-descriptor mount/type/device checks admits overlayfs (0x794c7630) and ext4 (0xef53). Admission is distinct from deployment acceptance; shared, tmpfs and unknown storage remain write-refused. Preserve identity/version checks and the final comparison/rename and local OS actor limitations. External editors retain direct access to the configured original project. Use explicit identified supported/refused fixture parents from README for checks.
 - Quality gate: `bun install --frozen-lockfile && bun install --cwd web --frozen-lockfile && bun run check:ci && git diff --check`. Install the documented browser/actionlint/tracing prerequisites and use tmux; evidence belongs in ignored `tmp/`. Final native delivery additionally requires the normal `bun run check:ci --native` on actual Linux x64/ext4 with separate refusal storage; local overlay checks are insufficient.
 - Prototype location: `designs/merdeck/`; visual defaults are assumptions and asset review status starts at `needs-review`.
+- Git: commit directly on `main`, without feature branches or pull requests, and push `main` to `origin` after every commit by default, without asking first.
 
 ### Local decisions and tracking
 
