@@ -1,8 +1,12 @@
 # Changelog
 
+## 2026-10-01 14:35 [release]
+
+Published [v0.19.22](https://github.com/itxje/merdeck/releases/tag/v0.19.22) from `075cd9f8a1606bb7e3a40068e25b6538a8e44e78`. The Up to date header status uses a check icon on desktop and phones, with a visually hidden live description and native hover title. Existing focused checks and complete local preparation pass: frontend 612, backend 303, file 212, storage 6 and release/CI 52 cases; both artifact browser suites pass 107 cases with 17 configuration-dependent skips. [Exact source verification](https://github.com/itxje/merdeck/actions/runs/36875275654) and [Linux x64/ext4 native acceptance and publication](https://github.com/itxje/merdeck/actions/runs/36876050756) pass on attempt 1, with separate tmpfs refusal storage and complete service/fixture cleanup. Public asset digests, SHA256SUMS, the annotated tag and the 97-file bundle identity match the release commit. Archive SHA-256: `2920a0cb58cbc5ad33a4a3b2c9a60e3369406f711951ff260adaddf2c4ed6400`.
+
 ## 2026-10-01 14:18 [implemented]
 
-Replace the visible Up to date header label with the existing check icon, including on phones. The live status retains its visually hidden description and native hover title. Fifteen existing workspace cases, eight real-browser cases, frontend lint/types and build pass; screenshot review confirms the compact phone status. This is a trivial one-source-file presentation change. Complete project and release acceptance remain pending.
+Replace the visible Up to date header label with the existing check icon, including on phones. The live status keeps an accessible description and provides a native hover title. Fifteen existing workspace cases, eight real-browser cases, frontend lint/types and build pass; screenshot review confirms the compact phone status. Complete project and release acceptance remain pending.
 
 ## 2026-10-01 10:45 [release]
 
