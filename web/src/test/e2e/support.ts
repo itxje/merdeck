@@ -193,9 +193,8 @@ export async function settledDialog(page: Page) {
   })).toBe(true)
 }
 
-export async function chooseFileTypes(page: Page, explorer: Locator, label: string) {
-  await explorer.getByRole('button', { name: 'File types', exact: true }).click()
-  await page.getByRole('menuitemradio', { name: label, exact: true }).click()
+export async function chooseFileTypes(explorer: Locator, label: string) {
+  await explorer.getByRole('group', { name: 'File types', exact: true }).getByRole('button', { name: label, exact: true }).click()
 }
 
 export async function fileAction(page: Page, explorer: Locator, label: string) {

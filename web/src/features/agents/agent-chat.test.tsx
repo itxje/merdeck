@@ -1,6 +1,6 @@
 import type { AgentEvent } from '../../../../src/shared/contracts'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { createQueryClient } from '@/shared/lib/query'
@@ -82,6 +82,15 @@ it('presents unavailable editing as a notice without unusable conversation contr
 })
 
 it('follows reply growth until the reader scrolls away and offers the latest content', async () => {
+  const resizes: (() => void)[] = []
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(callback: ResizeObserverCallback) {
+      resizes.push(() => callback([], this as unknown as ResizeObserver))
+    }
+
+    observe() {}
+    disconnect() {}
+  })
   vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
   vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
   vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
@@ -93,12 +102,20 @@ it('follows reply growth until the reader scrolls away and offers the latest con
   await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
   const log = screen.getByRole('log', { name: 'AI conversation' })
   let height = 100
-  Object.defineProperties(log, { scrollHeight: { configurable: true, get: () => height }, clientHeight: { configurable: true, value: 200 }, scrollTop: { configurable: true, writable: true, value: 0 } })
+  let width = 380
+  let viewportHeight = 200
+  let top = 0
+  Object.defineProperties(log, {
+    scrollHeight: { configurable: true, get: () => height },
+    clientHeight: { configurable: true, get: () => viewportHeight },
+    clientWidth: { configurable: true, get: () => width },
+    scrollTop: { configurable: true, get: () => top, set: (value: number) => { top = Math.max(0, Math.min(value, height - viewportHeight)) } },
+  })
   FakeEventSource.instances[0]!.emit({ id: 1, type: 'assistant.delta', text: 'First part.' })
   await screen.findByText('First part.')
   height = 700
   FakeEventSource.instances[0]!.emit({ id: 2, type: 'assistant.delta', text: ' More content.' })
-  await waitFor(() => expect(log.scrollTop).toBe(700))
+  await waitFor(() => expect(log.scrollTop).toBe(500))
   log.scrollTop = 40
   // A streaming update can arrive before the browser processes this scroll event.
   height = 900
@@ -106,7 +123,26 @@ it('follows reply growth until the reader scrolls away and offers the latest con
   await screen.findByText(/Latest content/)
   expect(log.scrollTop).toBe(40)
   await user.click(await screen.findByRole('button', { name: 'View latest content' }))
-  expect(log.scrollTop).toBe(900)
+  expect(log.scrollTop).toBe(700)
+  // Layout can clamp the old position and deliver scroll before ResizeObserver.
+  width = 300
+  height = 1200
+  log.scrollTop = 600
+  fireEvent.scroll(log)
+  act(() => resizes.forEach(resize => resize()))
+  expect(log.scrollTop).toBe(1000)
+  viewportHeight = 100
+  log.scrollTop = 800
+  fireEvent.scroll(log)
+  act(() => resizes.forEach(resize => resize()))
+  expect(log.scrollTop).toBe(1100)
+  log.scrollTop = 40
+  fireEvent.scroll(log)
+  width = 380
+  viewportHeight = 200
+  height = 900
+  act(() => resizes.forEach(resize => resize()))
+  expect(log.scrollTop).toBe(40)
   view.unmount()
   client.clear()
 })

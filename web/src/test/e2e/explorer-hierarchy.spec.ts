@@ -62,7 +62,7 @@ test('folder navigation exits a recursive type search at every nested level', as
     await login(page, true)
     const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
     await explorer.getByLabel('Filter files', { exact: true }).fill(parent)
-    await chooseFileTypes(page, explorer, '.mmd and .mermaid files')
+    await chooseFileTypes(explorer, '.mmd and .mermaid files')
     await explorer.getByRole('navigation', { name: 'Search results', exact: true }).getByRole('button', { name: parent, exact: true }).click()
     await expect(explorer.getByRole('button', { name: child, exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: child, exact: true }).click()

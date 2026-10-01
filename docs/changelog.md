@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 04:35 [progress]
+
+Restore All and visible directories on every page load, replacing the remembered type dropdown with direct All/Mermaid/MD/HTML controls. Fix conversation following when layout-induced scroll precedes viewport observation, exposed by the first concurrent native run. Focused unit/browser checks and repeated resize acceptance pass; complete local and tag native verification remain required before v0.19.18 publication. See [the explorer correction](task/20261001-0430-explorer-default-navigation.md), [CI optimization](task/20261001-0401-optimize-ci.md) and [release preparation](task/20261001-0435-release-v0.19.18.md).
+
 ## 2026-10-01 04:13 [progress]
 
 Split hosted CI into documentation, source and complete native verification. Main/PR source gates retain native storage and all source checks; version tags and explicit native checks retain complete artifact acceptance. Executable and bundle smoke suites now run concurrently with isolated browser outputs and awaited cleanup. Fourteen focused regression cases, lint, types and pinned workflow validation pass; full local and hosted verification remain pending. See [20261001-0401-optimize-ci](task/20261001-0401-optimize-ci.md).

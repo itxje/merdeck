@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test'
-import { browse, choose, chooseBlock, chooseFileTypes, expect, login, test } from './support'
+import { browse, choose, chooseBlock, chooseFileTypes, expect, login, settledDialog, test } from './support'
 
 // WCAG contrast ratio between a row's own background and the explorer background.
 function fillContrast(row: Locator) {
@@ -71,35 +71,70 @@ test('the explorer selects Markdown diagrams and fills only the selected row', a
   await expect(editor).toHaveValue(first)
 })
 
-test('the explorer lists the chosen file types from subfolders and remembers the choice', async ({ page }) => {
+test('the explorer opens All with folders and offers direct file-type choices', async ({ page }, info) => {
+  await page.addInitScript(() => localStorage.setItem('merdeck.file-filter', 'mermaid'))
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
   const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
   const listing = explorer.getByRole('navigation', { name: 'Files and diagrams', exact: true })
   const results = explorer.getByRole('navigation', { name: 'Search results', exact: true })
+  const types = explorer.getByRole('group', { name: 'File types', exact: true })
+  await expect(types.getByRole('button', { name: 'All files', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(listing.getByRole('button', { name: 'docs', exact: true })).toBeVisible()
   await expect(listing.getByRole('button', { name: /^welcome\.mmd/ })).toBeVisible()
   await expect(explorer.getByRole('button', { name: /overview\.md/ })).toHaveCount(0)
   await expect(explorer.getByText('2 loaded files')).toBeVisible()
 
   // A file type lists matching files in this folder and every subfolder, without opening them, in place of the listing.
-  await chooseFileTypes(page, explorer, '.md files')
+  await chooseFileTypes(explorer, '.md files')
   await expect(results.getByRole('button', { name: 'docs/overview.md', exact: true })).toBeVisible()
   await expect(results.getByRole('button', { name: 'welcome.mmd', exact: true })).toHaveCount(0)
   await expect(listing).toHaveCount(0)
-  await chooseFileTypes(page, explorer, '.mmd and .mermaid files')
+  await chooseFileTypes(explorer, '.mmd and .mermaid files')
   await expect(results.getByRole('button', { name: 'welcome.mmd', exact: true })).toBeVisible()
   await expect(results.getByRole('button', { name: 'sequence.mermaid', exact: true })).toBeVisible()
   await expect(results.getByRole('button', { name: 'docs/overview.md', exact: true })).toHaveCount(0)
 
-  // The choice belongs to this browser and survives a reload.
+  // A new page restores directory navigation even if the browser stored an earlier filter.
   await page.reload()
-  await explorer.getByRole('button', { name: 'File types', exact: true }).click()
-  await expect(page.getByRole('menuitemradio', { name: '.mmd and .mermaid files', exact: true })).toHaveAttribute('aria-checked', 'true')
-  await page.keyboard.press('Escape')
-  await expect(results.getByRole('button', { name: 'welcome.mmd', exact: true })).toBeVisible()
-  await expect(explorer.getByRole('button', { name: /overview\.md/ })).toHaveCount(0)
-  await chooseFileTypes(page, explorer, 'All files')
+  await expect(types.getByRole('button', { name: 'All files', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(listing.getByRole('button', { name: 'docs', exact: true })).toBeVisible()
   await expect(results).toHaveCount(0)
+  await expect(explorer.getByRole('button', { name: /overview\.md/ })).toHaveCount(0)
+  await types.getByRole('button', { name: 'All files', exact: true }).focus()
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Space')
+  await expect(types.getByRole('button', { name: '.mmd and .mermaid files', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await chooseFileTypes(explorer, 'All files')
+  await expect(results).toHaveCount(0)
+  // Direct controls fit the minimum explorer width and retain readable labels.
+  const separator = page.getByRole('separator', { name: 'Resize project files', exact: true })
+  await separator.focus()
+  for (let i = 0; i < 22; i++)
+    await page.keyboard.press('ArrowLeft')
+  await expect(separator).toHaveAttribute('aria-valuenow', '180')
+  for (const button of await types.getByRole('button').all()) {
+    expect(await button.evaluate((element) => {
+      const box = element.getBoundingClientRect()
+      const group = element.parentElement!.getBoundingClientRect()
+      return element.scrollWidth <= element.clientWidth && box.left >= group.left && box.right <= group.right
+    })).toBe(true)
+  }
+  await separator.dblclick()
+  await expect(separator).toHaveAttribute('aria-valuenow', '232')
+  await page.screenshot({ path: info.outputPath('all-directory-types-desktop.png'), animations: 'disabled' })
   await browse(page, 'docs')
   await expect(listing.getByRole('button', { name: /^overview\.md/ })).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Open project files', exact: true }).click()
+  await settledDialog(page)
+  const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  const phoneTypes = drawer.getByRole('group', { name: 'File types', exact: true })
+  for (const button of await phoneTypes.getByRole('button').all())
+    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+  await chooseFileTypes(drawer, '.md files')
+  await expect(drawer.getByRole('navigation', { name: 'Search results' }).getByRole('button', { name: 'overview.md', exact: true })).toBeVisible()
+  await chooseFileTypes(drawer, 'All files')
+  await expect(drawer.getByRole('navigation', { name: 'Files and diagrams' })).toBeVisible()
+  await page.screenshot({ path: info.outputPath('all-directory-types-phone.png'), animations: 'disabled' })
 })

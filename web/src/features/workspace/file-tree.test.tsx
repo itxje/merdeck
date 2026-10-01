@@ -67,9 +67,10 @@ it('folds the heading, breadcrumb and tools into one action rail with icon contr
   expect(rail!.querySelector('.directory-crumbs')).not.toBeNull()
   const actionNames = [...rail!.querySelectorAll('.tree-rail-actions button')].map(button => button.getAttribute('aria-label'))
   expect(actionNames).toEqual(['Up', 'New file', 'Refresh files', 'More file actions'])
-  // The file type menu sits inside the search field's own frame.
-  const search = screen.getByRole('textbox', { name: 'Filter files' }).closest('.tree-search')
-  expect(search?.querySelector('[aria-label="File types"]')).not.toBeNull()
+  const types = screen.getByRole('group', { name: 'File types' })
+  expect(types).toBeVisible()
+  expect(types.querySelectorAll('button')).toHaveLength(4)
+  expect(screen.getByRole('button', { name: 'All files' })).toHaveAttribute('aria-pressed', 'true')
   unmount()
 })
 
@@ -172,8 +173,7 @@ it('lists HTML documents under a distinct file-type filter', () => {
 it('reports the chosen file types and names them when nothing is listed', async () => {
   const { chooseKinds, unmount } = renderTree('all')
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: 'File types' }))
-  await user.click(await screen.findByRole('menuitemradio', { name: '.md files' }))
+  await user.click(screen.getByRole('button', { name: '.md files' }))
   expect(chooseKinds).toHaveBeenCalledWith('markdown')
   unmount()
 
@@ -182,7 +182,8 @@ it('reports the chosen file types and names them when nothing is listed', async 
   empty.unmount()
 })
 
-it('remembers the chosen file types in this browser', () => {
+it('opens All on every page load even when the browser remembers an earlier filter', () => {
+  localStorage.setItem('merdeck.file-filter', 'mermaid')
   const first = renderHook(() => useFileFilter())
   expect(first.result.current[0]).toBe('all')
   act(() => first.result.current[1]('mermaid'))
@@ -190,7 +191,7 @@ it('remembers the chosen file types in this browser', () => {
   first.unmount()
 
   const second = renderHook(() => useFileFilter())
-  expect(second.result.current[0]).toBe('mermaid')
+  expect(second.result.current[0]).toBe('all')
   second.unmount()
 })
 

@@ -4,11 +4,12 @@ import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
 import type { useDirectory } from './use-directory'
 import type { SearchView } from './use-directory-search'
-import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, ListFilter, MoreHorizontal, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, MoreHorizontal, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { errorMessage, parentDirectory } from './api'
 import { dirty } from './drafts'
@@ -34,11 +35,11 @@ interface Props {
 interface DiagramListProps { file: string, blocks: DiagramBlockSummary[], draft: FileDraft | undefined, open: boolean, block: number, select: Props['select'] }
 interface MenuItem { label: string, onSelect: () => void, disabled?: boolean, destructive?: boolean, separated?: boolean }
 
-const fileFilters: { value: FileFilter, label: string }[] = [
-  { value: 'all', label: 'All files' },
-  { value: 'mermaid', label: '.mmd and .mermaid files' },
-  { value: 'markdown', label: '.md files' },
-  { value: 'html', label: '.html and .htm files' },
+const fileFilters: { value: FileFilter, text: string, label: string }[] = [
+  { value: 'all', text: 'All', label: 'All files' },
+  { value: 'mermaid', text: 'Mermaid', label: '.mmd and .mermaid files' },
+  { value: 'markdown', text: 'MD', label: '.md files' },
+  { value: 'html', text: 'HTML', label: '.html and .htm files' },
 ]
 
 function FileKindIcon({ kind }: { kind: 'mermaid' | 'markdown' | 'html' }) {
@@ -250,22 +251,19 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             onQueryChange?.(event.target.value)
           }}
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button className="tree-search-kinds" variant="ghost" size="icon-xs" aria-label="File types" title={fileFilters.find(option => option.value === kinds)?.label} data-filtered={kinds !== 'all' || undefined} />}><ListFilter /></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-auto min-w-56">
-            <DropdownMenuRadioGroup
-              value={kinds}
-              onValueChange={(value) => {
-                const next = fileFilters.find(option => option.value === value)
-                if (next)
-                  chooseKinds(next.value)
-              }}
-            >
-              {fileFilters.map(option => <DropdownMenuRadioItem key={option.value} value={option.value} closeOnClick>{option.label}</DropdownMenuRadioItem>)}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
+      <ToggleGroup
+        className="tree-file-types"
+        aria-label="File types"
+        value={[kinds]}
+        onValueChange={(values) => {
+          const next = fileFilters.find(option => option.value === values[0])
+          if (next)
+            chooseKinds(next.value)
+        }}
+      >
+        {fileFilters.map(option => <ToggleGroupItem key={option.value} value={option.value} aria-label={option.label} title={option.label}>{option.text}</ToggleGroupItem>)}
+      </ToggleGroup>
       {searching && search && (
         <nav aria-label="Search results" aria-busy={search.pending}>
           {search.pending && <p className="tree-hint" role="status">Searching…</p>}

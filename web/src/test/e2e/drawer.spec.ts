@@ -159,7 +159,7 @@ test('file drawer reserves reachable folder rows in a short mobile viewport', as
     expect(nextMetrics.buttonTop).toBeGreaterThanOrEqual(nextMetrics.popupTop)
     expect(nextMetrics.buttonBottom).toBeLessThanOrEqual(nextMetrics.popupBottom)
 
-    await chooseFileTypes(page, dialog, '.mmd and .mermaid files')
+    await chooseFileTypes(dialog, '.mmd and .mermaid files')
     const results = dialog.getByRole('navigation', { name: 'Search results', exact: true })
     await expect(results.getByRole('button', { name: 'folder-001/diagram.mmd', exact: true })).toBeVisible()
     const searchMetrics = await results.evaluate((node) => {

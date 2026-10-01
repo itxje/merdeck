@@ -99,6 +99,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
   const messagesRef = React.useRef<HTMLDivElement>(null)
   const followingRef = React.useRef(true)
   const followedTopRef = React.useRef(0)
+  const followedViewportRef = React.useRef({ width: 0, height: 0 })
   const [unread, setUnread] = React.useState(false)
   const followLatest = React.useCallback(() => {
     followingRef.current = true
@@ -107,16 +108,19 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     if (transcript) {
       transcript.scrollTop = transcript.scrollHeight
       followedTopRef.current = transcript.scrollTop
+      followedViewportRef.current = { width: transcript.clientWidth, height: transcript.clientHeight }
     }
   }, [])
   const followIfAtLatest = React.useCallback(() => {
     const transcript = transcriptRef.current
     if (!followingRef.current || !transcript)
       return
-    // A reader can move before the browser delivers its scroll event. Account for that
-    // movement, including the browser clamping a previous bottom after a layout shrinks.
+    // Scroll positions belong to their viewport geometry. Resizing preserves follow mode;
+    // a reader moving within the same viewport can stop following before scroll is delivered.
+    const viewport = followedViewportRef.current
+    const resized = viewport.width !== transcript.clientWidth || viewport.height !== transcript.clientHeight
     const maximum = Math.max(0, transcript.scrollHeight - transcript.clientHeight)
-    if (transcript.scrollTop < Math.min(followedTopRef.current, maximum))
+    if (!resized && transcript.scrollTop < Math.min(followedTopRef.current, maximum))
       followingRef.current = false
     else
       followLatest()
@@ -283,9 +287,16 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
         aria-label="AI conversation"
         onScroll={(event) => {
           const transcript = event.currentTarget
+          const viewport = followedViewportRef.current
+          // Layout-induced scroll can precede ResizeObserver, so retain the prior follow mode.
+          if (followingRef.current && (viewport.width !== transcript.clientWidth || viewport.height !== transcript.clientHeight)) {
+            followLatest()
+            return
+          }
           followingRef.current = Math.ceil(transcript.scrollTop + transcript.clientHeight) >= transcript.scrollHeight
           if (followingRef.current) {
             followedTopRef.current = transcript.scrollTop
+            followedViewportRef.current = { width: transcript.clientWidth, height: transcript.clientHeight }
             setUnread(false)
           }
         }}
