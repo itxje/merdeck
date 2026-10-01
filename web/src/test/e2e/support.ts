@@ -202,3 +202,7 @@ export async function fileAction(page: Page, explorer: Locator, label: string) {
   await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
   await page.getByRole('menuitem', { name: label, exact: true }).click()
 }
+
+export async function mockAgentCapabilities(page: Page) {
+  await page.route('**/api/agents/capabilities', route => route.fulfill({ json: { success: true, data: { enabled: true, providers: [{ id: 'codex', label: 'Test editor', models: [{ id: 'default', label: 'Default', description: '', isDefault: true }] }] } } }))
+}

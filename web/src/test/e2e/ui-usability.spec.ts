@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { expect, login, test } from './support'
+import { expect, login, mockAgentCapabilities, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -110,7 +110,7 @@ test('unconfigured editing gives a compact notice without reducing document widt
 })
 
 test('streamed Markdown follows the bottom and respects reading earlier replies', async ({ page }, info) => {
-  await page.route('**/api/agents/capabilities', route => route.fulfill({ json: { success: true, data: { enabled: true, providers: [{ id: 'codex', label: 'Test editor', models: [{ id: 'default', label: 'Default', description: '', isDefault: true }] }] } } }))
+  await mockAgentCapabilities(page)
   await page.addInitScript(() => {
     let eventId = 0
     class Stream extends EventTarget {

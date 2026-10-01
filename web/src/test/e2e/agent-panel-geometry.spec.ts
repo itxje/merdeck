@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test'
-import { expect, test } from './support'
+import { expect, mockAgentCapabilities, test } from './support'
 
 const url = process.env.MERDECK_OPEN_URL
 test.skip(!url, 'Set MERDECK_OPEN_URL to a disposable service without an access token.')
+test.beforeEach(async ({ page }) => mockAgentCapabilities(page))
 
 const viewport = { width: 390, height: 844 }
 

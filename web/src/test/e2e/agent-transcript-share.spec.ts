@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test'
-import { expect, test } from './support'
+import { expect, mockAgentCapabilities, test } from './support'
 
 const url = process.env.MERDECK_OPEN_URL
 test.skip(!url, 'Set MERDECK_OPEN_URL to a disposable service without an access token.')
+test.beforeEach(async ({ page }) => mockAgentCapabilities(page))
 
 // A phone browser's own toolbars leave a visual viewport well short of the device's height, and the
 // panel's fixed chrome — title row, engine row, composer — does not shrink with it. At 55% of 640px
