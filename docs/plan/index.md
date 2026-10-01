@@ -101,7 +101,7 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260926-1717-release-v0.19.5 Release v0.19.5**](20260926-1717-release-v0.19.5.md) `2026-09-26`
 - [x] [**20260926-1911-mobile-contents-blank Restore the phone document contents drawer**](20260926-1911-mobile-contents-blank.md) `2026-09-26`
 - [x] [**20260926-1926-document-width-and-markdown-toolbar Align document widths and remove Markdown view tabs**](20260926-1926-document-width-and-markdown-toolbar.md) `2026-09-26`
-- [-] [**20260926-1953-release-v0.19.6 Release v0.19.6**](20260926-1953-release-v0.19.6.md) `2026-09-26`
+- [x] [**20260926-1953-release-v0.19.6 Release v0.19.6**](20260926-1953-release-v0.19.6.md) `2026-09-26`
 - [x] [**20260927-0407-inline-diagram-select Remove selection controls from inline Markdown diagrams**](20260927-0407-inline-diagram-select.md) `2026-09-27`
 - [x] [**20260927-0430-document-media-zoom Zoom selected Markdown diagrams and HTML images**](20260927-0430-document-media-zoom.md) `2026-09-27`
 - [x] [**20260927-0430-node24-gate Accept supported Node 24 releases in the quality gate**](20260927-0430-node24-gate.md) `2026-09-27`
