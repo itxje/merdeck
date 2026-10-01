@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 15:48 [completed]
+
+Published [v0.19.23](https://github.com/itxje/merdeck/releases/tag/v0.19.23) from `df4deb5`. The file status uses circular arrows with a green check, gray pending dot, rotating save animation and red attention badge. It follows whole-file edits and existing save/review state, retains accessible live descriptions and shows no hover/click text. Focused red/green, complete local/source/native, publication and public digest/checksum/build-identity verification pass. See [the acceptance record](task/20261001-1514-file-sync-status.md).
+
 ## 2026-10-01 15:22 [implemented]
 
 Use circular arrows for project-file synchronization, with a green check for synchronized content, a gray dot for pending edits, rotating arrows during saves and a red exclamation for failed synchronization or required review. The header uses whole-file dirty state, preserves accessible live descriptions and shows no hover/click text. Eight focused state cases, eighteen real-browser cases, frontend lint/types, build and phone screenshot review pass. Complete local and release acceptance remain pending. See [the file synchronization task](task/20261001-1514-file-sync-status.md).

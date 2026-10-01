@@ -1,6 +1,6 @@
 # 20261001-1514-file-sync-status Present file synchronization with distinct shapes
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 15:14
 - **approvedAt**: 2026-10-01 15:14 (explicit implementation request)
 - **relatedTask**: 20261001-1514-file-sync-status
@@ -24,3 +24,7 @@ Header presentation, state component, focused unit/browser coverage and document
 ## Alternatives
 
 Cloud imagery would imply a service this project does not provide; circular arrows follow the owner's explicit non-cloud choice. Existing save/review semantics remain authoritative.
+
+## Delivery
+
+Published [v0.19.23](https://github.com/itxje/merdeck/releases/tag/v0.19.23) from `df4deb5122a50dac76ca090e718ae36bb1bbfc6c` after complete local preparation, [exact source verification](https://github.com/itxje/merdeck/actions/runs/36883730220), [complete native artifact acceptance and publication](https://github.com/itxje/merdeck/actions/runs/36884607204) and public asset checksum/build-identity verification. See [the task](../task/20261001-1514-file-sync-status.md).
