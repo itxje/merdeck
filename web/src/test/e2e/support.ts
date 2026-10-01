@@ -197,9 +197,8 @@ export async function chooseFileTypes(explorer: Locator, label: string) {
   await explorer.getByRole('group', { name: 'File types', exact: true }).getByRole('button', { name: label, exact: true }).click()
 }
 
-export async function fileAction(page: Page, explorer: Locator, label: string) {
-  await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
-  await page.getByRole('menuitem', { name: label, exact: true }).click()
+export async function fileAction(explorer: Locator, label: string) {
+  await explorer.getByRole('button', { name: label, exact: true }).click()
 }
 
 export async function mockAgentCapabilities(page: Page) {

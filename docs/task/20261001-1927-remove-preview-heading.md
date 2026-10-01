@@ -7,11 +7,11 @@
 
 ## Description
 
-Remove the Preview / Live preview heading row shown in the supplied screenshot. Retain accessible render status, the existing visible error banner, loading/empty canvas messages and all diagram interactions. Deliver the approved presentation change as v0.19.26 using the established native tag and public asset verification workflow.
+Remove the Preview / Live preview heading row shown in the supplied screenshot. Retain accessible render status, the existing visible error banner, loading/empty canvas messages and all diagram interactions. Fix the clipped phone theme menu and expose New folder and Restart listing directly in the explorer toolbar, as subsequently requested. Deliver the approved presentation changes as v0.19.26 using the established native tag and public asset verification workflow.
 
 ## ActiveForm
 
-Removing the redundant preview heading and verifying render feedback.
+Refining the preview and mobile controls and verifying the combined release.
 
 ## Dependencies
 
@@ -33,3 +33,13 @@ The updated existing render/error case first failed on the heading assertion, th
 ## Browser selector correction
 
 The initial complete local browser checks exposed ambiguity in the new status locator: Playwright's default substring match for an empty accessible name also matched the Zoom level output, which has an implicit status role. The light/dark cases failed before their layout and warning assertions. Add exact: true to select the unnamed render status. The initial browser results remain failed; complete clean-source verification will run again at the corrected commit after the current checks finish cleanup. The application change is unchanged.
+
+## Approved scope extension
+
+The subsequent screenshots and explicit requests approve fixing the clipped phone theme controls and moving New folder and Restart listing out of the explorer popup. The header popup inherits its narrow trigger width; size this specific popup to its contents. Reuse the existing explorer icon actions, handlers and disabled conditions. Extend the existing phone header case to check every theme control and icon fits inside the popup and viewport; adapt existing explorer action and keyboard tests to the direct buttons.
+
+The second complete local gate passed the updated preview cases but failed an existing responsive diagram measurement: the width poll and later geometry read observed different render/layout frames, yielding width zero after a previously visible SVG. Check content bounds and rendered width together with a retrying assertion during the viewport change. Preserve both requirements and record the failed run rather than treating it as passed. The exact hosted source gate at 5cf2e7a passed; the extended implementation will need fresh clean-source acceptance.
+
+## Combined implementation verification
+
+The explorer toolbar now shows Up, New file, New folder, Refresh files and Restart listing directly, with the existing tooltip, handler and permission/busy/depth conditions. The specific phone header popup uses content width, preserving every 44px theme target. The existing action-order case failed before the toolbar change; all 21 focused explorer/preview cases and frontend lint/types now pass, with the same four existing lint warnings. All 18 affected production browser cases pass with zero unexpected errors and confirmed fixture cleanup. These cover real folder operations, busy/read-only restrictions, stale-list restart, keyboard order, theme-button/icon containment at 320/360/390 pixels and responsive preview geometry. Inspected real 320px menu and explorer screenshots: all three theme icons and all five explorer buttons fit. Implementation review found zero actionable introduced issues. Complete clean-source local/source acceptance and native publication remain pending.

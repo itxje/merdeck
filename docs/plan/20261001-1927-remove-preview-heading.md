@@ -21,6 +21,10 @@ The last valid diagram must never be mistaken for a successfully rendered invali
 
 Preview component, its stylesheet rules, existing preview unit tests and affected browser readiness/contrast/state assertions. PMA tracking, release metadata and acceptance documentation. No renderer, storage, authentication or dependency changes.
 
+## Approved extension
+
+The owner subsequently requested complete display of the phone theme controls and direct explorer buttons for New folder and Restart listing. Size the header popup intrinsically to its contents, and replace only the explorer's two-action popup with existing icon-button components. Retain handlers, busy/read-only/depth restrictions and individual file menus. Adapt the existing header, explorer, drawer and file-operation tests; check all three phone theme controls fit in the popup at 320, 360 and 390 pixels. Include these approved refinements in v0.19.26 and rerun acceptance at the final combined commit.
+
 ## Alternatives
 
 Keeping the heading repeats the already-labelled pane and consumes canvas height. Removing useful render feedback entirely is unnecessary; the existing accessible status and error alert preserve it.

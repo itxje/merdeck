@@ -186,7 +186,7 @@ button:disabled { cursor: default; }
 .header-actions .control-divider { height: 20px; }
 .theme-switch { gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
 /* The overflow menu stacks the same controls it replaces in the header, rather than a horizontal row. */
-.header-menu { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px; }
+.header-menu { display: flex; width: max-content; flex-direction: column; align-items: flex-start; gap: 8px; padding: 8px; }
 .header-menu .theme-switch { align-self: stretch; justify-content: space-between; }
 /* Tooltip triggers replace the data-slot of the controls they render, so these compositions select elements. */
 .theme-switch button { width: 26px; height: 26px; min-width: 0; padding: 0; border-radius: var(--radius-md); color: var(--muted-foreground); }

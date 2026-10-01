@@ -213,7 +213,7 @@ test('file drawer omits its redundant header while retaining named usable contro
       assertContained(measurement)
       // The explorer heading actions precede the filter when it is deliberately focused.
       await page.keyboard.press('Shift+Tab')
-      await expect(dialog.getByRole('button', { name: 'More file actions', exact: true })).toBeFocused()
+      await expect(dialog.getByRole('button', { name: 'Restart listing', exact: true })).toBeFocused()
       await page.keyboard.press('Tab')
       await expect(search).toBeFocused()
       await page.keyboard.press('Escape')

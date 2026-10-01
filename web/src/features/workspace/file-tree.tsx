@@ -224,20 +224,9 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             <ArrowUp />
           </HeadingAction>
           <HeadingAction label="New file" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
+          <HeadingAction label="New folder" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
           <HeadingAction label="Refresh files" onClick={refresh}><RefreshCw /></HeadingAction>
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="More file actions" />}><MoreHorizontal /></DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-auto min-w-44">
-              <DropdownMenuItem disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}>
-                <FolderPlus />
-                New folder
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}>
-                <RotateCcw />
-                Restart listing
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <HeadingAction label="Restart listing" disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}><RotateCcw /></HeadingAction>
         </span>
       </div>
       <div className="tree-search">

@@ -66,7 +66,7 @@ it('folds the heading, breadcrumb and tools into one action rail with icon contr
   expect(rail).not.toBeNull()
   expect(rail!.querySelector('.directory-crumbs')).not.toBeNull()
   const actionNames = [...rail!.querySelectorAll('.tree-rail-actions button')].map(button => button.getAttribute('aria-label'))
-  expect(actionNames).toEqual(['Up', 'New file', 'Refresh files', 'More file actions'])
+  expect(actionNames).toEqual(['Up', 'New file', 'New folder', 'Refresh files', 'Restart listing'])
   const types = screen.getByRole('group', { name: 'File types' })
   expect(types).toBeVisible()
   expect(types.querySelectorAll('button')).toHaveLength(4)

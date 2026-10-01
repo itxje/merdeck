@@ -318,7 +318,7 @@ test('a real namespace change rejects one continuation and Restart recovers with
     await expect(explorer.getByRole('status').filter({ hasText: 'Listing is not current' })).toBeVisible()
     await expect(editor).toHaveValue(draft)
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled()
-    await fileAction(page, explorer, 'Restart listing')
+    await fileAction(explorer, 'Restart listing')
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
     expect(requests).toEqual([true, false])
     expect(conflicts).toEqual([409])

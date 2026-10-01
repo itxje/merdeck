@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 19:47 [implemented]
+
+Fit the phone theme menu to its controls and expose New folder and Restart listing directly in the explorer toolbar. Existing action handlers, busy/read-only/depth restrictions and per-file menus remain intact. The updated toolbar assertion first failed; 21 focused frontend cases, lint/types and 18 affected production browser cases pass. Phone theme controls and icons fit at 320/360/390 pixels, and real 320px menu/explorer screenshots have been inspected. Complete clean-source and native v0.19.26 release acceptance remain pending. See [the combined presentation task](task/20261001-1927-remove-preview-heading.md).
+
 ## 2026-10-01 19:29 [implemented]
 
 Remove the redundant Preview / Live preview heading row so the diagram canvas can use its height. Accessible render status, visible error and loading/empty feedback, and diagram controls remain intact. The updated existing case first failed on the heading assertion, then six preview cases and frontend lint/types passed. Complete local/source/native verification and v0.19.26 delivery remain pending. See [the preview task](task/20261001-1927-remove-preview-heading.md).

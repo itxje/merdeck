@@ -8,7 +8,7 @@ async function size(locator: Locator) {
   return box
 }
 
-test('header keeps the brand, the open file, saving, a theme switch and log out, and the explorer offers refresh', async ({ page }) => {
+test('header keeps the brand, file controls and a complete phone theme menu, and the explorer exposes its actions', async ({ page }, info) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
   const header = page.getByRole('banner')
@@ -79,7 +79,7 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   expect((await size(refresh.locator('svg'))).width).toBeCloseTo(16, 0)
   await search.focus()
   await page.keyboard.press('Shift+Tab')
-  await expect(explorer.getByRole('button', { name: 'More file actions', exact: true })).toBeFocused()
+  await expect(explorer.getByRole('button', { name: 'Restart listing', exact: true })).toBeFocused()
   await refresh.hover()
   await expect(page.locator('[data-slot="tooltip-content"]', { hasText: 'Refresh files' })).toBeVisible()
   const request = page.waitForRequest(item => new URL(item.url()).pathname === '/api/diagrams/directory')
@@ -94,7 +94,7 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
   // assistant toggle stays in the header beside its trigger: opening the assistant is done often
   // enough on a phone that it is not worth a second tap.
   const menuTrigger = header.getByRole('button', { name: 'More options', exact: true })
-  for (const width of [390, 360]) {
+  for (const width of [390, 360, 320]) {
     await page.setViewportSize({ width, height: 844 })
     await expect(menuTrigger).toBeVisible()
     await expect(theme).toHaveCount(0)
@@ -115,11 +115,38 @@ test('header keeps the brand, the open file, saving, a theme switch and log out,
     // Controls take their touch-target sizes below the narrow breakpoint.
     await expect.poll(async () => Math.round((await size(menuLight)).width)).toBe(44)
     await expect.poll(async () => Math.round((await size(menuLogout)).width)).toBeGreaterThanOrEqual(44)
+    const menuBounds = await size(menu)
+    const triggerBounds = await size(menuTrigger)
+    expect(triggerBounds.x).toBeGreaterThanOrEqual(0)
+    expect(triggerBounds.x + triggerBounds.width).toBeLessThanOrEqual(width)
+    expect(menuBounds.x).toBeGreaterThanOrEqual(0)
+    expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(width)
+    for (const name of ['Light theme', 'Dark theme', 'System theme']) {
+      const button = menuTheme.getByRole('button', { name, exact: true })
+      for (const control of [button, button.locator('svg')]) {
+        const box = await size(control)
+        expect(box.x).toBeGreaterThanOrEqual(menuBounds.x)
+        expect(box.x + box.width).toBeLessThanOrEqual(menuBounds.x + menuBounds.width)
+        expect(box.y).toBeGreaterThanOrEqual(menuBounds.y)
+        expect(box.y + box.height).toBeLessThanOrEqual(menuBounds.y + menuBounds.height)
+      }
+    }
+    await page.mouse.move(1, 1)
+    await page.screenshot({ path: info.outputPath(`theme-menu-${width}.png`), animations: 'disabled' })
     await menuTrigger.click()
     await expect(menu).toHaveCount(0)
   }
   await page.getByRole('button', { name: 'Open project files', exact: true }).click()
-  await expect(page.getByRole('dialog', { name: 'Project files', exact: true }).getByRole('button', { name: 'Refresh files', exact: true })).toBeVisible()
+  const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
+  for (const name of ['New file', 'New folder', 'Refresh files', 'Restart listing']) {
+    const button = drawer.getByRole('button', { name, exact: true })
+    await expect(button).toBeVisible()
+    const box = await size(button)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(320)
+  }
+  await page.mouse.move(1, 1)
+  await page.screenshot({ path: info.outputPath('explorer-actions-phone.png'), animations: 'disabled' })
 })
 
 test('the assistant panel starts closed under the phone breakpoint despite a stored open preference, and an explicit choice still persists', async ({ page }) => {
