@@ -197,4 +197,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261001-1045-release-v0.19.21 Release v0.19.21**](20261001-1045-release-v0.19.21.md) `P2`
 - [x] [**20261001-1514-file-sync-status Use distinct icons for file sync states**](20261001-1514-file-sync-status.md) `P2`
 
-- [-] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `P1`
+- [x] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `P1`

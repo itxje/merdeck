@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 16:56 [release]
+
+Published [v0.19.24](https://github.com/itxje/merdeck/releases/tag/v0.19.24) from `6d90444`, aligning the header copy and synchronization icons with 20px outlines and green circular success checks. The tag workflow passed complete Linux x64/ext4 native acceptance and same-run publication on attempt 1; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public asset digests, SHA256SUMS, annotated tag and the 97-file bundle's version/commit identity are verified. Release notes use the documented runtime support contract; the generator wording follow-up is taskist #61. See [the release acceptance record](task/20261001-1642-release-v0.19.24.md).
+
 ## 2026-10-01 16:42 [progress]
 
 Prepare v0.19.24 for the header copy-icon alignment after complete local preparation, implementation review and exact source verification. The immutable tag workflow must pass the complete normal Linux x64/ext4 gate before same-run publication; public asset and build-identity verification remain pending. See [the release task](task/20261001-1642-release-v0.19.24.md).
