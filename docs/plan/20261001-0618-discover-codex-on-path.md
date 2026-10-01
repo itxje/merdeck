@@ -1,6 +1,6 @@
 # 20261001-0618-discover-codex-on-path Discover installed Codex through PATH
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 06:18
 - **approvedAt**: 2026-10-01 06:18 (owner explicitly requests removal of the executable-setting prerequisite)
 - **relatedTask**: 20261001-0618-discover-codex-on-path
@@ -22,3 +22,7 @@ Codex startup resolution, focused configuration/API regressions, relevant fixtur
 Service PATH must determine discovery; tests cannot depend on installed tools or probe a real logged-in provider. PATH resolution must not introduce a project-owned executable. Existing explicit overrides remain authoritative. Native release acceptance still requires complete exact-commit Linux x64/ext4 and both artifact browser suites.
 
 The complete acceptance also exposed a file-actions test that focused a directory row during menu closure. The test now verifies complete popup removal and normal trigger focus return before exercising the row shortcut. This is verification-only scope; runtime UI behavior is unchanged.
+
+## Delivery
+
+Delivered in [v0.19.19](https://github.com/itxje/merdeck/releases/tag/v0.19.19) from `416dda47a0650bf33c39c93ec656c000be5f83e0`. Complete local preparation, [exact source verification](https://github.com/itxje/merdeck/actions/runs/36826507191), [complete native artifact acceptance and publication](https://github.com/itxje/merdeck/actions/runs/36827179734), and public archive checksums/build identity pass. See [the task](../task/20261001-0618-discover-codex-on-path.md). Remote deployment verification remains taskist #52.

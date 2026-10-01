@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 07:02 [completed]
+
+Published [v0.19.19](https://github.com/itxje/merdeck/releases/tag/v0.19.19) from `416dda4`, removing the explicit MERDECK_CODEX_PATH prerequisite through service-PATH discovery. Canonical executable/root checks and optional overrides remain; Claude and Antigravity configuration is unchanged. Four regressions first failed, then all configuration/API cases passed; controlled-provider editing and both full artifact browser suites pass. Complete local/source/native acceptance, publication and public asset digest/checksum/build identity checks pass. Remote deployment verification remains taskist #52. See [the acceptance record](task/20261001-0618-discover-codex-on-path.md).
+
 ## 2026-10-01 06:35 [progress]
 
 The first complete local preparation for automatic Codex discovery failed one browser audit after real session revocation; the other artifact suite passed. Preserve the failure and make the logout/poll ordering deterministic. The corrected scenario explicitly checks that a genuine background poll is refused after server logout, declaring expected authenticated-read/cleanup 401 responses only in its final logout phase. Runtime authentication is unchanged. Focused red/green browser proof and frontend lint/types pass; fresh complete acceptance remains required. See [the configuration task](task/20261001-0618-discover-codex-on-path.md).

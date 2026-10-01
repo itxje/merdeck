@@ -191,4 +191,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261001-0401-optimize-ci Reduce duplicate CI and release verification**](20261001-0401-optimize-ci.md) `P1`
 - [x] [**20261001-0430-explorer-default-navigation Restore the default directory view and direct file-type selection**](20261001-0430-explorer-default-navigation.md) `P1`
 - [x] [**20261001-0435-release-v0.19.18 Release v0.19.18**](20261001-0435-release-v0.19.18.md) `P1`
-- [-] [**20261001-0618-discover-codex-on-path Discover Codex without an explicit executable setting**](20261001-0618-discover-codex-on-path.md) `P1`
+- [x] [**20261001-0618-discover-codex-on-path Discover Codex without an explicit executable setting**](20261001-0618-discover-codex-on-path.md) `P1`
