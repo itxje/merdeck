@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 06:23 [progress]
+
+Remove the explicit Codex executable-setting prerequisite: startup now discovers `codex` from the service PATH, retaining canonical executable validation and optional overrides. Claude and Antigravity remain explicitly configured. Six new configuration/API cases and controlled-provider browser editing pass; source acceptance fixtures isolate discovery from installed logged-in CLIs. Complete local/source/native acceptance and v0.19.19 publication remain pending. See [the configuration task](task/20261001-0618-discover-codex-on-path.md).
+
 ## 2026-10-01 05:01 [completed]
 
 Published [v0.19.18](https://github.com/itxje/merdeck/releases/tag/v0.19.18) from `a0cdf10`, restoring default All with visible folders and direct All/Mermaid/MD/HTML controls. Desktop density and phone targets remain intact; conversation following now survives viewport changes. CI separates documentation/source/native verification and runs complete artifact browser checks concurrently. Exact source verification took 2m44s; complete native verification took 8m51s, down from 13m08s for v0.19.17. Local preparation, tag native acceptance, publication and public asset digests/checksums/build identity all pass. See [CI acceptance](task/20261001-0401-optimize-ci.md), [explorer acceptance](task/20261001-0430-explorer-default-navigation.md) and [release evidence](task/20261001-0435-release-v0.19.18.md).

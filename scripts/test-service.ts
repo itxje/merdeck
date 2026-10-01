@@ -30,7 +30,9 @@ try {
     MERDECK_MAX_TREE_ENTRIES: '100',
     MERDECK_POLL_INTERVAL_MS: '1000',
     NODE_ENV: 'production',
-    ...(config.codexPath ? { MERDECK_CODEX_PATH: config.codexPath } : {}),
+    // Acceptance uses only its explicit fixture CLI, never a logged-in CLI from the shell.
+    PATH: '',
+    MERDECK_CODEX_PATH: config.codexPath ?? '',
     ...(config.claudePath ? { MERDECK_CLAUDE_PATH: config.claudePath } : {}),
   })
   await import(pathToFileURL(resolve('dist/index.js')).href)

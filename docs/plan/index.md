@@ -118,3 +118,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261001-0401-optimize-ci Optimize CI routing and artifact checks**](20261001-0401-optimize-ci.md) `2026-10-01`
 - [x] [**20261001-0430-explorer-default-navigation Default directory navigation and direct type controls**](20261001-0430-explorer-default-navigation.md) `2026-10-01`
 - [x] [**20261001-0435-release-v0.19.18 Publish the corrected explorer and optimized verification workflow**](20261001-0435-release-v0.19.18.md) `2026-10-01`
+- [-] [**20261001-0618-discover-codex-on-path Discover installed Codex through PATH**](20261001-0618-discover-codex-on-path.md) `2026-10-01`

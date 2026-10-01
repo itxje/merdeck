@@ -1,4 +1,4 @@
-import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { createApp } from './app'
@@ -155,6 +155,85 @@ describe('startup configuration', () => {
     finally {
       await rm(providerRoot, { recursive: true, force: true })
     }
+  })
+})
+
+describe('Codex command discovery', () => {
+  let tools: string
+  let executable: string
+  beforeAll(async () => {
+    tools = await mkdtemp(resolve('tmp/config-codex-'))
+    executable = `${tools}/codex`
+    await writeFile(executable, `#!${process.execPath}\n
+let pending = ''
+for await (const chunk of Bun.stdin.stream()) {
+  pending += new TextDecoder().decode(chunk)
+  let newline
+  while ((newline = pending.indexOf('\\n')) >= 0) {
+    const message = JSON.parse(pending.slice(0, newline))
+    pending = pending.slice(newline + 1)
+    if (message.method === 'initialize')
+      console.log(JSON.stringify({ id: message.id, result: {} }))
+    else if (message.method === 'model/list')
+      console.log(JSON.stringify({ id: message.id, result: { data: [{ model: 'discovered-model', displayName: 'Discovered model', isDefault: true }] } }))
+  }
+}
+`)
+    await chmod(executable, 0o700)
+  })
+  afterAll(async () => {
+    await rm(tools, { recursive: true, force: true })
+  })
+
+  test('discovers Codex without an override, including an empty setting', async () => {
+    for (const override of [{}, { MERDECK_CODEX_PATH: '' }]) {
+      const config = await loadConfig({ ...env(), PATH: tools, ...override })
+      expect(config.agents).toEqual({ codex: executable, claude: undefined, agy: undefined })
+    }
+  })
+
+  test('uses only the supplied PATH and leaves a missing CLI unavailable', async () => {
+    for (const environment of [env(), { ...env(), PATH: '' }, { ...env(), PATH: `${tools}/missing` }])
+      expect((await loadConfig(environment)).agents.codex).toBeUndefined()
+  })
+
+  test('preserves executable precedence and canonicalizes a discovered symlink', async () => {
+    const blocked = `${tools}/blocked`
+    const linked = `${tools}/linked`
+    await mkdir(blocked)
+    await mkdir(linked)
+    await writeFile(`${blocked}/codex`, 'not executable')
+    await chmod(`${blocked}/codex`, 0o600)
+    await symlink(executable, `${linked}/codex`)
+    const config = await loadConfig({ ...env(), PATH: `${blocked}:${linked}:${tools}` })
+    expect(config.agents.codex).toBe(await realpath(executable))
+  })
+
+  test('keeps an explicit override authoritative, including invalid overrides', async () => {
+    expect((await loadConfig({ ...env(), PATH: tools, MERDECK_CODEX_PATH: process.execPath })).agents.codex).toBe(await realpath(process.execPath))
+    await expect(loadConfig({ ...env(), PATH: tools, MERDECK_CODEX_PATH: `${tools}/absent` })).rejects.toBeInstanceOf(ConfigError)
+  })
+
+  test('rejects a project-owned command instead of choosing a later PATH entry', async () => {
+    const owned = `${project}/codex`
+    await writeFile(owned, '#!/bin/sh\n')
+    await chmod(owned, 0o700)
+    try {
+      await expect(loadConfig({ ...env(), PATH: `${project}:${tools}` })).rejects.toBeInstanceOf(ConfigError)
+    }
+    finally {
+      await rm(owned)
+    }
+  })
+
+  test('advertises the discovered Codex through the actual capability route', async () => {
+    const app = await appFor({ MERDECK_ROOT: project, PATH: tools })
+    const response = await app.request('http://127.0.0.1:8787/api/agents/capabilities')
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      success: true,
+      data: { enabled: true, providers: [{ id: 'codex', models: [{ id: 'discovered-model', isDefault: true }] }] },
+    })
   })
 })
 

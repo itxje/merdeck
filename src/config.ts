@@ -99,8 +99,9 @@ export async function loadConfig(environment: Record<string, string | undefined>
   // Without a token anyone who can connect may change project files, so wider exposure must be deliberate.
   if (!token && !openAccess && !(loopback(host) && allowedOrigins.every(value => loopback(new URL(value).hostname))))
     throw new ConfigError('A service reachable beyond loopback requires MERDECK_TOKEN or MERDECK_OPEN_ACCESS=true')
+  const codexPath = env.MERDECK_CODEX_PATH ?? Bun.which('codex', { PATH: environment.PATH ?? '' }) ?? undefined
   const agents = Object.freeze({
-    codex: await canonicalExecutable(env.MERDECK_CODEX_PATH, 'MERDECK_CODEX_PATH', projectRoot),
+    codex: await canonicalExecutable(codexPath, 'MERDECK_CODEX_PATH', projectRoot),
     claude: await canonicalExecutable(env.MERDECK_CLAUDE_PATH, 'MERDECK_CLAUDE_PATH', projectRoot),
     agy: await canonicalExecutable(env.MERDECK_AGY_PATH, 'MERDECK_AGY_PATH', projectRoot),
   })
