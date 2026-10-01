@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 20:06 [release]
+
+Published [v0.19.26](https://github.com/itxje/merdeck/releases/tag/v0.19.26) from `f0d517b`, removing the redundant preview heading, fitting every phone theme control and exposing New folder and Restart listing directly as explorer icons. Focused red/green, complete local/source/native checks, desktop/phone screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261001-1927-remove-preview-heading.md).
+
 ## 2026-10-01 19:47 [implemented]
 
 Fit the phone theme menu to its controls and expose New folder and Restart listing directly in the explorer toolbar. Existing action handlers, busy/read-only/depth restrictions and per-file menus remain intact. The updated toolbar assertion first failed; 21 focused frontend cases, lint/types and 18 affected production browser cases pass. Phone theme controls and icons fit at 320/360/390 pixels, and real 320px menu/explorer screenshots have been inspected. Complete clean-source and native v0.19.26 release acceptance remain pending. See [the combined presentation task](task/20261001-1927-remove-preview-heading.md).

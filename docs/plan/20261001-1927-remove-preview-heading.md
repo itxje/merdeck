@@ -1,6 +1,6 @@
 # 20261001-1927-remove-preview-heading Remove the redundant preview heading
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 19:27
 - **approvedAt**: 2026-10-01 19:27 (explicit conditional removal request and existing publication authorization)
 - **relatedTask**: 20261001-1927-remove-preview-heading

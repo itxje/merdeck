@@ -1,6 +1,6 @@
 # 20261001-1927-remove-preview-heading Remove the redundant preview heading
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: preview-worker/session-20261001-1927
 - **createdAt**: 2026-10-01 19:27
@@ -11,7 +11,7 @@ Remove the Preview / Live preview heading row shown in the supplied screenshot. 
 
 ## ActiveForm
 
-Refining the preview and mobile controls and verifying the combined release.
+The preview and mobile controls are refined and published as v0.19.26.
 
 ## Dependencies
 
@@ -43,3 +43,23 @@ The second complete local gate passed the updated preview cases but failed an ex
 ## Combined implementation verification
 
 The explorer toolbar now shows Up, New file, New folder, Refresh files and Restart listing directly, with the existing tooltip, handler and permission/busy/depth conditions. The specific phone header popup uses content width, preserving every 44px theme target. The existing action-order case failed before the toolbar change; all 21 focused explorer/preview cases and frontend lint/types now pass, with the same four existing lint warnings. All 18 affected production browser cases pass with zero unexpected errors and confirmed fixture cleanup. These cover real folder operations, busy/read-only restrictions, stale-list restart, keyboard order, theme-button/icon containment at 320/360/390 pixels and responsive preview geometry. Inspected real 320px menu and explorer screenshots: all three theme icons and all five explorer buttons fit. Implementation review found zero actionable introduced issues. Complete clean-source local/source acceptance and native publication remain pending.
+
+## Complete preparation
+
+Clean implementation f0d517b89d17529773372642efa9b04b78f93c59 passed both frozen installs and the complete local ARM64/overlayfs check:ci gate with separate tmpfs refusal storage: frontend 620, backend 303, file 212, storage 6 and release/CI 52 cases. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each, in 3.9m and 4.4m. The latest clarification requires only icons in the explorer toolbar; the implemented buttons display only their icons, retaining names in tooltips and accessible labels. Inspected final desktop and 320px explorer/menu screenshots and a dark phone preview: the toolbar icons and all three theme controls fit, and the preview starts directly below the application header. Implementation review passes with zero actionable introduced findings.
+
+[Exact implementation source verification](https://github.com/itxje/merdeck/actions/runs/36916870016) passed on Linux x64/ext4 with clean commit identity, distinct tmpfs refusal storage and physical source/bundle/compiled directory checks verified in downloaded reports. The earlier failed local checks remain recorded separately; this final combined candidate passes. Local evidence is under /home/alan/warehouse/merdeck-preview-heading/.
+
+## Final acceptance and delivery
+
+The immutable annotated v0.19.26 tag resolves to f0d517b89d17529773372642efa9b04b78f93c59. [The tag workflow](https://github.com/itxje/merdeck/actions/runs/36917781577) passed complete Linux x64/ext4 native acceptance and same-run publication on attempt 1.
+
+Downloaded reports confirm actual ext4 (0xef53, device 66305, descriptor mount 27 / 259:1) and distinct tmpfs refusal storage (0x1021994, device 26, descriptor mount 32 / 0:26). All twenty raw storage controls, file/HTTP checks, physical source/bundle/compiled directory adapters and the complete normal native gate passed with cleanup. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each, in 4.3m and 4.4m. Native acceptance is explicitly passed.
+
+The publisher downloaded checked artifact 11190413637 from the same run and commit, with verified artifact digest sha256:40b9a4ee38c4f25f319c76ec611c8b41f356248f9a442c164f4601314a147443. No earlier artifact or duplicate pre-tag native run supplied publication.
+
+[v0.19.26](https://github.com/itxje/merdeck/releases/tag/v0.19.26) is published. Both public attachments match GitHub digests and publisher provenance; SHA256SUMS validates the archive. The 97-file bundle reports version 0.19.26, tag v0.19.26, commit f0d517b89d17529773372642efa9b04b78f93c59, bundle target and Bun 1.4.2. Archive SHA-256: 12d9d789ce752f3c3946c19993827b9ea0f0b76238d8da0b674325a04c2a7173.
+
+Release notes describe the preview/menu refinements and direct explorer icons with the exact documented runtime/platform requirements, retaining the verified publisher marker and asset identities. Release evidence is under /home/alan/warehouse/merdeck-release-v0.19.26/. The existing release-generator wording follow-up remains taskist #61.
+
+- complete: Removed the redundant preview heading, fixed the phone theme menu and exposed explorer actions as icons; published v0.19.26 after complete local/source/native checks and verified same-run public asset, checksum, tag and bundle identity.
