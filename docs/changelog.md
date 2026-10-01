@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 16:30 [completed]
+
+Align the header path-copy control with file synchronization: both primary icons use 20px Lucide outlines, and successful copying uses the same circular check and success theme token. Existing clipboard behavior, live announcements and phone touch targets remain intact. At `85e9cba`, the complete local `check:ci` passes on Linux ARM64/overlay with tmpfs refusal storage, both artifact browser suites pass 108 cases with 17 configuration-dependent skips each, and [hosted Linux x64/ext4 source verification](https://github.com/itxje/merdeck/actions/runs/36891501062) passes. Phone screenshot inspection and implementation review pass.
+
 ## 2026-10-01 15:48 [completed]
 
 Published [v0.19.23](https://github.com/itxje/merdeck/releases/tag/v0.19.23) from `df4deb5`. The file status uses circular arrows with a green check, gray pending dot, rotating save animation and red attention badge. It follows whole-file edits and existing save/review state, retains accessible live descriptions and shows no hover/click text. Focused red/green, complete local/source/native, publication and public digest/checksum/build-identity verification pass. See [the acceptance record](task/20261001-1514-file-sync-status.md).
