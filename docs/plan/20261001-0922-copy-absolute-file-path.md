@@ -1,6 +1,6 @@
 # 20261001-0922-copy-absolute-file-path Compact the header and copy absolute file paths
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 09:22
 - **approvedAt**: 2026-10-01 09:22 (owner explicitly requests the copy control)
 - **relatedTask**: 20261001-0922-copy-absolute-file-path
@@ -20,3 +20,7 @@ Prove nested/Unicode filenames and exact absolute copied bytes, ordinary/root fi
 ## Implementation decisions
 
 Add the location read to the existing diagram API module instead of exposing the configured root through public build/session metadata. It delegates validation and containment to the normal repository read, keeping errors and limits intact. Continue the existing documented plain-Hono/Zod compatibility approach. Prepare location data with Query before the clipboard gesture; do not infer service/container/host roots. Keep the icon beside the filename/metadata group to preserve the 58px phone header with a 44px button. A check mark and accessible success status avoid consuming filename width.
+
+## Delivery
+
+Published [v0.19.20](https://github.com/itxje/merdeck/releases/tag/v0.19.20) from `ea466b2947c499331b2f85d3ad446188d9de7e32` after complete local preparation, [exact source verification](https://github.com/itxje/merdeck/actions/runs/36844664268), [complete native artifact acceptance and publication](https://github.com/itxje/merdeck/actions/runs/36845704073) and public asset checksum/build-identity verification. See [the task](../task/20261001-0922-copy-absolute-file-path.md).

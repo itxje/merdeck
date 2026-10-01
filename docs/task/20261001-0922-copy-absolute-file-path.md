@@ -1,6 +1,6 @@
 # 20261001-0922-copy-absolute-file-path Copy the active file's absolute path from the header
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: header-worker/session-20261001-0922
 - **createdAt**: 2026-10-01 09:22
@@ -11,7 +11,7 @@ Replace the header's displayed relative path with the filename and an icon butto
 
 ## ActiveForm
 
-Implementing and verifying the compact header and absolute-path copy control.
+The compact header and absolute-path copy control are verified and released.
 
 ## Dependencies
 
@@ -45,3 +45,15 @@ The first complete local gate on `344f750` failed on ten legacy browser expectat
 The affected tests now assert the filename while checking the complete relative navigation URL, explicitly admit only the new application endpoint in request lists, and allow its expected status only within the existing deletion/auth-loss scenarios. Production code and security assertions are unchanged. Matching source verification for `344f750` passed; delivery will use the corrected clean source and a fresh complete local gate.
 
 All twenty-six affected real-browser cases now pass in 1.8 minutes with zero unexpected browser errors and complete service/fixture teardown. Frontend lint and types pass with the same four pre-existing warnings. Focused review of the assertion changes finds no actionable issues: basename display is paired with exact full navigation-path checks; request/status allowances remain explicit and scenario-scoped.
+
+## Final acceptance and delivery
+
+Clean source `ea466b2947c499331b2f85d3ad446188d9de7e32` passed both frozen installs, complete local ARM64/overlayfs `check:ci` with separate tmpfs refusal storage and `git diff --check` in 8m47s. Frontend 612, backend 303, file 212, storage 6 and release/CI 52 cases passed. Both full artifact browser suites passed 107 cases with 17 configuration-dependent skips and clean service/fixture teardown. The new case exercises exact native clipboard bytes, Unicode/nested and root-level files, keyboard activation, selection reset, empty selection and the 44px phone control.
+
+[The exact source run](https://github.com/itxje/merdeck/actions/runs/36844664268) passed in 2m45s. [The v0.19.20 tag workflow](https://github.com/itxje/merdeck/actions/runs/36845704073) passed complete normal Linux x64/ext4 acceptance with distinct tmpfs refusal storage and published on attempt 1; verification took 6m39s. Downloaded sanitized records confirm all twenty raw controls, file/HTTP checks, physical source/bundle/compiled directory adapters and both artifact browser suites. Native acceptance is explicitly passed. Publication uses the exact same-run checked artifact; no earlier artifact or extra manual native run was used.
+
+[v0.19.20](https://github.com/itxje/merdeck/releases/tag/v0.19.20) contains the filename header and absolute-path copy control. Public assets match GitHub digests and publisher provenance; SHA256SUMS validates the archive. Its 97-file bundle reports version 0.19.20, tag v0.19.20, the exact commit and Bun 1.4.2. The annotated remote tag resolves to that source. Archive SHA-256: `74cc198aec73a008fac561dc22a2e77dab505df6b2a7bafc8049fb4e744bf12e`. Evidence is under `/home/alan/warehouse/merdeck-header-copy-20261001/`.
+
+Taskist #54 is complete. Absolute paths are service/container filesystem paths; no host filesystem path was inferred and no running deployment configuration was changed.
+
+- complete: Released v0.19.20 after complete local, source, native and public asset verification.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 10:02 [completed]
+
+Published [v0.19.20](https://github.com/itxje/merdeck/releases/tag/v0.19.20) from `ea466b2`. The active-file header shows the filename and an icon that copies its exact absolute server path. Validated, session-scoped path preparation preserves the clipboard gesture; selection changes isolate feedback. Success shows a check mark, refusal is announced, and the phone control keeps a 44px target beside the existing save context. Focused red/green, complete local/source/native, publication and public digest/checksum/build-identity verification pass. See [the acceptance record](task/20261001-0922-copy-absolute-file-path.md).
+
 ## 2026-10-01 09:30 [progress]
 
 Compact the active-file header to its filename and a copy icon. The new authenticated location read returns the validated absolute server path; the control prepares it before the clipboard gesture, reports refusal and isolates feedback when selection changes. Focused backend/frontend and real browser copy cases pass; screenshot review preserves the phone filename, save metadata and 44px copy target. Complete preparation and release checks remain pending. See [the header copy task](task/20261001-0922-copy-absolute-file-path.md).
