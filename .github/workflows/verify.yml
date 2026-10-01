@@ -19,51 +19,97 @@ defaults:
     shell: bash
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mode: ${{ steps.changes.outputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+          no-cache: true
+      - name: Select verification from the complete change set
+        id: changes
+        run: bun scripts/ci/changes.ts
+
   verify:
+    needs: changes
+    if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     outputs:
       artifact-id: ${{ steps.package.outputs.artifact-id }}
     steps:
+      - name: Validate verification selection
+        env:
+          CHANGE_STATUS: ${{ needs.changes.result }}
+          MODE: ${{ needs.changes.outputs.mode }}
+        run: |
+          [[ "$CHANGE_STATUS" == success ]]
+          case "$MODE" in
+            docs) echo 'Documentation diff checked; native acceptance is not claimed.' ;;
+            source|native) echo "Selected $MODE verification." ;;
+            *) exit 1 ;;
+          esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         with:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         with:
           node-version-file: .node-version
           package-manager-cache: false
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         with:
           bun-version-file: .bun-version
           no-cache: true
-      - name: Install process and browser prerequisites
+      - name: Install process prerequisites
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         run: |
           sudo apt-get update
           sudo apt-get install --yes tmux strace
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         with:
-          path: |
-            ~/.bun/install/cache
-            .cache/playwright
-          key: merdeck-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'web/bun.lock', '.bun-version', '.node-version') }}
+          path: ~/.bun/install/cache
+          key: merdeck-packages-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'web/bun.lock', '.bun-version', '.node-version') }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: ${{ needs.changes.outputs.mode == 'native' }}
+        with:
+          path: .cache/playwright
+          key: merdeck-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'web/bun.lock', '.bun-version', '.node-version') }}
       - name: Install frozen source dependencies
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
         run: |
           bun install --frozen-lockfile
           bun install --cwd web --frozen-lockfile
-      - name: Install verified workflow tool and browser
+      - name: Install verified workflow tool
+        if: ${{ needs.changes.outputs.mode != 'docs' }}
+        run: bun scripts/setup-ci-tools.ts
+      - name: Install browser
+        if: ${{ needs.changes.outputs.mode == 'native' }}
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/playwright
-        run: |
-          bun scripts/setup-ci-tools.ts
-          web/node_modules/.bin/playwright install --with-deps chromium
+        run: web/node_modules/.bin/playwright install --with-deps chromium
+      - name: Native source verification
+        if: ${{ needs.changes.outputs.mode == 'source' }}
+        run: bun scripts/ci/hosted.ts --source-only
       - name: Native source and executable acceptance
+        if: ${{ needs.changes.outputs.mode == 'native' }}
         run: bun scripts/ci/hosted.ts
       - name: Prepare bounded verification evidence
         id: evidence
-        if: ${{ success() || failure() }}
+        if: ${{ (success() || failure()) && needs.changes.result == 'success' && needs.changes.outputs.mode != 'docs' }}
         run: bun scripts/ci/evidence.ts
       - name: Upload bounded verification reports
-        if: ${{ (success() || failure()) && steps.evidence.outcome == 'success' }}
+        if: ${{ (success() || failure()) && steps.evidence.outcome == 'success' && needs.changes.outputs.mode != 'docs' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verification-reports-${{ github.sha }}-${{ github.run_attempt }}
@@ -72,6 +118,7 @@ jobs:
           if-no-files-found: warn
       - name: Retain the checked executable and the published bundle
         id: package
+        if: ${{ needs.changes.outputs.mode == 'native' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: checked-release-${{ github.sha }}
@@ -93,6 +140,10 @@ jobs:
       group: release-${{ github.ref }}
       cancel-in-progress: false
     steps:
+      - name: Require the checked native artifact
+        env:
+          ARTIFACT_ID: ${{ needs.verify.outputs.artifact-id }}
+        run: '[[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

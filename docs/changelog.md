@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 04:13 [progress]
+
+Split hosted CI into documentation, source and complete native verification. Main/PR source gates retain native storage and all source checks; version tags and explicit native checks retain complete artifact acceptance. Executable and bundle smoke suites now run concurrently with isolated browser outputs and awaited cleanup. Fourteen focused regression cases, lint, types and pinned workflow validation pass; full local and hosted verification remain pending. See [20261001-0401-optimize-ci](task/20261001-0401-optimize-ci.md).
+
 ## 2026-10-01 03:58 [completed]
 
 Published [v0.19.17](https://github.com/itxje/merdeck/releases/tag/v0.19.17) from `50eae67`, delivering the eight workspace usability improvements. Main and tag workflows passed exact-commit Linux x64/ext4 native verification with separate tmpfs refusal storage; the tag workflow published on attempt 1. Public assets pass SHA256SUMS, match GitHub digests and report the exact version, tag and commit. Duplicate full release verification is tracked as taskist #49. See [20261001-0328-release-v0.19.17](task/20261001-0328-release-v0.19.17.md).

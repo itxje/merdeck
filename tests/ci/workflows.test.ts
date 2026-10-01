@@ -25,13 +25,17 @@ test('real workflow exposes nonpublishing candidate checks and gates the only wr
   expect(publisher).toMatch(/artifact-ids: \$\{\{ needs\.verify\.outputs\.artifact-id \}\}/)
   expect(publisher).toContain('cancel-in-progress: false')
   expect(publisher).toContain('--ignore-scripts')
+  expect(publisher).toContain('Require the checked native artifact')
+  expect(publisher).toContain('"$ARTIFACT_ID" =~ ^[0-9]+$')
 })
 
 test('verification evidence is sanitized before success or failure upload', async () => {
   const yaml = await readFile('.github/workflows/verify.yml', 'utf8')
   const prepare = yaml.split('name: Prepare bounded verification evidence')[1]!.split('      - name:')[0]!
   expect(prepare).toContain('id: evidence')
-  expect(prepare).toContain(`if: \${{ success() || failure() }}`)
+  expect(prepare).toContain('success() || failure()')
+  expect(prepare).toContain('needs.changes.result == \'success\'')
+  expect(prepare).toContain('needs.changes.outputs.mode != \'docs\'')
   expect(prepare).toContain('run: bun scripts/ci/evidence.ts')
   const upload = yaml.split('name: Upload bounded verification reports')[1]!.split('      - name:')[0]!
   expect(upload).toContain('steps.evidence.outcome == \'success\'')
@@ -39,4 +43,17 @@ test('verification evidence is sanitized before success or failure upload', asyn
   expect(upload).toContain('path: tmp/ci-evidence/')
   expect(upload).toContain(`verification-reports-\${{ github.sha }}-\${{ github.run_attempt }}`)
   expect(upload).not.toContain('directory-physical-')
+})
+
+test('verification remains a required result even when classification fails or selects docs', async () => {
+  const yaml = await readFile('.github/workflows/verify.yml', 'utf8')
+  const verify = yaml.split('\n  verify:')[1]!.split('\n  publish:')[0]!
+  expect(verify).toContain(`needs: changes\n    if: \${{ always() }}`)
+  expect(verify).toContain('[[ "$CHANGE_STATUS" == success ]]')
+  expect(verify).toContain('*) exit 1')
+  expect(verify).toContain('run: bun scripts/ci/hosted.ts --source-only')
+  const browser = verify.split('name: Install browser')[1]!.split('      - name:')[0]!
+  expect(browser).toContain('needs.changes.outputs.mode == \'native\'')
+  const packageStep = verify.split('name: Retain the checked executable')[1]!
+  expect(packageStep).toContain('needs.changes.outputs.mode == \'native\'')
 })

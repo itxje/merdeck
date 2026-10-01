@@ -161,7 +161,7 @@ try {
     secretFile = tokenFile
   }
   await writeFile(join(scratch, 'environment.json'), JSON.stringify({ root, origin, unsupportedOrigin, openRoot, openOrigin, expected, unsupportedExpected }, null, 2))
-  const child = Bun.spawn([process.execPath, 'run', '--cwd', 'web', 'test:e2e', ...process.argv.slice(2)], {
+  const child = Bun.spawn([process.execPath, 'run', '--cwd', 'web', 'test:e2e', `--output=${join(scratch, 'browser-results')}`, ...process.argv.slice(2)], {
     cwd: project,
     env: { ...process.env, MERDECK_SMOKE_ROOT: root, MERDECK_TEST_URL: origin, MERDECK_UNSUPPORTED_URL: unsupportedOrigin, MERDECK_SMOKE_TOKEN_FILE: secretFile, MERDECK_TEST_EXPECTED_FS: expected, ...(openRoot && openOrigin ? { MERDECK_OPEN_ROOT: openRoot, MERDECK_OPEN_URL: openOrigin } : {}) },
     stdout: 'inherit',

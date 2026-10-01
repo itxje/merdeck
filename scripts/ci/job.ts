@@ -3,12 +3,12 @@ import { readFile, rename, writeFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { run } from './process'
 
-const config = z.strictObject({ environment: z.record(z.string(), z.string()), marker: z.string() }).parse(JSON.parse(await readFile(process.argv[2]!, 'utf8')))
+const config = z.strictObject({ environment: z.record(z.string(), z.string()), marker: z.string(), sourceOnly: z.boolean() }).parse(JSON.parse(await readFile(process.argv[2]!, 'utf8')))
 Object.assign(process.env, config.environment)
 let exit = 1
 process.on('exit', () => writeFileSync(`${config.marker}.exit`, String(exit)))
 try {
-  await run(['run', 'check:ci', '--native'], 1200000)
+  await run(['run', 'check:ci', '--native', ...(config.sourceOnly ? ['--source-only'] : [])], 1200000)
   const diff = Bun.spawnSync(['git', 'diff', '--check'], { stdout: 'inherit', stderr: 'inherit' })
   if (diff.exitCode)
     throw new Error('Whitespace gate failed')

@@ -2,10 +2,13 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { join, resolve } from 'node:path'
 import { storageIdentity } from '../storage-support'
 import { markerEvent } from '../test-support'
+import { ciOptions } from './mode'
 import { project, quote, session, tmux } from './process'
 
 if (process.env.GITHUB_ACTIONS !== 'true' || process.env.RUNNER_OS !== 'Linux' || process.arch !== 'x64')
   throw new Error('Hosted verification requires an actual Linux x64 GitHub Actions runner')
+const releaseTag = process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_EVENT_NAME === 'push' ? process.env.GITHUB_REF_NAME ?? '' : 'v0.0.0-ci.fixture'
+const { sourceOnly } = ciOptions(['--native', ...process.argv.slice(2)], releaseTag)
 const runnerTemp = process.env.RUNNER_TEMP
 if (!runnerTemp)
   throw new Error('Runner temporary directory is missing')
@@ -22,7 +25,7 @@ try {
   const commit = Bun.spawnSync(['git', 'rev-parse', 'HEAD']).stdout.toString().trim()
   const dirty = Bun.spawnSync(['git', 'status', '--porcelain']).stdout.toString().trim() !== ''
   const provenance = { commit, dirty, run: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`, attempt: process.env.GITHUB_RUN_ATTEMPT, runner: { name: process.env.RUNNER_NAME, os: process.env.RUNNER_OS, architecture: process.env.RUNNER_ARCH, image: process.env.ImageOS, version: process.env.ImageVersion }, native, refusal, bun: Bun.version, node: Bun.spawnSync(['node', '--version']).stdout.toString().trim() }
-  await writeFile(join(evidence, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`)
+  await writeFile(join(evidence, 'provenance.json'), `${JSON.stringify({ ...provenance, verification: sourceOnly ? 'source' : 'native' }, null, 2)}\n`)
   if (dirty)
     throw new Error('Hosted verification requires a clean candidate commit')
   const environment: Record<string, string> = {
@@ -37,7 +40,7 @@ try {
   }
   if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_EVENT_NAME === 'push')
     environment.MERDECK_RELEASE_TAG = process.env.GITHUB_REF_NAME ?? ''
-  await writeFile(privateConfig, JSON.stringify({ environment, marker }), { mode: 0o600 })
+  await writeFile(privateConfig, JSON.stringify({ environment, marker, sourceOnly }), { mode: 0o600 })
   const exists = Bun.spawnSync(['tmux', 'has-session', '-t', session])
   if (exists.exitCode !== 0)
     tmux(['new-session', '-d', '-s', session, '-c', project, '/bin/bash'])
@@ -61,6 +64,6 @@ finally {
       await rm(root, { recursive: true })
     else exit = 1
   }
-  await writeFile(join(evidence, 'exit.json'), JSON.stringify({ exit, nativeAcceptance: exit === 0 ? 'passed' : 'pending' }))
+  await writeFile(join(evidence, 'exit.json'), JSON.stringify({ exit, sourceAcceptance: exit === 0 ? 'passed' : 'pending', nativeAcceptance: exit === 0 && !sourceOnly ? 'passed' : 'pending' }))
 }
 process.exitCode = exit

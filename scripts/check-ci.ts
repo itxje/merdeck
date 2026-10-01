@@ -1,6 +1,8 @@
 import { mkdir, mkdtemp, rename } from 'node:fs/promises'
 import { join } from 'node:path'
 import { bundleRelease } from './bundle'
+import { checkArtifacts } from './ci/artifact-checks'
+import { ciOptions } from './ci/mode'
 import { project, requireSession, run } from './ci/process'
 import { compile } from './compile'
 import { packageRelease } from './package-release'
@@ -11,13 +13,9 @@ import { smokeRelease } from './smoke-release'
 requireSession()
 if (!/^v24\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(Bun.spawnSync(['node', '--version']).stdout.toString().trim()))
   throw new Error('check:ci requires a stable Node 24 release')
-const native = process.argv.slice(2).includes('--native')
-if (process.argv.slice(2).some(value => value !== '--native'))
-  throw new Error('Usage: bun run check:ci [--native]')
 const tag = process.env.MERDECK_RELEASE_TAG ?? 'v0.0.0-ci.fixture'
 releaseVersion(tag)
-if (!native && tag !== 'v0.0.0-ci.fixture')
-  throw new Error('Real tag verification requires --native; local checks use the nonpublishing fixture only')
+const { native, sourceOnly } = ciOptions(process.argv.slice(2), tag)
 const target = process.arch === 'arm64' ? 'bun-linux-arm64' : 'bun-linux-x64'
 if (process.platform !== 'linux' || !['arm64', 'x64'].includes(process.arch))
   throw new Error('Only matching Linux execution targets are supported by this check')
@@ -40,23 +38,25 @@ else {
 await run(['run', 'check'])
 await run(['scripts/check-directory-streaming.ts'])
 await run(['run', 'test:release'])
-await mkdir(join(project, 'tmp'), { recursive: true })
-const output = await mkdtemp(join(project, 'tmp/checked-release-'))
-await compile(tag, target, { built: true, output })
-await packageRelease(output, tag)
-await smokeRelease(output, tag)
-// Keep prior complete outputs as evidence. Never reuse unchecked files in publication.
-const destination = join(project, 'dist/release')
-if (await Bun.file(join(destination, 'manifest.json')).exists())
-  await rename(destination, `${await mkdtemp(join(project, 'tmp/prior-release-'))}/release`)
-await rename(output, destination)
-// The published artifact is the architecture-independent bundle; it is checked after the executable.
-const bundleOutput = await mkdtemp(join(project, 'tmp/checked-bundle-'))
-await bundleRelease(tag, { built: true, output: bundleOutput })
-await smokeBundle(bundleOutput, tag)
-const bundleDestination = join(project, 'dist/bundle')
-if (await Bun.file(join(bundleDestination, 'manifest.json')).exists())
-  await rename(bundleDestination, `${await mkdtemp(join(project, 'tmp/prior-bundle-'))}/bundle`)
-await rename(bundleOutput, bundleDestination)
+if (!sourceOnly) {
+  await mkdir(join(project, 'tmp'), { recursive: true })
+  const output = await mkdtemp(join(project, 'tmp/checked-release-'))
+  await compile(tag, target, { built: true, output })
+  await packageRelease(output, tag)
+  const bundleOutput = await mkdtemp(join(project, 'tmp/checked-bundle-'))
+  await bundleRelease(tag, { built: true, output: bundleOutput })
+  await checkArtifacts(() => smokeRelease(output, tag), () => smokeBundle(bundleOutput, tag))
+  // Wait for both checks and their cleanup before exposing either artifact to publication.
+  const destination = join(project, 'dist/release')
+  if (await Bun.file(join(destination, 'manifest.json')).exists())
+    await rename(destination, `${await mkdtemp(join(project, 'tmp/prior-release-'))}/release`)
+  await rename(output, destination)
+  const bundleDestination = join(project, 'dist/bundle')
+  if (await Bun.file(join(bundleDestination, 'manifest.json')).exists())
+    await rename(bundleDestination, `${await mkdtemp(join(project, 'tmp/prior-bundle-'))}/bundle`)
+  await rename(bundleOutput, bundleDestination)
+}
 await run(['scripts/ci/evidence.ts'])
-process.stdout.write(`check:ci passed for ${target} with the architecture-independent bundle; native acceptance: ${native ? 'passed' : 'pending'}; remote CI/release: unobserved locally.\n`)
+process.stdout.write(sourceOnly
+  ? 'Source verification passed; native artifact acceptance: pending; no release artifacts produced.\n'
+  : `check:ci passed for ${target} with the architecture-independent bundle; native acceptance: ${native ? 'passed' : 'pending'}; remote CI/release: unobserved locally.\n`)

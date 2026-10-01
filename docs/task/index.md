@@ -188,3 +188,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261001-0238-workspace-usability Improve workspace navigation, editing context and feedback**](20261001-0238-workspace-usability.md) `P1`
 - [x] [**20261001-0328-release-v0.19.17 Release v0.19.17**](20261001-0328-release-v0.19.17.md) `P1`
+- [-] [**20261001-0401-optimize-ci Reduce duplicate CI and release verification**](20261001-0401-optimize-ci.md) `P1`
