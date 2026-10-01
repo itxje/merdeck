@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 03:28 [progress]
+
+Preparing v0.19.17 for the eight workspace usability improvements. Clean implementation source `d4a374f` passed full local ARM64/overlayfs `check:ci`; the exact release candidate requires native Linux x64/ext4 acceptance before tagging. See [20261001-0328-release-v0.19.17](task/20261001-0328-release-v0.19.17.md).
+
 ## 2026-10-01 03:19 [completed]
 
 Implemented the eight approved workspace usability improvements: usable explorer search and breadcrumbs, compact unavailable editing, visible phone saves, explicit document diagram editing and context, current-section contents, formatted conversation replies with code copying and respectful following, reading-mode controls, and larger primary text. Clean source commit `d4a374f` passed full local ARM64/overlayfs `check:ci`, including executable and bundle browser acceptance; configured-provider browser cases also passed separately. Native Linux x64/ext4 release acceptance remains outside this verification. See [20261001-0238-workspace-usability](task/20261001-0238-workspace-usability.md).
