@@ -97,7 +97,7 @@ function auditRequests(page: Page) {
   const unexpected: string[] = []
   page.on('request', (request) => {
     const pathname = new URL(request.url()).pathname
-    if (!['/', '/index.html', '/api/build', '/api/session', '/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/revision', '/api/diagrams/source'].includes(pathname) && !pathname.startsWith('/assets/'))
+    if (!['/', '/index.html', '/api/build', '/api/session', '/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/location', '/api/diagrams/revision', '/api/diagrams/source'].includes(pathname) && !pathname.startsWith('/assets/'))
       unexpected.push(pathname)
     if (request.method() === 'PUT')
       writes.push(request.postData() ?? '')

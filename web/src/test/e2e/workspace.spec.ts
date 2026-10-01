@@ -191,6 +191,7 @@ test('clean external refresh, detected stale save and deletion keep original fil
   test.setTimeout(60000)
   audit.allowHttp(409, '/api/diagrams/source')
   audit.allowHttp(410, '/api/diagrams/document')
+  audit.allowHttp(410, '/api/diagrams/location')
   const standalonePath = join(root, 'welcome.mmd')
   const initial = await readFile(standalonePath, 'utf8')
   try {

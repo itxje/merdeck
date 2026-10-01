@@ -37,3 +37,11 @@ The location contract retains the repository's documented plain-Hono/Zod routing
 Shared, TypeScript backend and frontend review found no actionable introduced issues. The absolute value is formed only after the existing held-descriptor repository read succeeds; errors retain safe messages and the old deleted-file status. The HTTP route preserves strict queries and every existing read boundary in both mount modes. Frontend query results are tied to the selected file and session, clipboard writes require prepared validated data, and late completion stays with its keyed component. No persistent storage or new filesystem write is introduced. Screenshot review covers the desktop/phone hit area, filename visibility and preserved save status. Complete acceptance remains required.
 
 Taskist #54 tracks this delivery. Complete local preparation and matching source verification precede the v0.19.20 tag; that workflow supplies actual Linux x64/ext4 native acceptance and publication without another manual native run.
+
+## Complete regression correction
+
+The first complete local gate on `344f750` failed on ten legacy browser expectations per artifact suite: relative-path header captions, closed request lists missing the location read, and scoped deletion/auth-loss allowances missing its 410/401 responses. The new clipboard case, all unit/file/storage cases and physical directory checks passed, and both artifact fixture/service lifecycles cleaned up. No tag was created from that failed gate.
+
+The affected tests now assert the filename while checking the complete relative navigation URL, explicitly admit only the new application endpoint in request lists, and allow its expected status only within the existing deletion/auth-loss scenarios. Production code and security assertions are unchanged. Matching source verification for `344f750` passed; delivery will use the corrected clean source and a fresh complete local gate.
+
+All twenty-six affected real-browser cases now pass in 1.8 minutes with zero unexpected browser errors and complete service/fixture teardown. Frontend lint and types pass with the same four pre-existing warnings. Focused review of the assertion changes finds no actionable issues: basename display is paired with exact full navigation-path checks; request/status allowances remain explicit and scenario-scoped.

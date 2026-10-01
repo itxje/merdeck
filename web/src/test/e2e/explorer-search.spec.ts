@@ -27,7 +27,8 @@ test('the explorer search finds diagrams in unopened subfolders and opens them',
     await expect(explorer.getByRole('navigation', { name: 'Files and diagrams' })).toBeHidden()
 
     await results.getByRole('button', { name: `${folder}/mermaid/mesh-v1/deep/13-relay-gantt.mmd` }).click()
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${folder}/mermaid/mesh-v1/deep/13-relay-gantt.mmd`)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('13-relay-gantt.mmd')
+    await expect(page).toHaveURL(url => url.searchParams.get('path') === `${folder}/mermaid/mesh-v1/deep/13-relay-gantt.mmd`)
     await expect(page.getByLabel('Mermaid source', { exact: true })).toHaveValue('flowchart LR\n  Relay --> Gantt\n')
 
     await box.fill('')
