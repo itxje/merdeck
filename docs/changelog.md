@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 05:01 [completed]
+
+Published [v0.19.18](https://github.com/itxje/merdeck/releases/tag/v0.19.18) from `a0cdf10`, restoring default All with visible folders and direct All/Mermaid/MD/HTML controls. Desktop density and phone targets remain intact; conversation following now survives viewport changes. CI separates documentation/source/native verification and runs complete artifact browser checks concurrently. Exact source verification took 2m44s; complete native verification took 8m51s, down from 13m08s for v0.19.17. Local preparation, tag native acceptance, publication and public asset digests/checksums/build identity all pass. See [CI acceptance](task/20261001-0401-optimize-ci.md), [explorer acceptance](task/20261001-0430-explorer-default-navigation.md) and [release evidence](task/20261001-0435-release-v0.19.18.md).
+
 ## 2026-10-01 04:35 [progress]
 
 Restore All and visible directories on every page load, replacing the remembered type dropdown with direct All/Mermaid/MD/HTML controls. Fix conversation following when layout-induced scroll precedes viewport observation, exposed by the first concurrent native run. Focused unit/browser checks and repeated resize acceptance pass; complete local and tag native verification remain required before v0.19.18 publication. See [the explorer correction](task/20261001-0430-explorer-default-navigation.md), [CI optimization](task/20261001-0401-optimize-ci.md) and [release preparation](task/20261001-0435-release-v0.19.18.md).
