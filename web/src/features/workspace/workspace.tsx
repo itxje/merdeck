@@ -300,7 +300,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                         {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
                         {selected
                           ? (
-                              <span className="save-status" role="status">
+                              <span className="save-status" role="status" title={!file.saving && !changed && !file.saved ? 'Up to date' : undefined}>
                                 {file.saving
                                   ? 'Saving…'
                                   : changed
@@ -312,8 +312,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                       )
                                     : (
                                         <>
-                                          <Check />
-                                          {file.saved ? 'Saved' : 'Up to date'}
+                                          <Check className={file.saved ? undefined : 'block!'} aria-hidden="true" />
+                                          {file.saved ? 'Saved' : <span className="sr-only">Up to date</span>}
                                         </>
                                       )}
                               </span>

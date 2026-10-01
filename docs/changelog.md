@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 14:18 [implemented]
+
+Replace the visible Up to date header label with the existing check icon, including on phones. The live status retains its visually hidden description and native hover title. Fifteen existing workspace cases, eight real-browser cases, frontend lint/types and build pass; screenshot review confirms the compact phone status. This is a trivial one-source-file presentation change. Complete project and release acceptance remain pending.
+
 ## 2026-10-01 10:45 [release]
 
 Published [v0.19.21](https://github.com/itxje/merdeck/releases/tag/v0.19.21) from `d828b15`: the header shows
