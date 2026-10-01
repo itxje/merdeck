@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 03:58 [completed]
+
+Published [v0.19.17](https://github.com/itxje/merdeck/releases/tag/v0.19.17) from `50eae67`, delivering the eight workspace usability improvements. Main and tag workflows passed exact-commit Linux x64/ext4 native verification with separate tmpfs refusal storage; the tag workflow published on attempt 1. Public assets pass SHA256SUMS, match GitHub digests and report the exact version, tag and commit. Duplicate full release verification is tracked as taskist #49. See [20261001-0328-release-v0.19.17](task/20261001-0328-release-v0.19.17.md).
+
 ## 2026-10-01 03:28 [progress]
 
 Preparing v0.19.17 for the eight workspace usability improvements. Clean implementation source `d4a374f` passed full local ARM64/overlayfs `check:ci`; the exact release candidate requires native Linux x64/ext4 acceptance before tagging. See [20261001-0328-release-v0.19.17](task/20261001-0328-release-v0.19.17.md).

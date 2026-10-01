@@ -114,4 +114,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20260929-1931-release-v0.19.16 Release v0.19.16**](20260929-1931-release-v0.19.16.md) `2026-09-29`
 
 - [x] [**20261001-0238-workspace-usability Workspace usability improvements**](20261001-0238-workspace-usability.md) `2026-10-01`
-- [-] [**20261001-0328-release-v0.19.17 Release v0.19.17**](20261001-0328-release-v0.19.17.md) `2026-10-01`
+- [x] [**20261001-0328-release-v0.19.17 Release v0.19.17**](20261001-0328-release-v0.19.17.md) `2026-10-01`
