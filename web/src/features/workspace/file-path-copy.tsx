@@ -1,6 +1,6 @@
 import type { Session } from './api'
 import { useQuery } from '@tanstack/react-query'
-import { Check, Copy } from 'lucide-react'
+import { CircleCheck, Copy } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { api, sessionCsrf } from './api'
@@ -33,7 +33,7 @@ export function FilePathCopy({ path, session }: { path: string, session: Session
   return (
     <>
       <Button className="header-path-copy" variant="ghost" size="icon-sm" aria-label="Copy absolute path" disabled={!location.isSuccess || copying} onClick={() => void copy()}>
-        {feedback === 'Path copied' ? <Check /> : <Copy />}
+        {feedback === 'Path copied' ? <CircleCheck className="size-5 text-success" /> : <Copy className="size-5" />}
       </Button>
       <span className={location.isError || feedback === 'Copy failed' ? 'header-path-status' : 'sr-only'} role="status">{location.isError ? 'File path unavailable' : feedback}</span>
     </>
