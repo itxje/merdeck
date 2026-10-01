@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 16:42 [progress]
+
+Prepare v0.19.24 for the header copy-icon alignment after complete local preparation, implementation review and exact source verification. The immutable tag workflow must pass the complete normal Linux x64/ext4 gate before same-run publication; public asset and build-identity verification remain pending. See [the release task](task/20261001-1642-release-v0.19.24.md).
+
 ## 2026-10-01 16:30 [completed]
 
 Align the header path-copy control with file synchronization: both primary icons use 20px Lucide outlines, and successful copying uses the same circular check and success theme token. Existing clipboard behavior, live announcements and phone touch targets remain intact. At `85e9cba`, the complete local `check:ci` passes on Linux ARM64/overlay with tmpfs refusal storage, both artifact browser suites pass 108 cases with 17 configuration-dependent skips each, and [hosted Linux x64/ext4 source verification](https://github.com/itxje/merdeck/actions/runs/36891501062) passes. Phone screenshot inspection and implementation review pass.

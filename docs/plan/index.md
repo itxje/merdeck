@@ -1,6 +1,6 @@
 # Merdeck - Plan Index
 
-> Updated: 2026-09-28
+> Updated: 2026-10-01
 
 ## Usage
 
@@ -121,3 +121,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261001-0618-discover-codex-on-path Discover installed Codex through PATH**](20261001-0618-discover-codex-on-path.md) `2026-10-01`
 - [x] [**20261001-0922-copy-absolute-file-path Compact the header and copy absolute file paths**](20261001-0922-copy-absolute-file-path.md) `2026-10-01`
 - [x] [**20261001-1514-file-sync-status Present file synchronization with distinct shapes**](20261001-1514-file-sync-status.md) `2026-10-01`
+
+- [-] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `2026-10-01`
