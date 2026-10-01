@@ -33,7 +33,7 @@ export function FilePathCopy({ path, session }: { path: string, session: Session
   return (
     <>
       <Button className="header-path-copy" variant="ghost" size="icon-sm" aria-label="Copy absolute path" disabled={!location.isSuccess || copying} onClick={() => void copy()}>
-        {feedback === 'Path copied' ? <CircleCheck className="size-5 text-success" /> : <Copy className="size-5" />}
+        {feedback === 'Path copied' ? <CircleCheck className="size-5 text-primary" /> : <Copy className="size-5 text-primary" />}
       </Button>
       <span className={location.isError || feedback === 'Copy failed' ? 'header-path-status' : 'sr-only'} role="status">{location.isError ? 'File path unavailable' : feedback}</span>
     </>

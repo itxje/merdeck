@@ -140,13 +140,13 @@ it('retries an unavailable file location when the existing refresh control is us
   client.clear()
 })
 
-it('labels documents without editable blocks as reading mode and omits Save', async () => {
+it('keeps documents without editable blocks readable without a header mode label or Save', async () => {
   const document = { ...markdownDocument('docs/read.md', '# Reading guide'), blocks: [] }
   mockMarkdownWorkspace(document)
   const client = createQueryClient()
   const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={document.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
   expect(await screen.findByRole('heading', { name: 'Reading guide' })).toBeVisible()
-  expect(screen.getByText('Reading mode')).toBeVisible()
+  expect(screen.queryByText('Reading mode')).toBeNull()
   expect(screen.queryByRole('button', { name: /^Save/ })).toBeNull()
   view.unmount()
   client.clear()

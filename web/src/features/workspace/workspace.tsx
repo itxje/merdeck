@@ -1,6 +1,6 @@
 import type { EntryAction } from './entries'
 import type { EntryOperation } from './use-workspace'
-import { Bot, Code2, FileCode2, FolderOpen, GitBranch, LockOpen, LogOut, MoreHorizontal, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
+import { Bot, Code2, FolderOpen, GitBranch, LockOpen, LogOut, MoreHorizontal, PanelLeft, PanelLeftClose, PanelLeftOpen, ShieldCheck } from 'lucide-react'
 import * as React from 'react'
 import { useDefaultLayout, usePanelRef } from 'react-resizable-panels'
 import { ThemeToggle } from '@/app/theme-toggle'
@@ -291,23 +291,18 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
             {!narrow && filesTrigger(false)}
             {/* Without an open file the header names nothing: the explorer and the empty state already say what to do. */}
             {path && (
-              <>
-                <FileCode2 className="desktop-only" />
-                <div className="header-file-copy">
-                  <div className="header-file-text">
-                    <h1 className="sr-only">{filename}</h1>
-                    {file && (
-                      <div className="header-file-meta">
-                        {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
-                        {selected
-                          ? <FileSyncStatus file={file} />
-                          : <span className="reading-mode">Reading mode</span>}
-                      </div>
-                    )}
-                  </div>
-                  {file && <FilePathCopy key={path} path={path} session={state.session} />}
+              <div className="header-file-copy">
+                <div className="header-file-text">
+                  <h1 className="sr-only">{filename}</h1>
+                  {file && selected && (
+                    <div className="header-file-meta">
+                      {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
+                      <FileSyncStatus file={file} />
+                    </div>
+                  )}
                 </div>
-              </>
+                {file && <FilePathCopy key={path} path={path} session={state.session} />}
+              </div>
             )}
           </div>
         )}

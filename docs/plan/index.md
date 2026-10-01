@@ -123,3 +123,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261001-1514-file-sync-status Present file synchronization with distinct shapes**](20261001-1514-file-sync-status.md) `2026-10-01`
 
 - [x] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `2026-10-01`
+
+- [-] [**20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors**](20261001-1739-simplify-header-brand-colors.md) `2026-10-01`
