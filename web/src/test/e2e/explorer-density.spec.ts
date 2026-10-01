@@ -14,16 +14,12 @@ function rect(locator: Locator) {
   })
 }
 
-// The former heading + breadcrumb + tools row + kinds row + explanatory sentence measured 249px of
-// chrome above the first row at the default 232px explorer width and a 1440x900 viewport (not the
-// plan's estimated 346px — measured directly, on the pre-rail markup, the same way as below), and fit
-// 12 of 60 rows in a 900px-tall viewport. The rail-and-search-frame layout measures both below: 92px of
-// chrome (a 157px reduction) and 18 of 60 rows visible (6 more, not the plan's estimated nine — recorded
-// here rather than adjusted to match the estimate).
-const chromeRange = { min: 80, max: 105 }
+// A full-width breadcrumb and search keep navigation usable at the default 232px width,
+// while the completed-list footer leaves room for at least 18 readable rows at 900px height.
+const chromeRange = { min: 110, max: 135 }
 const minimumVisibleRows = 18
 
-test('the explorer rail leaves about 92px of chrome above the first row and fits six more rows than the former stack', async ({ page }) => {
+test('the explorer preserves readable search and at least eighteen visible rows', async ({ page }) => {
   const owned = await mkdtemp(join(root, 'density-'))
   await Promise.all(Array.from({ length: 60 }, (_, index) => writeFile(join(owned, `file-${String(index + 1).padStart(2, '0')}.mmd`), 'flowchart LR\nA-->B\n')))
   try {

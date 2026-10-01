@@ -192,3 +192,13 @@ export async function settledDialog(page: Page) {
     return element.getBoundingClientRect().width <= innerWidth
   })).toBe(true)
 }
+
+export async function chooseFileTypes(page: Page, explorer: Locator, label: string) {
+  await explorer.getByRole('button', { name: 'File types', exact: true }).click()
+  await page.getByRole('menuitemradio', { name: label, exact: true }).click()
+}
+
+export async function fileAction(page: Page, explorer: Locator, label: string) {
+  await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
+  await page.getByRole('menuitem', { name: label, exact: true }).click()
+}

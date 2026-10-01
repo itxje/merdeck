@@ -111,6 +111,8 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [sourcePanel])
   const file = state.file
   const selected = file?.baseline.blocks[block]
+  const diagramContext = file?.baseline.kind === 'markdown' && selected ? `Diagram ${block + 1}${selected.label === `Diagram ${block + 1}` ? '' : ` · ${selected.label}`}` : undefined
+  const contextId = React.useId()
   const source = file?.sources[block] ?? ''
   const changed = !!selected && source !== selected.source
   const sourceBytes = new TextEncoder().encode(source).length
@@ -196,6 +198,11 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
     setReviewOpen(false)
 
     state.review.reset()
+  }
+  const editDiagram = (index: number) => {
+    select(path, index)
+    setPane('source')
+    showSource()
   }
   const openEntry = (action: EntryAction) => {
     setTreeOpen(false)
@@ -283,35 +290,44 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
             {path && (
               <>
                 <FileCode2 className="desktop-only" />
-                <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : file?.baseline.kind === 'html' ? `${path} · HTML document` : path}>{path}</h1>
+                <div className="header-file-copy">
+                  <h1 title={selected ? `${path} · ${file?.baseline.kind === 'markdown' ? 'Markdown diagram' : 'Mermaid file'}` : file?.baseline.kind === 'html' ? `${path} · HTML document` : path}>{path}</h1>
+                  {file && (
+                    <div className="header-file-meta">
+                      {diagramContext && <span id={contextId} className="editing-context" title={diagramContext}>{diagramContext}</span>}
+                      {selected
+                        ? (
+                            <span className="save-status" role="status">
+                              {file.saving
+                                ? 'Saving…'
+                                : changed
+                                  ? (
+                                      <>
+                                        <span className="dirty-dot" />
+                                        Unsaved
+                                      </>
+                                    )
+                                  : (
+                                      <>
+                                        <Check />
+                                        {file.saved ? 'Saved' : 'Up to date'}
+                                      </>
+                                    )}
+                            </span>
+                          )
+                        : <span className="reading-mode">Reading mode</span>}
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
         )}
         <div className="header-actions">
-          {state.session && file && file.baseline.kind !== 'html' && (
+          {state.session && file && selected && (
             <>
-              <span className="save-status" role="status">
-                {file?.saving
-                  ? 'Saving…'
-                  : changed
-                    ? (
-                        <>
-                          <span className="dirty-dot" />
-                          Unsaved
-                        </>
-                      )
-                    : selected
-                      ? (
-                          <>
-                            <Check />
-                            {file?.saved ? 'Saved' : 'Up to date'}
-                          </>
-                        )
-                      : ''}
-              </span>
-              <Button disabled={!canSave} onClick={doSave}>
-                Save
+              <Button disabled={!canSave} aria-describedby={diagramContext ? contextId : undefined} onClick={doSave}>
+                {file.saving ? 'Saving…' : 'Save'}
                 <kbd>⌘ / Ctrl S</kbd>
               </Button>
               <span className="control-divider" aria-hidden="true" />
@@ -438,6 +454,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                       selected={block}
                                       onOpenFile={openResolvedLinkedFile}
                                       onOpenDiagramFile={openLinkedFile}
+                                      onEditDiagram={editDiagram}
                                     />
                                   )
                                 : (
@@ -451,7 +468,10 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                         {/* The collapsed editor stays mounted so its scroll position and selection survive. */}
                                         <section className="source-pane" aria-label="Source editor" data-collapsed={sourceCollapsed || undefined}>
                                           <div className="pane-heading">
-                                            <label htmlFor="diagram-source">Source</label>
+                                            <label htmlFor="diagram-source">
+                                              Source
+                                              {diagramContext && <span className="source-context" title={diagramContext}>{diagramContext}</span>}
+                                            </label>
                                             <span className="pane-actions">
                                               <span className="muted">Mermaid</span>
                                               <Button className="pane-collapse" variant="ghost" size="icon-xs" aria-label="Hide source" title="Hide source" onClick={() => sourcePanel.current?.collapse()}><PanelLeftClose /></Button>
@@ -499,7 +519,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                       <ResizableHandle withHandle aria-label="Resize source and preview" />
                                       <ResizablePanel id="preview-panel" className="pane-slot" minSize="30%">
                                         {file?.baseline.kind === 'markdown'
-                                          ? <DocumentView text={file.baseline.text} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} />
+                                          ? <DocumentView text={file.baseline.text} path={path} blocks={file.baseline.blocks} sources={file.sources} selected={block} onOpenFile={openResolvedLinkedFile} onOpenDiagramFile={openLinkedFile} onEditDiagram={editDiagram} />
                                           : <Preview key={`${path}:${block}`} source={source} title={selected?.label ?? 'Diagram'} onError={setSyntaxError} onSourceChange={next => state.dispatch({ type: 'edit', path, block, source: next })} onLocate={locate} onOpenFile={openLinkedFile} />}
                                       </ResizablePanel>
                                     </ResizablePanelGroup>

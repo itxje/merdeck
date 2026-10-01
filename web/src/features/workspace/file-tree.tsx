@@ -4,12 +4,11 @@ import type { EntryAction } from './entries'
 import type { FileFilter } from './file-filter'
 import type { useDirectory } from './use-directory'
 import type { SearchView } from './use-directory-search'
-import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, MoreHorizontal, RefreshCw, RotateCcw, Search } from 'lucide-react'
+import { ArrowUp, ChevronRight, FileCode2, FilePlus2, FileText, FileType2, Folder, FolderPlus, ListFilter, MoreHorizontal, RefreshCw, RotateCcw, Search } from 'lucide-react'
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu'
 import { Input } from '@/shared/components/ui/input'
-import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip'
 import { errorMessage, parentDirectory } from './api'
 import { dirty } from './drafts'
@@ -35,11 +34,11 @@ interface Props {
 interface DiagramListProps { file: string, blocks: DiagramBlockSummary[], draft: FileDraft | undefined, open: boolean, block: number, select: Props['select'] }
 interface MenuItem { label: string, onSelect: () => void, disabled?: boolean, destructive?: boolean, separated?: boolean }
 
-const fileFilters: { value: FileFilter, text: string, label: string }[] = [
-  { value: 'all', text: 'All', label: 'All files' },
-  { value: 'mermaid', text: '.mmd', label: '.mmd and .mermaid files' },
-  { value: 'markdown', text: '.md', label: '.md files' },
-  { value: 'html', text: '.html', label: '.html and .htm files' },
+const fileFilters: { value: FileFilter, label: string }[] = [
+  { value: 'all', label: 'All files' },
+  { value: 'mermaid', label: '.mmd and .mermaid files' },
+  { value: 'markdown', label: '.md files' },
+  { value: 'html', label: '.html and .htm files' },
 ]
 
 function FileKindIcon({ kind }: { kind: 'mermaid' | 'markdown' | 'html' }) {
@@ -224,9 +223,20 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             <ArrowUp />
           </HeadingAction>
           <HeadingAction label="New file" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'file', parent: folder })}><FilePlus2 /></HeadingAction>
-          <HeadingAction label="New folder" disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}><FolderPlus /></HeadingAction>
           <HeadingAction label="Refresh files" onClick={refresh}><RefreshCw /></HeadingAction>
-          <HeadingAction label="Restart" disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}><RotateCcw /></HeadingAction>
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="More file actions" />}><MoreHorizontal /></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto min-w-44">
+              <DropdownMenuItem disabled={!canChange || listing.depth} onClick={() => onAction({ type: 'create', kind: 'directory', parent: folder })}>
+                <FolderPlus />
+                New folder
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={listing.loading || listing.retryAt > 0} onClick={listing.restart}>
+                <RotateCcw />
+                Restart listing
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </span>
       </div>
       <div className="tree-search">
@@ -240,22 +250,21 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             onQueryChange?.(event.target.value)
           }}
         />
-        <ToggleGroup
-          className="tree-search-kinds"
-          size="sm"
-          aria-label="File types"
-          value={[kinds]}
-          onValueChange={(value) => {
-            // Pressing the current choice again reports no value; keep exactly one choice.
-            const next = fileFilters.find(option => option.value === value[0])
-            if (next)
-              chooseKinds(next.value)
-          }}
-        >
-          {fileFilters.map(option => (
-            <ToggleGroupItem key={option.value} value={option.value} aria-label={option.label}>{option.text}</ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button className="tree-search-kinds" variant="ghost" size="icon-xs" aria-label="File types" title={fileFilters.find(option => option.value === kinds)?.label} data-filtered={kinds !== 'all' || undefined} />}><ListFilter /></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-auto min-w-56">
+            <DropdownMenuRadioGroup
+              value={kinds}
+              onValueChange={(value) => {
+                const next = fileFilters.find(option => option.value === value)
+                if (next)
+                  chooseKinds(next.value)
+              }}
+            >
+              {fileFilters.map(option => <DropdownMenuRadioItem key={option.value} value={option.value} closeOnClick>{option.label}</DropdownMenuRadioItem>)}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {searching && search && (
         <nav aria-label="Search results" aria-busy={search.pending}>
@@ -401,15 +410,18 @@ export function FileTree({ listing, directory, browse, drafts, path, block, sele
             {listed.length}
             {' '}
             {listed.length === 1 ? 'loaded file' : 'loaded files'}
-            {` · ${fileExtensions[kinds].join(' · ')}`}
           </span>
-          {' · '}
-          <span className="tree-pages">{`Pages ${listing.firstPage}–${listing.lastPage || 1}`}</span>
+          {listing.lastPage > 1 && (
+            <>
+              {' · '}
+              <span className="tree-pages">{`Pages ${listing.firstPage}–${listing.lastPage}`}</span>
+            </>
+          )}
           {' · '}
           <span className="tree-listing-status">{listing.depth ? 'Contents not listed.' : listing.complete && !listing.stale ? 'End of this listing.' : 'More entries may exist.'}</span>
         </span>
         {listing.firstPage > 1 && <span className="tree-pagination-notice" role="status">Earlier pages are no longer shown. Restart to see them.</span>}
-        <Button className="tree-next-page" variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>
+        {(!listing.complete || listing.stale) && <Button className="tree-next-page" variant="outline" disabled={!listing.canNext} onClick={listing.next}>Next page</Button>}
       </div>
     </aside>
   )

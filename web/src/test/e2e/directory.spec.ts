@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { browse, choose, expect, live, login, test } from './support'
+import { browse, choose, chooseFileTypes, expect, fileAction, live, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
@@ -20,7 +20,7 @@ test('Up leaves the file-type search and shows every file in the parent folder o
     await login(page, true)
     await browse(page, `${top}/mermaid`)
     const explorer = page.getByRole('dialog', { name: 'Project files', exact: true })
-    await explorer.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await chooseFileTypes(page, explorer, '.mmd and .mermaid files')
     await expect(explorer.getByRole('navigation', { name: 'Search results' }).getByRole('button', { name: 'flow.mmd' })).toBeVisible()
 
     await explorer.getByRole('button', { name: 'Up', exact: true }).click()
@@ -106,7 +106,7 @@ test('directory pages advance past the old root budget with a five-page window a
     await login(page, true)
     await browse(page, top)
     const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
-    await expect(explorer.getByText('Pages 1–1', { exact: true })).toBeVisible()
+    await expect(explorer.getByText('Pages 1–1', { exact: true })).toHaveCount(0)
     const files = explorer.getByRole('navigation', { name: 'Files and diagrams' }).locator('button[title$=".mmd"]')
     const first = await files.first().getAttribute('title')
     expect(first).toBeTruthy()
@@ -121,7 +121,7 @@ test('directory pages advance past the old root budget with a five-page window a
     }
     await expect(explorer.getByText('Earlier pages are no longer shown. Restart to see them.', { exact: true })).toBeVisible()
     await expect(explorer.getByText('End of this listing.', { exact: true })).toBeVisible()
-    await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled()
+    await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toHaveCount(0)
     expect(new Set(batches.flat()).size).toBe(621)
     expect(batches.flat()).toHaveLength(621)
     expect(await files.count()).toBeLessThanOrEqual(500)
@@ -132,7 +132,7 @@ test('directory pages advance past the old root budget with a five-page window a
     await expect(editor).toHaveValue(source)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${top}/deep/target.mmd`)
     await browse(page, top)
-    await expect(explorer.getByText('Pages 1–1', { exact: true })).toBeVisible()
+    await expect(explorer.getByText('Pages 1–1', { exact: true })).toHaveCount(0)
     await expect(explorer.getByRole('navigation', { name: 'Files and diagrams' })).toHaveAttribute('aria-busy', 'false')
     await live(page)
     await page.screenshot({ path: info.outputPath('directory-desktop.png'), fullPage: true, animations: 'disabled' })
@@ -161,12 +161,12 @@ test('excluded-only continuations remain navigable, file types list below a fold
     await expect(explorer.getByRole('list', { name: 'Diagrams in blocks.md' })).toHaveCount(0)
     // A file type lists the matching files below the folder by name only, whatever their contents, and names the type when none match.
     const results = explorer.getByRole('navigation', { name: 'Search results', exact: true })
-    await explorer.getByRole('button', { name: '.md files', exact: true }).click()
+    await chooseFileTypes(page, explorer, '.md files')
     for (const name of ['binary.md', 'blocks.md', 'prose.md'])
       await expect(results.getByRole('button', { name, exact: true })).toBeVisible()
-    await explorer.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await chooseFileTypes(page, explorer, '.mmd and .mermaid files')
     await expect(results.getByText('No .mmd or .mermaid files in this folder or below', { exact: true })).toBeVisible()
-    await explorer.getByRole('button', { name: 'All files', exact: true }).click()
+    await chooseFileTypes(page, explorer, 'All files')
     await expect(explorer.getByRole('button', { name: 'empty', exact: true })).toBeVisible()
     await explorer.getByRole('button', { name: 'only-hidden', exact: true }).click()
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
@@ -317,7 +317,7 @@ test('a real namespace change rejects one continuation and Restart recovers with
     await expect(explorer.getByRole('status').filter({ hasText: 'Listing is not current' })).toBeVisible()
     await expect(editor).toHaveValue(draft)
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeDisabled()
-    await explorer.getByRole('button', { name: 'Restart', exact: true }).click()
+    await fileAction(page, explorer, 'Restart listing')
     await expect(explorer.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled()
     expect(requests).toEqual([true, false])
     expect(conflicts).toEqual([409])

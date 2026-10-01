@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 03:02 [progress]
+
+Implemented the eight approved workspace usability improvements: usable explorer search and breadcrumbs, compact unavailable editing, visible phone saves, explicit document diagram editing and context, current-section contents, formatted conversation replies with code copying and respectful following, reading-mode controls, and larger primary text. Focused browser and unit regressions passed; full local aggregate verification follows on clean committed source. See [20261001-0238-workspace-usability](task/20261001-0238-workspace-usability.md).
+
 ## 2026-09-29 19:59 [completed]
 
 Published [v0.19.16](https://github.com/itxje/merdeck/releases/tag/v0.19.16) from `6a37442`, delivering the resizable Markdown and HTML contents rail. Main and tag workflows passed exact-commit Linux x64/ext4 native verification with a separate tmpfs refusal fixture; the tag workflow published on attempt 1. The downloaded archive passes `SHA256SUMS` and reports the exact version, tag and commit. See [20260929-1931-release-v0.19.16](task/20260929-1931-release-v0.19.16.md).

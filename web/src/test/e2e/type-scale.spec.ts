@@ -16,7 +16,7 @@ async function monospaceStack(page: Page) {
   })
 }
 
-const steps = [11, 12, 13, 15, 17]
+const steps = [11, 12, 13, 14, 15, 16, 17]
 // Rendered document and diagram content keep their own reading scale; everything else is shell chrome.
 const exemptSelector = '.document-view, .document-view *, .markdown-document-view, .markdown-document-view *, .html-document-view, .html-document-view *, .label-editor, .label-editor *, .diagram-graphic, .diagram-graphic *'
 
@@ -60,19 +60,20 @@ async function assertFits(page: Page, regions: Locator[]) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 }
 
-test('the application shell renders only the five-step type scale', async ({ page }) => {
+test('the application shell uses readable primary text and compact metadata', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
   await choose(page, 'welcome.mmd')
   await live(page)
   await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
-  const editor = page.getByRole('complementary', { name: 'AI file editor', exact: true })
+  const editor = page.locator('.agent-pane')
+  await expect(editor).toHaveAttribute('aria-label', 'AI file editor')
   await expect(editor).toBeVisible()
   expect(await shellFontSteps(page)).toEqual([])
-  await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator('.agent-composer'), page.locator('.workspace-body > .file-tree')])
+  await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator(process.env.MERDECK_TEST_AGENTS === 'true' ? '.agent-composer' : '.agent-notice'), page.locator('.workspace-body > .file-tree')])
 
   const px = async (locator: Locator) => Number.parseFloat(await locator.evaluate(element => getComputedStyle(element).fontSize))
-  await expect.poll(() => px(page.locator('.file-tree .tree-row').first())).toBe(12)
+  await expect.poll(() => px(page.locator('.file-tree .tree-row').first())).toBe(14)
   await expect.poll(() => px(page.locator('.status-bar'))).toBe(12)
   await expect.poll(() => px(page.locator('.tree-bottom').first())).toBe(11)
   await expect.poll(() => px(page.locator('.pane-heading').first())).toBe(15)
@@ -80,14 +81,14 @@ test('the application shell renders only the five-step type scale', async ({ pag
   await expect.poll(() => px(page.getByRole('button', { name: /^Save/ }))).toBe(13)
 
   // Below 1100px width the docked explorer rail becomes the project-files drawer; the composer
-  // becomes the fixed full-screen agent overlay. Both still need to fit at each remaining viewport.
+  // becomes a bottom sheet, or a compact notice when unavailable. Both must fit each viewport.
   const drawer = page.getByRole('dialog', { name: 'Project files', exact: true })
   for (const size of [{ width: 390, height: 844 }, { width: 390, height: 700 }]) {
     await page.setViewportSize(size)
     expect(await shellFontSteps(page)).toEqual([])
     await page.getByRole('button', { name: 'Open project files', exact: true }).click()
     await expect(drawer).toBeVisible()
-    await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator('.agent-composer'), drawer])
+    await assertFits(page, [page.locator('.app-header'), page.locator('.status-bar'), editor.locator(process.env.MERDECK_TEST_AGENTS === 'true' ? '.agent-composer' : '.agent-notice'), drawer])
     await page.keyboard.press('Escape')
     await expect(drawer).not.toBeVisible()
   }
@@ -128,8 +129,13 @@ test('the directory breadcrumb and the assistant attached-file line render in th
   await choose(page, 'welcome.mmd')
   await page.getByRole('button', { name: 'Open AI file editor', exact: true }).click()
   const attachment = page.getByLabel('Attached file', { exact: true })
-  await expect(attachment).toBeVisible()
-  expect(await attachment.locator('code').evaluate(element => getComputedStyle(element).fontFamily)).toBe(monospace)
+  if (process.env.MERDECK_TEST_AGENTS === 'true') {
+    await expect(attachment).toBeVisible()
+    expect(await attachment.locator('code').evaluate(element => getComputedStyle(element).fontFamily)).toBe(monospace)
+  }
+  else {
+    await expect(attachment).toHaveCount(0)
+  }
 })
 
 const openRoot = process.env.MERDECK_OPEN_ROOT

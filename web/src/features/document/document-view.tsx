@@ -12,6 +12,7 @@ import * as React from 'react'
 import { annotateFileLinks, linkedFile } from '@/features/preview/file-links'
 import { renderDiagram } from '@/features/preview/renderer'
 import { fileLinks } from '@/features/preview/source-policy'
+import { Button } from '@/shared/components/ui/button'
 import { isExternalLink, resolveProjectLink } from './document-links'
 import { DocumentMediaZoom } from './document-media-zoom'
 import { DocumentReader } from './document-reader'
@@ -173,7 +174,7 @@ function useDocumentTree(text: string) {
   return state.text === text ? state : { text, tree: null, error: null }
 }
 
-function InlineDiagram({ source, selected, themeRevision, onOpenFile, onLinkError, onMount }: { source: string, selected: boolean, themeRevision: number, onOpenFile?: OpenFile | undefined, onLinkError: (message: string) => void, onMount: (element: HTMLElement | null) => void }) {
+function InlineDiagram({ source, selected, themeRevision, onOpenFile, onLinkError, onMount, onEdit, number }: { source: string, selected: boolean, themeRevision: number, onOpenFile?: OpenFile | undefined, onLinkError: (message: string) => void, onMount: (element: HTMLElement | null) => void, onEdit?: (() => void) | undefined, number: number }) {
   const figureRef = React.useRef<HTMLElement>(null)
   const graphicRef = React.useRef<HTMLDivElement>(null)
   const sourceRef = React.useRef(source)
@@ -263,6 +264,12 @@ function InlineDiagram({ source, selected, themeRevision, onOpenFile, onLinkErro
   }
   return (
     <>
+      {onEdit && (
+        <div className="document-diagram-actions">
+          <span>{`Diagram ${number}`}</span>
+          <Button variant="outline" size="sm" aria-label={`Edit diagram ${number}`} onClick={onEdit}>Edit diagram</Button>
+        </div>
+      )}
       <figure
         ref={(element) => {
           figureRef.current = element
@@ -296,7 +303,7 @@ function InlineDiagram({ source, selected, themeRevision, onOpenFile, onLinkErro
   )
 }
 
-export function DocumentView({ text, path, blocks, sources, selected, onOpenFile, onOpenDiagramFile }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onOpenFile: OpenFile, onOpenDiagramFile?: OpenFile }) {
+export function DocumentView({ text, path, blocks, sources, selected, onOpenFile, onOpenDiagramFile, onEditDiagram }: { text: string, path: string, blocks: DiagramBlock[], sources: string[], selected: number, onOpenFile: OpenFile, onOpenDiagramFile?: OpenFile, onEditDiagram?: (index: number) => void }) {
   const parsed = useDocumentTree(text)
   const [linkError, setLinkError] = React.useState<{ path: string, message: string }>({ path, message: '' })
   const [themeRevision, setThemeRevision] = React.useState(0)
@@ -479,7 +486,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onOpenFile
     if (node.type === 'paragraph')
       return <p key={key}>{children}</p>
     if (node.type === 'heading') {
-      return React.createElement(`h${Math.min(6, node.depth)}`, { key, ref: (element: HTMLElement | null) => {
+      return React.createElement(`h${Math.min(6, node.depth)}`, { key, 'data-document-section': headingSlugs.get(node), 'ref': (element: HTMLElement | null) => {
         const slug = headingSlugs.get(node)
         if (slug && element)
           headingMapRef.current.set(slug, element)
@@ -535,6 +542,8 @@ export function DocumentView({ text, path, blocks, sources, selected, onOpenFile
           <InlineDiagram
             key={key}
             source={sources[found] ?? blocks[found]!.source}
+            number={found + 1}
+            onEdit={onEditDiagram ? () => onEditDiagram(found) : undefined}
             selected={selected === found}
             themeRevision={themeRevision}
             onOpenFile={onOpenDiagramFile}
@@ -572,12 +581,12 @@ export function DocumentView({ text, path, blocks, sources, selected, onOpenFile
   if (!parsed.tree)
     return <DocumentReader path={path}><article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document"><p role="status">Loading document…</p></article></DocumentReader>
   const navigation = contents.length > 1
-    ? (
+    ? (current: string | null) => (
         <nav aria-label="Contents">
           <ul>
             {contents.map(item => (
               <li key={item.slug} className={`document-contents-depth-${item.depth}`}>
-                <button type="button" className="document-link" onClick={() => headingMapRef.current.get(item.slug)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{item.text}</button>
+                <button type="button" className="document-link" aria-current={current === item.slug ? 'location' : undefined} onClick={() => headingMapRef.current.get(item.slug)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{item.text}</button>
               </li>
             ))}
           </ul>
@@ -585,7 +594,7 @@ export function DocumentView({ text, path, blocks, sources, selected, onOpenFile
       )
     : undefined
   return (
-    <DocumentReader path={path} contents={navigation}>
+    <DocumentReader path={path} contents={navigation} contentsTargets={contents.map(item => item.slug)}>
       <article ref={articleRef} className="document-view markdown-document-view" aria-label="Markdown document">
         <div className="markdown-document-body">
           {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}

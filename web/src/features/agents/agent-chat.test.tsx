@@ -70,6 +70,61 @@ beforeEach(() => {
   vi.stubGlobal('matchMedia', () => media)
 })
 
+it('presents unavailable editing as a notice without unusable conversation controls', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: false, providers: [] })
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><AgentChat session={session} open blockedReason={undefined} activePath={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} /></QueryClientProvider>)
+  expect(await screen.findByText(/AI editing is not configured/)).toBeVisible()
+  expect(screen.queryByLabelText('Engine')).toBeNull()
+  expect(screen.queryByLabelText('Agent instruction')).toBeNull()
+  view.unmount()
+  client.clear()
+})
+
+it('follows reply growth until the reader scrolls away and offers the latest content', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  vi.spyOn(agentApi, 'create').mockResolvedValue({ id: 'a'.repeat(48), provider: 'codex', model: 'gpt-safe' })
+  vi.spyOn(agentApi, 'turn').mockResolvedValue({ accepted: true })
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><AgentChat session={session} open blockedReason={undefined} activePath={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} /></QueryClientProvider>)
+  const user = userEvent.setup()
+  await user.type(await screen.findByLabelText('Agent instruction'), 'Explain the diagram')
+  await user.click(screen.getByRole('button', { name: 'Send' }))
+  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+  const log = screen.getByRole('log', { name: 'AI conversation' })
+  let height = 100
+  Object.defineProperties(log, { scrollHeight: { configurable: true, get: () => height }, clientHeight: { configurable: true, value: 200 }, scrollTop: { configurable: true, writable: true, value: 0 } })
+  FakeEventSource.instances[0]!.emit({ id: 1, type: 'assistant.delta', text: 'First part.' })
+  await screen.findByText('First part.')
+  height = 700
+  FakeEventSource.instances[0]!.emit({ id: 2, type: 'assistant.delta', text: ' More content.' })
+  await waitFor(() => expect(log.scrollTop).toBe(700))
+  log.scrollTop = 40
+  // A streaming update can arrive before the browser processes this scroll event.
+  height = 900
+  FakeEventSource.instances[0]!.emit({ id: 3, type: 'assistant.delta', text: ' Latest content.' })
+  await screen.findByText(/Latest content/)
+  expect(log.scrollTop).toBe(40)
+  await user.click(await screen.findByRole('button', { name: 'View latest content' }))
+  expect(log.scrollTop).toBe(900)
+  view.unmount()
+  client.clear()
+})
+
+it('formats provider Markdown while keeping HTML and unsafe URLs inert', async () => {
+  vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
+  sessionStorage.setItem('merdeck-agent-session', JSON.stringify({ conversation: null, selection: null, state: { active: false, lastEventId: 0, items: [{ key: 'reply', kind: 'assistant', text: '# Review\n\n**Clear labels** and [unsafe](javascript:alert(1)).\n\n<img src=x onerror=alert(1)>\n\n```ts\nconst answer = 42\n```' }] } }))
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><AgentChat session={session} open blockedReason={undefined} activePath={undefined} onClose={vi.fn()} onActiveChange={vi.fn()} onFileChanged={vi.fn()} onSettled={vi.fn()} /></QueryClientProvider>)
+  expect(await screen.findByRole('heading', { name: 'Review' })).toBeVisible()
+  expect(screen.getByText('Clear labels').tagName).toBe('STRONG')
+  expect(view.container.querySelector('img')).toBeNull()
+  expect(screen.queryByRole('link', { name: 'unsafe' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'Copy code' })).toBeVisible()
+  view.unmount()
+  client.clear()
+})
+
 it('defers provider discovery until the editor is opened', async () => {
   const capabilities = vi.spyOn(agentApi, 'capabilities').mockResolvedValue({ enabled: true, providers: [codexProvider] })
   const client = createQueryClient()

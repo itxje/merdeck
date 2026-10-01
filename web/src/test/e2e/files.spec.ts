@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { browse, expect, live, login, test } from './support'
+import { browse, expect, fileAction, live, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 const tokenFile = process.env.MERDECK_SMOKE_TOKEN_FILE
@@ -22,7 +22,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     const pathInput = dialog.getByLabel('Path', { exact: true })
     const editor = page.getByLabel('Mermaid source', { exact: true })
 
-    await explorer.getByRole('button', { name: 'New folder', exact: true }).click()
+    await fileAction(page, explorer, 'New folder')
     await expect(pathInput).toHaveValue('new-folder')
     await pathInput.fill(folder)
     await dialog.getByRole('button', { name: 'Create', exact: true }).click()
@@ -70,7 +70,7 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
     await expect(page.getByText('Saved', { exact: true })).toBeVisible()
     expect(await readFile(join(root, folder, 'renamed.mmd'), 'utf8')).toBe(draft)
 
-    await explorer.getByRole('button', { name: 'New folder', exact: true }).click()
+    await fileAction(page, explorer, 'New folder')
     await pathInput.fill(`${folder}/nested`)
     await dialog.getByRole('button', { name: 'Create', exact: true }).click()
     await expect(explorer.getByRole('button', { name: 'nested', exact: true })).toBeVisible()
@@ -128,12 +128,16 @@ test('the explorer creates, renames, moves and deletes files and folders inside 
       await explorer.getByRole('button', { name: 'Refresh files', exact: true }).click()
       // Retained rows are visible before this response makes their actions ready.
       await expect(listing).toHaveAttribute('aria-busy', 'true')
-      await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeDisabled()
+      await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
+      await expect(page.getByRole('menuitem', { name: 'New folder', exact: true })).toBeDisabled()
+      await page.keyboard.press('Escape')
     }
     finally { releaseRefresh() }
     await (await refreshed).finished()
     await expect(listing).toHaveAttribute('aria-busy', 'false')
-    await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeEnabled()
+    await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
+    await expect(page.getByRole('menuitem', { name: 'New folder', exact: true })).toBeEnabled()
+    await page.keyboard.press('Escape')
     const nested = listing.getByRole('button', { name: 'nested', exact: true })
     await nested.focus()
     await expect(nested).toBeFocused()
@@ -183,7 +187,9 @@ test('read-only storage keeps file changes unavailable in the explorer and refus
   await page.getByRole('button', { name: 'Connect to project' }).click()
   const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
   await expect(explorer.getByRole('button', { name: 'New file', exact: true })).toBeDisabled()
-  await expect(explorer.getByRole('button', { name: 'New folder', exact: true })).toBeDisabled()
+  await explorer.getByRole('button', { name: 'More file actions', exact: true }).click()
+  await expect(page.getByRole('menuitem', { name: 'New folder', exact: true })).toBeDisabled()
+  await page.keyboard.press('Escape')
   await explorer.getByRole('button', { name: 'Actions for welcome.mmd', exact: true }).click()
   await expect(page.getByRole('menuitem', { name: 'Rename or move…' })).toBeDisabled()
   await expect(page.getByRole('menuitem', { name: 'Delete…' })).toBeDisabled()

@@ -185,3 +185,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20260929-1404-release-v0.19.15 Release v0.19.15**](20260929-1404-release-v0.19.15.md) `P1`
 - [x] [**20260929-1843-resize-document-contents Resize document contents rail**](20260929-1843-resize-document-contents.md) `P2`
 - [x] [**20260929-1931-release-v0.19.16 Release v0.19.16**](20260929-1931-release-v0.19.16.md) `P1`
+
+- [-] [**20261001-0238-workspace-usability Improve workspace navigation, editing context and feedback**](20261001-0238-workspace-usability.md) `P1`

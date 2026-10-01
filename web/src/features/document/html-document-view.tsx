@@ -75,6 +75,31 @@ function sourceIds(nodes: HtmlRenderNode[]): Set<string> {
   return ids
 }
 
+function fragmentTarget(href: string, knownIds: Set<string>): string | null {
+  if (!href.startsWith('#') || href.length < 2)
+    return null
+  try {
+    const fragment = decodeURIComponent(href.slice(1))
+    return knownIds.has(fragment) ? fragment : null
+  }
+  catch { return null }
+}
+
+function contentsTargets(node: HtmlRenderNode | undefined, knownIds: Set<string>): string[] {
+  const targets = new Set<string>()
+  const visit = (item: HtmlRenderNode) => {
+    if (item.type !== 'element')
+      return
+    const fragment = item.tag === 'a' && typeof item.href === 'string' ? fragmentTarget(item.href, knownIds) : null
+    if (fragment)
+      targets.add(fragment)
+    item.children.forEach(visit)
+  }
+  if (node)
+    visit(node)
+  return [...targets]
+}
+
 export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, path: string, onOpenFile: OpenFile }) {
   const state = useHtmlProjection(text)
   const [linkError, setLinkError] = React.useState<{ path: string, message: string }>({ path, message: '' })
@@ -120,7 +145,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     : undefined
   // The renderer accepts only the application-owned node vocabulary. A malformed
   // Worker message cannot choose a DOM tag or provide DOM attributes.
-  const render = (candidate: unknown, key: string, insideLink = false): React.ReactNode => {
+  const render = (candidate: unknown, key: string, insideLink = false, currentSection?: string | null): React.ReactNode => {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate))
       return null
     const node = candidate as Partial<HtmlRenderNode> & { children?: unknown }
@@ -188,7 +213,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     }
     if (node.tag === 'video' || node.tag === 'audio') {
       const src = typeof node.src === 'string' ? node.src : undefined
-      const children = node.children.map((child, index) => render(child, `${key}-${index}`))
+      const children = node.children.map((child, index) => render(child, `${key}-${index}`, false, currentSection))
       return React.createElement(node.tag, { key, id, ref, controls: true, src, style }, children)
     }
     if (node.tag === 'source') {
@@ -209,7 +234,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     }
     if (node.tag === 'hr' || node.tag === 'br')
       return React.createElement(node.tag, { key, id, ref, style })
-    const children = node.children.map((child, index) => render(child, `${key}-${index}`, insideLink || node.tag === 'a'))
+    const children = node.children.map((child, index) => render(child, `${key}-${index}`, insideLink || node.tag === 'a', currentSection))
     if (node.tag === 'table') {
       // A wide table scrolls inside its own frame and keeps its table role for assistive technology.
       return (
@@ -220,14 +245,9 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
     }
     if (node.tag === 'a') {
       const href = typeof node.href === 'string' ? node.href : ''
-      if (href.startsWith('#') && href.length > 1) {
-        try {
-          const fragment = decodeURIComponent(href.slice(1))
-          if (knownIds.has(fragment))
-            return <button key={key} id={id} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
-        }
-        catch { /* Malformed fragments stay inert. */ }
-      }
+      const fragment = fragmentTarget(href, knownIds)
+      if (fragment)
+        return <button key={key} id={id} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" aria-current={currentSection === fragment ? 'location' : undefined} style={style} onClick={() => anchorsRef.current.get(fragment)?.scrollIntoView({ block: 'start', behavior: 'smooth' })}>{children}</button>
       const project = resolveProjectLink(path, href)
       if (project)
         return <button key={key} id={id} ref={ref as React.Ref<HTMLButtonElement>} type="button" className="document-link" style={style} onClick={() => followProjectLink(project)}>{children}</button>
@@ -250,7 +270,7 @@ export function HtmlDocumentView({ text, path, onOpenFile }: { text: string, pat
   const nodes = state.projection.children
   const sidebarIndex = nodes.findIndex(node => isRenderElement(node) && node.tag === 'nav')
   return (
-    <DocumentReader path={path} contents={sidebarIndex >= 0 ? render(nodes[sidebarIndex], 'sidebar') : undefined}>
+    <DocumentReader path={path} contents={sidebarIndex >= 0 ? current => render(nodes[sidebarIndex], 'sidebar', false, current) : undefined} contentsTargets={contentsTargets(nodes[sidebarIndex], knownIds)}>
       <article className="document-view html-document-view" aria-label="HTML document">
         <div className="html-document-body">
           {linkError.path === path && linkError.message && <p role="alert">{linkError.message}</p>}

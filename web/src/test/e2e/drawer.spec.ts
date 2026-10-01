@@ -1,7 +1,7 @@
 import type { Locator } from '@playwright/test'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
-import { browse, choose, expect, live, login, settledDialog, test } from './support'
+import { browse, choose, chooseFileTypes, expect, live, login, settledDialog, test } from './support'
 
 async function measureDrawer(dialog: Locator) {
   return dialog.evaluate((popup) => {
@@ -159,7 +159,7 @@ test('file drawer reserves reachable folder rows in a short mobile viewport', as
     expect(nextMetrics.buttonTop).toBeGreaterThanOrEqual(nextMetrics.popupTop)
     expect(nextMetrics.buttonBottom).toBeLessThanOrEqual(nextMetrics.popupBottom)
 
-    await dialog.getByRole('button', { name: '.mmd and .mermaid files', exact: true }).click()
+    await chooseFileTypes(page, dialog, '.mmd and .mermaid files')
     const results = dialog.getByRole('navigation', { name: 'Search results', exact: true })
     await expect(results.getByRole('button', { name: 'folder-001/diagram.mmd', exact: true })).toBeVisible()
     const searchMetrics = await results.evaluate((node) => {
@@ -213,7 +213,7 @@ test('file drawer omits its redundant header while retaining named usable contro
       assertContained(measurement)
       // The explorer heading actions precede the filter when it is deliberately focused.
       await page.keyboard.press('Shift+Tab')
-      await expect(dialog.getByRole('button', { name: 'Restart', exact: true })).toBeFocused()
+      await expect(dialog.getByRole('button', { name: 'More file actions', exact: true })).toBeFocused()
       await page.keyboard.press('Tab')
       await expect(search).toBeFocused()
       await page.keyboard.press('Escape')

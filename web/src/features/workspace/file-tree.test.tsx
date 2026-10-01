@@ -49,12 +49,11 @@ it('lists every supported file, its folders and an empty folder by default', () 
   expect(screen.getByRole('button', { name: 'report.html' }).querySelector('.lucide-file-type-2')).not.toBeNull()
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'empty' })).toBeVisible()
-  expect(screen.getByText('3 loaded files · .mmd · .mermaid · .md · .html · .htm')).toBeVisible()
-  // The loaded-file count, the active file types, the page range and the listing status
-  // collapse into one line, in that order, each still its own findable phrase.
+  expect(screen.getByText('3 loaded files')).toBeVisible()
+  // Completed single-page listings keep the file count and completion status.
   const summaryLine = container.querySelector('.tree-summary-line')
-  expect(summaryLine).toHaveTextContent('3 loaded files · .mmd · .mermaid · .md · .html · .htm · Pages 1–1 · End of this listing.')
-  expect(screen.getByText('Pages 1–1', { exact: true })).toBeVisible()
+  expect(summaryLine).toHaveTextContent('3 loaded files · End of this listing.')
+  expect(screen.queryByText('Pages 1–1', { exact: true })).toBeNull()
   expect(screen.getByText('End of this listing.', { exact: true })).toBeVisible()
   unmount()
 })
@@ -67,8 +66,8 @@ it('folds the heading, breadcrumb and tools into one action rail with icon contr
   expect(rail).not.toBeNull()
   expect(rail!.querySelector('.directory-crumbs')).not.toBeNull()
   const actionNames = [...rail!.querySelectorAll('.tree-rail-actions button')].map(button => button.getAttribute('aria-label'))
-  expect(actionNames).toEqual(['Up', 'New file', 'New folder', 'Refresh files', 'Restart'])
-  // The four-way file type control sits inside the search field's own frame.
+  expect(actionNames).toEqual(['Up', 'New file', 'Refresh files', 'More file actions'])
+  // The file type menu sits inside the search field's own frame.
   const search = screen.getByRole('textbox', { name: 'Filter files' }).closest('.tree-search')
   expect(search?.querySelector('[aria-label="File types"]')).not.toBeNull()
   unmount()
@@ -148,7 +147,7 @@ it('lists only diagram files and their folders when diagram files are chosen', (
   expect(screen.queryByRole('button', { name: 'overview.md' })).toBeNull()
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'empty' })).toBeVisible()
-  expect(screen.getByText('1 loaded file · .mmd · .mermaid')).toBeVisible()
+  expect(screen.getByText('1 loaded file')).toBeVisible()
   unmount()
 })
 
@@ -157,7 +156,7 @@ it('lists Markdown files under the folders that hold them', () => {
   expect(screen.getByRole('button', { name: 'overview.md' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'docs' })).toBeVisible()
   expect(screen.queryByRole('button', { name: 'welcome.mmd' })).toBeNull()
-  expect(screen.getByText('1 loaded file · .md')).toBeVisible()
+  expect(screen.getByText('1 loaded file')).toBeVisible()
   unmount()
 })
 
@@ -166,14 +165,15 @@ it('lists HTML documents under a distinct file-type filter', () => {
   expect(screen.getByRole('button', { name: 'report.html' })).toBeVisible()
   expect(screen.queryByRole('button', { name: 'welcome.mmd' })).toBeNull()
   expect(screen.queryByRole('button', { name: 'overview.md' })).toBeNull()
-  expect(screen.getByText('1 loaded file · .html · .htm')).toBeVisible()
+  expect(screen.getByText('1 loaded file')).toBeVisible()
   unmount()
 })
 
 it('reports the chosen file types and names them when nothing is listed', async () => {
   const { chooseKinds, unmount } = renderTree('all')
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: '.md files' }))
+  await user.click(screen.getByRole('button', { name: 'File types' }))
+  await user.click(await screen.findByRole('menuitemradio', { name: '.md files' }))
   expect(chooseKinds).toHaveBeenCalledWith('markdown')
   unmount()
 

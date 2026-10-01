@@ -105,6 +105,18 @@ function mockMarkdownWorkspace(document: ReturnType<typeof markdownDocument>) {
   return vi.spyOn(api, 'document').mockImplementation(async target => target === document.path ? document : Promise.reject(new HttpError(404, 'not_found', 'Missing file')))
 }
 
+it('labels documents without editable blocks as reading mode and omits Save', async () => {
+  const document = { ...markdownDocument('docs/read.md', '# Reading guide'), blocks: [] }
+  mockMarkdownWorkspace(document)
+  const client = createQueryClient()
+  const view = render(<QueryClientProvider client={client}><ThemeProvider><Workspace path={document.path} block={0} navigate={vi.fn()} /></ThemeProvider></QueryClientProvider>)
+  expect(await screen.findByRole('heading', { name: 'Reading guide' })).toBeVisible()
+  expect(screen.getByText('Reading mode')).toBeVisible()
+  expect(screen.queryByRole('button', { name: /^Save/ })).toBeNull()
+  view.unmount()
+  client.clear()
+})
+
 it('keeps the source pane in Markdown Document view and reports guarded document-link failures', async () => {
   const current = markdownDocument('docs/guide.md', '# Guide\n\n[Next](next.md)\n\n```mermaid\nflowchart LR\nA-->B\n```')
   const document = mockMarkdownWorkspace(current)

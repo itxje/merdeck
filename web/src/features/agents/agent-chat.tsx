@@ -4,6 +4,7 @@ import { Bot, FilePenLine, LoaderCircle, MessageSquarePlus, Paperclip, Send, Squ
 import * as React from 'react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
+import { AgentMarkdown } from './agent-markdown'
 import { useAgentChat } from './use-agent-chat'
 
 interface AgentChatProps {
@@ -94,15 +95,58 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
   React.useEffect(() => {
     setHeightPercent(current => Math.min(current, maximumHeightPercent))
   }, [maximumHeightPercent])
-  const [noticeDismissed, setNoticeDismissed] = React.useState(false)
   const transcriptRef = React.useRef<HTMLDivElement>(null)
+  const messagesRef = React.useRef<HTMLDivElement>(null)
+  const followingRef = React.useRef(true)
+  const followedTopRef = React.useRef(0)
+  const [unread, setUnread] = React.useState(false)
+  const followLatest = React.useCallback(() => {
+    followingRef.current = true
+    setUnread(false)
+    const transcript = transcriptRef.current
+    if (transcript) {
+      transcript.scrollTop = transcript.scrollHeight
+      followedTopRef.current = transcript.scrollTop
+    }
+  }, [])
+  const followIfAtLatest = React.useCallback(() => {
+    const transcript = transcriptRef.current
+    if (!followingRef.current || !transcript)
+      return
+    // A reader can move before the browser delivers its scroll event. Account for that
+    // movement, including the browser clamping a previous bottom after a layout shrinks.
+    const maximum = Math.max(0, transcript.scrollHeight - transcript.clientHeight)
+    if (transcript.scrollTop < Math.min(followedTopRef.current, maximum))
+      followingRef.current = false
+    else
+      followLatest()
+  }, [followLatest])
+  React.useLayoutEffect(() => {
+    if (!chat.items.length) {
+      followLatest()
+    }
+    else {
+      followIfAtLatest()
+      if (!followingRef.current)
+        setUnread(true)
+    }
+  }, [chat.items, followLatest, followIfAtLatest])
   React.useEffect(() => {
-    transcriptRef.current?.lastElementChild?.scrollIntoView({ block: 'nearest' })
-  }, [chat.items.length])
+    const messages = messagesRef.current
+    if (!messages || typeof ResizeObserver === 'undefined')
+      return
+    const observer = new ResizeObserver(followIfAtLatest)
+    observer.observe(messages)
+    if (transcriptRef.current)
+      observer.observe(transcriptRef.current)
+    return () => observer.disconnect()
+  }, [open, chat.capabilities.isSuccess, followIfAtLatest])
   const submit = async () => {
     const sent = await chat.send(prompt)
-    if (sent)
+    if (sent) {
       setPrompt('')
+      followLatest()
+    }
   }
   const resizeWidth = (event: React.PointerEvent<HTMLDivElement>) => {
     const handle = event.currentTarget
@@ -141,7 +185,18 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
     handle.addEventListener('pointerup', stop)
     handle.addEventListener('pointercancel', stop)
   }
-  const unavailable = !chat.capabilities.isPending && !chat.providers.length
+  const unavailable = chat.capabilities.isSuccess && !chat.providers.length
+  if (unavailable) {
+    return (
+      <aside ref={paneRef} className="agent-pane agent-unavailable" aria-label="AI file editor" hidden={!open}>
+        <div className="agent-notice" role="status">
+          <Bot aria-hidden="true" />
+          <p>AI editing is not configured for this project. Ask the project owner to enable it.</p>
+          <Button variant="ghost" size="icon-sm" aria-label="Close AI file editor" onClick={onClose}><X /></Button>
+        </div>
+      </aside>
+    )
+  }
   return (
     <aside ref={paneRef} className="agent-pane" aria-label="AI file editor" hidden={!open} data-narrow={narrow || undefined} style={{ '--agent-width': `${width}px`, '--agent-height': `${heightPercent}dvh` } as React.CSSProperties}>
       <div
@@ -220,63 +275,74 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
           {chat.models.map(model => <option key={model.id} value={model.id}>{model.label}</option>)}
         </select>
       </div>
-      <div ref={transcriptRef} className="agent-transcript" role="log" aria-live="polite" aria-label="AI conversation">
-        {chat.capabilities.isPending && (
-          <p className="agent-empty">
-            <LoaderCircle className="spin" />
-            {' '}
-            Checking configured providers…
-          </p>
-        )}
-        {chat.capabilities.isError && <p className="agent-error" role="alert">The agent capability check failed.</p>}
-        {unavailable && !noticeDismissed && (
-          <div className="agent-notice" role="status">
-            <p>No provider is configured. Set an approved executable path on the service and restart it.</p>
-            <Button variant="ghost" size="icon-sm" aria-label="Dismiss" onClick={() => setNoticeDismissed(true)}><X /></Button>
-          </div>
-        )}
-        {!chat.capabilities.isPending && !unavailable && !chat.items.length && <p className="agent-empty">Ask the agent to update a diagram or document. File changes refresh the current preview automatically.</p>}
-        {chat.items.map((item) => {
-          if (item.kind === 'user') {
-            return (
-              <div key={item.key} className="agent-message agent-user">
-                <span>You</span>
-                <p>{item.text}</p>
-              </div>
-            )
+      <div
+        ref={transcriptRef}
+        className="agent-transcript"
+        role="log"
+        aria-live="polite"
+        aria-label="AI conversation"
+        onScroll={(event) => {
+          const transcript = event.currentTarget
+          followingRef.current = Math.ceil(transcript.scrollTop + transcript.clientHeight) >= transcript.scrollHeight
+          if (followingRef.current) {
+            followedTopRef.current = transcript.scrollTop
+            setUnread(false)
           }
-          if (item.kind === 'assistant') {
-            return (
-              <div key={item.key} className="agent-message agent-assistant">
-                <span>Assistant</span>
-                <p>{item.text}</p>
-              </div>
-            )
-          }
-          if (item.kind === 'tool') {
-            return (
-              <div key={item.key} className="agent-event">
-                <Wrench />
-                <code>{item.label}</code>
-              </div>
-            )
-          }
-          if (item.kind === 'file') {
-            return (
-              <div key={item.key} className="agent-event">
-                <FilePenLine />
-                <span>
-                  {item.change}
-                  :
-                  {' '}
-                  <code>{item.path}</code>
-                </span>
-              </div>
-            )
-          }
-          return <p key={item.key} className="agent-error" role="alert">{item.text}</p>
-        })}
+        }}
+      >
+        <div ref={messagesRef} className="agent-messages">
+          {chat.capabilities.isPending && (
+            <p className="agent-empty">
+              <LoaderCircle className="spin" />
+              {' '}
+              Checking configured providers…
+            </p>
+          )}
+          {chat.capabilities.isError && <p className="agent-error" role="alert">The agent capability check failed.</p>}
+          {!chat.capabilities.isPending && !unavailable && !chat.items.length && <p className="agent-empty">Ask the agent to update a diagram or document. File changes refresh the current preview automatically.</p>}
+          {chat.items.map((item) => {
+            if (item.kind === 'user') {
+              return (
+                <div key={item.key} className="agent-message agent-user">
+                  <span>You</span>
+                  <p>{item.text}</p>
+                </div>
+              )
+            }
+            if (item.kind === 'assistant') {
+              return (
+                <div key={item.key} className="agent-message agent-assistant">
+                  <span>Assistant</span>
+                  <AgentMarkdown text={item.text} />
+                </div>
+              )
+            }
+            if (item.kind === 'tool') {
+              return (
+                <div key={item.key} className="agent-event">
+                  <Wrench />
+                  <code>{item.label}</code>
+                </div>
+              )
+            }
+            if (item.kind === 'file') {
+              return (
+                <div key={item.key} className="agent-event">
+                  <FilePenLine />
+                  <span>
+                    {item.change}
+                    :
+                    {' '}
+                    <code>{item.path}</code>
+                  </span>
+                </div>
+              )
+            }
+            return <p key={item.key} className="agent-error" role="alert">{item.text}</p>
+          })}
+        </div>
       </div>
+      {unread && <Button className="agent-latest" variant="secondary" aria-label="View latest content" onClick={followLatest}>View latest content</Button>}
       <div className="agent-composer">
         {blockedReason && <p role="status">{blockedReason}</p>}
         {chat.attached && (

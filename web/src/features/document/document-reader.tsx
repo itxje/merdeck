@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/shared/comp
 const contentsWidthKey = 'merdeck.document-contents-width'
 const defaultContentsWidth = 240
 const minimumContentsWidth = 180
+const emptyTargets: readonly string[] = []
 
 function storedContentsWidth(): number {
   try {
@@ -17,14 +18,64 @@ function storedContentsWidth(): number {
   }
 }
 
-export function DocumentReader({ path, contents, children }: { path: string, contents?: React.ReactNode, children: React.ReactNode }) {
+export function DocumentReader({ path, contents, contentsTargets = emptyTargets, children }: { path: string, contents?: ((current: string | null) => React.ReactNode) | undefined, contentsTargets?: readonly string[], children: React.ReactNode }) {
   const frameRef = React.useRef<HTMLDivElement>(null)
+  const pageRef = React.useRef<HTMLDivElement>(null)
+  const drawerContentsRef = React.useRef<HTMLDivElement>(null)
+  const [currentSection, setCurrentSection] = React.useState<string | null>(null)
   const [narrow, setNarrow] = React.useState(() => window.matchMedia?.('(max-width: 900px)').matches ?? false)
   const [frameWidth, setFrameWidth] = React.useState(0)
   const [preferredContentsWidth, setPreferredContentsWidth] = React.useState(storedContentsWidth)
   const [collapsed, setCollapsed] = React.useState(false)
   const [drawerOpen, setDrawerOpen] = React.useState(false)
   const contentsId = React.useId()
+  const revealCurrentContents = React.useCallback(() => {
+    drawerContentsRef.current?.querySelector<HTMLElement>('[aria-current="location"]')?.scrollIntoView?.({ block: 'nearest' })
+  }, [])
+  React.useLayoutEffect(() => {
+    const article = pageRef.current?.querySelector<HTMLElement>('article')
+    if (!article)
+      return
+    const targets = new Set(contentsTargets)
+    const targetId = (element: HTMLElement) => element.dataset.documentSection ?? element.id
+    const headings = [...article.querySelectorAll<HTMLElement>('[data-document-section], [id]')].filter(element => targets.has(targetId(element)))
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const top = article.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(article).paddingTop || '0')
+      let current = headings[0] ? targetId(headings[0]) : null
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top > top)
+          break
+        current = targetId(heading)
+      }
+      const last = headings.at(-1)
+      if (last && article.scrollTop > 0 && Math.ceil(article.scrollTop + article.clientHeight) >= article.scrollHeight)
+        current = targetId(last)
+      setCurrentSection(current)
+    }
+    const schedule = () => {
+      if (!frame)
+        frame = requestAnimationFrame(update)
+    }
+    update()
+    article.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    const body = article.firstElementChild
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule)
+    if (body)
+      observer?.observe(body)
+    return () => {
+      cancelAnimationFrame(frame)
+      article.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      observer?.disconnect()
+    }
+  }, [path, children, contentsTargets])
+  React.useLayoutEffect(() => {
+    if (drawerOpen)
+      revealCurrentContents()
+  }, [drawerOpen, currentSection, revealCurrentContents])
   React.useEffect(() => {
     const frame = frameRef.current
     if (!frame || typeof ResizeObserver === 'undefined')
@@ -74,7 +125,14 @@ export function DocumentReader({ path, contents, children }: { path: string, con
   const railVisible = hasContents && !narrow && !collapsed
   const label = path.split('/').pop() ?? path
   return (
-    <Dialog open={narrow && drawerOpen} onOpenChange={setDrawerOpen}>
+    <Dialog
+      open={narrow && drawerOpen}
+      onOpenChange={setDrawerOpen}
+      onOpenChangeComplete={(open) => {
+        if (open)
+          revealCurrentContents()
+      }}
+    >
       <div ref={frameRef} className="document-reader" data-contents={railVisible ? 'visible' : 'hidden'} style={{ '--contents-width': `${contentsWidth}px` } as React.CSSProperties}>
         <div className="document-reader-toolbar">
           {hasContents && (narrow
@@ -92,7 +150,7 @@ export function DocumentReader({ path, contents, children }: { path: string, con
               ))}
           <span className="document-reader-title" title={path}>{label}</span>
         </div>
-        {railVisible && <div id={contentsId} className="document-reader-contents">{contents}</div>}
+        {railVisible && <div id={contentsId} className="document-reader-contents">{contents?.(currentSection)}</div>}
         {railVisible && (
           <div
             className="document-reader-resizer"
@@ -115,7 +173,7 @@ export function DocumentReader({ path, contents, children }: { path: string, con
             }}
           />
         )}
-        <div className="document-reader-page">{children}</div>
+        <div ref={pageRef} className="document-reader-page">{children}</div>
       </div>
       {narrow && hasContents && (
         /* The popup's centering utility uses the independent translate property. Keep its override
@@ -123,13 +181,14 @@ export function DocumentReader({ path, contents, children }: { path: string, con
         <DialogContent className="document-contents-drawer" aria-describedby={undefined} style={{ translate: 'none' }}>
           <DialogTitle>Contents</DialogTitle>
           <div
+            ref={drawerContentsRef}
             className="document-reader-contents"
             onClick={(event) => {
               if (event.target instanceof Element && event.target.closest('a, button'))
                 setDrawerOpen(false)
             }}
           >
-            {contents}
+            {contents?.(currentSection)}
           </div>
         </DialogContent>
       )}
