@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-01 03:02 [progress]
+## 2026-10-01 02:59 [progress]
 
 Implemented the eight approved workspace usability improvements: usable explorer search and breadcrumbs, compact unavailable editing, visible phone saves, explicit document diagram editing and context, current-section contents, formatted conversation replies with code copying and respectful following, reading-mode controls, and larger primary text. Focused browser and unit regressions passed; full local aggregate verification follows on clean committed source. See [20261001-0238-workspace-usability](task/20261001-0238-workspace-usability.md).
 

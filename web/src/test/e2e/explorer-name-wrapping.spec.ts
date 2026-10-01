@@ -17,7 +17,7 @@ if (!root)
 // count is read from the rendered stem instead, and the row is required to grow with it while the
 // name stays whole.
 const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd']
-const singleLineRow = 34
+const singleLineRow = 36
 const maximumLines = 3
 // The 3px flex gap between the stem and the extension, and a pixel for subpixel layout.
 const nameGapPixels = 4
