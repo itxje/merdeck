@@ -1,6 +1,6 @@
 # 20261001-0238-workspace-usability Improve workspace navigation, editing context and feedback
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P1
 - **owner**: ui-worker/session-20261001-0238
 - **createdAt**: 2026-10-01 02:38
@@ -11,7 +11,7 @@ Implement the eight approved interface review follow-ups (taskist 41–48): usab
 
 ## ActiveForm
 
-Implementing and verifying the approved workspace usability improvements.
+Completed and verified the approved workspace usability improvements.
 
 ## Dependencies
 
@@ -34,6 +34,14 @@ HTML current-section tracking uses visible heading positions sorted by their act
 
 ## Verification
 
-The new assertions first failed against the original behavior. Initial frontend coverage passed 597 tests. After the final scroll and drawer corrections, the focused conversation unit suite passed 18 tests and the latest browser run passed all 9 focused cases, including a 390×400 contents drawer, actual clipboard use, independent second-block saves and viewport changes. Browser audits reported no unexpected errors. Phone screenshots were visually inspected and retained under the task evidence directory.
+Focused regression assertions first failed against the original behavior. Conversation tests cover a manual scroll before its scroll event is delivered, viewport changes, streaming code-copy state and refused clipboard access. Browser regressions cover a 390×400 contents drawer, actual clipboard use, independent second-block saves, unavailable providers, hidden HTML headings and visually reordered sections. The latest seven usability browser cases passed; phone screenshots were visually inspected and retained.
 
-Implementation self-review followed the frontend review policy, checking safe markup and links, block identity and write behavior, cleanup of observers/listeners, keyboard/focus behavior, and mobile layout. No remaining actionable introduced findings. Frozen root/frontend installs passed. The full local aggregate gate is next; it requires clean committed source provenance. Native Linux x64/ext4 delivery remains outside this local ARM64/overlay verification.
+Frozen root/frontend installs and the full local `bun run check:ci` passed on clean source commit `d4a374f9990e9255892c0111645a1f37349f7586`, using Bun 1.4.2, stable Node 24, ARM64/overlayfs (`0x794c7630`) and separate tmpfs refusal storage (`0x1021994`). File checks passed 209 tests, storage integration passed 6, backend checks passed 294, release checks passed 41, and frontend coverage passed 597 across 35 files (93.47% lines; 88.95% branches). ESLint reported four warnings and no errors. Physical directory checks passed through source, bundle and compiled application adapters. Executable and architecture-independent bundle browser suites each passed 106 tests, with 17 configuration-dependent skips; the separate configured-provider source suite passed all 17 relevant cases. Browser audits reported no unexpected errors. `git diff --check` passed.
+
+Evidence: `/home/alan/warehouse/merdeck-ui-usability/check-ci-verified.log` (exit 0), `provider-browser.log`, focused regression logs and phone screenshots under that same directory; exported coverage and sanitized reports are in ignored `tmp/ci-evidence/`. Physical application-adapter evidence is in `tmp/directory-physical-H8u6c4/`.
+
+Taskist 41–48 are closed as done, each with a completion note identifying the change, implementation location, checked commit and this task record.
+
+Implementation self-review checked safe markup and links, block identity and write behavior, cleanup of observers/listeners, keyboard/focus behavior, and mobile layout. No remaining actionable introduced findings. Native Linux x64/ext4 delivery remains outside this local verification; no remote CI or release acceptance is claimed.
+
+- complete: Implemented all eight approved follow-ups and passed full local check:ci on clean source commit d4a374f; native Linux x64/ext4 release acceptance remains outside this task.

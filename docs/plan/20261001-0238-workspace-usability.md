@@ -1,6 +1,6 @@
 # 20261001-0238-workspace-usability Workspace usability improvements
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 02:38
 - **approvedAt**: 2026-10-01 02:38
 - **relatedTask**: 20261001-0238-workspace-usability
@@ -35,3 +35,7 @@ Keeping all filters and actions inline would continue to squeeze the search fiel
 ## Annotations
 
 The owner approved the eight review recommendations before this implementation. Runtime geometry tests and unit tests establish regression evidence before behavior changes.
+
+## Delivery
+
+All eight recommendations are implemented. Clean source commit `d4a374f` passed the full local ARM64/overlayfs aggregate gate, including executable and architecture-independent bundle browser acceptance. A separate configured-provider suite passed the cases skipped by the default release fixtures. See the related task for counts, reproduction evidence and the native acceptance boundary.
