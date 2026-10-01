@@ -194,3 +194,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261001-0618-discover-codex-on-path Discover Codex without an explicit executable setting**](20261001-0618-discover-codex-on-path.md) `P1`
 - [x] [**20261001-0922-copy-absolute-file-path Copy the active file absolute path**](20261001-0922-copy-absolute-file-path.md) `P2`
 - [x] [**20261001-1027-single-row-file-header Show the file status and path copy on one header row**](20261001-1027-single-row-file-header.md) `P2`
+- [x] [**20261001-1045-release-v0.19.21 Release v0.19.21**](20261001-1045-release-v0.19.21.md) `P2`

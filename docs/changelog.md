@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-01 10:45 [release]
+
+Published [v0.19.21](https://github.com/itxje/merdeck/releases/tag/v0.19.21) from `d828b15`: the header shows
+the file status and the path copy button on one row. Main and tag workflows passed native verification, the
+tag workflow published on its first attempt, and the downloaded archive passes `SHA256SUMS` and reports
+version 0.19.21. See [20261001-1045-release-v0.19.21](task/20261001-1045-release-v0.19.21.md).
+
 ## 2026-10-01 10:27 [completed]
 
 The header no longer shows the open file's name: the save status and the path copy button now sit on one row
