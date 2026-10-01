@@ -1,6 +1,6 @@
 # 20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-01 17:39
 - **approvedAt**: 2026-10-01 17:39 (explicit removal/color requests and existing publication authorization)
 - **relatedTask**: 20261001-1739-simplify-header-brand-colors
@@ -24,3 +24,7 @@ Workspace header, path-copy presentation, shared stylesheet, the existing worksp
 ## Alternatives
 
 The current primary token already colors the logo in both themes; introducing another color token is unnecessary.
+
+## Verification checkpoint
+
+The implementation at 0e476aa passes focused red/green verification, frontend lint/types, complete clean-source local preparation, exact hosted Linux x64/ext4 source verification, desktop/phone screenshot inspection and implementation review. The immutable candidate also passed complete native tag verification and same-run publication on attempt 1. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public asset digests, SHA256SUMS, the annotated tag and the 97-file bundle's version/commit identity are verified for [v0.19.25](https://github.com/itxje/merdeck/releases/tag/v0.19.25). The task records the exact source and native workflow evidence. The existing release-note generator wording follow-up remains taskist #61.

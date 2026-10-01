@@ -199,4 +199,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261001-1642-release-v0.19.24 Release v0.19.24**](20261001-1642-release-v0.19.24.md) `P1`
 
-- [-] [**20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors**](20261001-1739-simplify-header-brand-colors.md) `P2`
+- [x] [**20261001-1739-simplify-header-brand-colors Simplify the header and use brand colors**](20261001-1739-simplify-header-brand-colors.md) `P2`

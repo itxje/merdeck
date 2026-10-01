@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 18:02 [release]
+
+Published [v0.19.25](https://github.com/itxje/merdeck/releases/tag/v0.19.25) from `0e476aa`, removing the decorative document icon and Reading mode header label, and matching synchronization and path-copy icon colors to the logo's primary theme token. Focused red/green, complete local/source/native checks, desktop/phone screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261001-1739-simplify-header-brand-colors.md).
+
 ## 2026-10-01 17:42 [implemented]
 
 Remove the static file icon and Reading mode header label, and use the logo's shared primary theme color for synchronization and path-copy icons. Accessible file naming, clipboard behavior and distinct synchronization states remain intact. The updated read-only document assertion first failed, then 26 focused cases and frontend lint/types passed. Complete clean-source local/source checks, screenshot inspection and native release delivery remain pending. See [the header task](task/20261001-1739-simplify-header-brand-colors.md).
