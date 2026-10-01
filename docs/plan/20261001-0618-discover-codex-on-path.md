@@ -20,3 +20,5 @@ Codex startup resolution, focused configuration/API regressions, relevant fixtur
 ## Risks
 
 Service PATH must determine discovery; tests cannot depend on installed tools or probe a real logged-in provider. PATH resolution must not introduce a project-owned executable. Existing explicit overrides remain authoritative. Native release acceptance still requires complete exact-commit Linux x64/ext4 and both artifact browser suites.
+
+The complete acceptance also exposed a file-actions test that focused a directory row during menu closure. The test now verifies complete popup removal and normal trigger focus return before exercising the row shortcut. This is verification-only scope; runtime UI behavior is unchanged.
