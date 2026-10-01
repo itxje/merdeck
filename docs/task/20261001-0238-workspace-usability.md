@@ -30,6 +30,8 @@ The unavailable editor is a compact dismissible notice. Editable documents name 
 
 Both document formats derive current-section state from their article scroller and reveal the selected contents item after the phone drawer opens. Conversation following accounts for streamed text growth, viewport changes and a scroll event that has not yet been delivered. Manual reading pauses following until View latest content or a new instruction. Provider Markdown uses the existing parser, owned React elements, inert HTML/images and validated external links; displayed code can be copied with explicit failure feedback.
 
+HTML current-section tracking uses visible heading positions sorted by their actual layout, so hidden targets and authored visual reordering do not select the wrong section. Its focused browser regression failed against DOM-order tracking and passed after the correction; the seven usability browser cases all passed without unexpected errors.
+
 ## Verification
 
 The new assertions first failed against the original behavior. Initial frontend coverage passed 597 tests. After the final scroll and drawer corrections, the focused conversation unit suite passed 18 tests and the latest browser run passed all 9 focused cases, including a 390×400 contents drawer, actual clipboard use, independent second-block saves and viewport changes. Browser audits reported no unexpected errors. Phone screenshots were visually inspected and retained under the task evidence directory.

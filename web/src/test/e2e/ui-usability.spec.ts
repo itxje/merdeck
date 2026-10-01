@@ -109,6 +109,29 @@ test('unconfigured editing gives a compact notice without reducing document widt
   await page.screenshot({ path: info.outputPath('compact-unconfigured-phone.png'), animations: 'disabled' })
 })
 
+test('HTML contents follows visual order and ignores hidden targets', async ({ page }) => {
+  const name = `visual-contents-${randomUUID()}.html`
+  const file = join(root, name)
+  const prose = 'A readable paragraph with enough content to scroll. '.repeat(40)
+  const text = `<nav><a href="#one">One</a><a href="#hidden">Hidden</a><a href="#two">Two</a><a href="#three">Three</a></nav><main><div style="display:flex;flex-direction:column-reverse"><section><h2 id="one">One</h2><p>${prose}</p></section><section style="display:none"><h2 id="hidden">Hidden</h2></section><section><h2 id="two">Two</h2><p>${prose}</p></section><section><h2 id="three">Three</h2><p>${prose}</p></section></div></main>`
+  await writeFile(file, text, { flag: 'wx' })
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await login(page, true)
+    await page.goto(`/?path=${encodeURIComponent(name)}`)
+    const contents = page.locator('.document-reader > .document-reader-contents')
+    await expect(contents.getByRole('button', { name: 'Three', exact: true })).toHaveAttribute('aria-current', 'location')
+    await contents.getByRole('button', { name: 'Two', exact: true }).click()
+    await expect(contents.getByRole('button', { name: 'Two', exact: true })).toHaveAttribute('aria-current', 'location')
+    await page.getByRole('article', { name: 'HTML document' }).evaluate(e => e.scrollTo({ top: e.scrollHeight }))
+    await expect(contents.getByRole('button', { name: 'One', exact: true })).toHaveAttribute('aria-current', 'location')
+    await expect(contents.getByRole('button', { name: 'Hidden', exact: true })).not.toHaveAttribute('aria-current', 'location')
+  }
+  finally {
+    await rm(file, { force: true })
+  }
+})
+
 test('streamed Markdown follows the bottom and respects reading earlier replies', async ({ page }, info) => {
   await mockAgentCapabilities(page)
   await page.addInitScript(() => {

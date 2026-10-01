@@ -43,15 +43,19 @@ export function DocumentReader({ path, contents, contentsTargets = emptyTargets,
     const update = () => {
       frame = 0
       const top = article.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(article).paddingTop || '0')
-      let current = headings[0] ? targetId(headings[0]) : null
-      for (const heading of headings) {
-        if (heading.getBoundingClientRect().top > top)
+      const positions = headings
+        .filter(heading => heading.getClientRects().length > 0)
+        .map(heading => ({ id: targetId(heading), top: heading.getBoundingClientRect().top }))
+        .sort((left, right) => left.top - right.top)
+      let current = positions[0]?.id ?? null
+      for (const heading of positions) {
+        if (heading.top > top)
           break
-        current = targetId(heading)
+        current = heading.id
       }
-      const last = headings.at(-1)
+      const last = positions.at(-1)
       if (last && article.scrollTop > 0 && Math.ceil(article.scrollTop + article.clientHeight) >= article.scrollHeight)
-        current = targetId(last)
+        current = last.id
       setCurrentSection(current)
     }
     const schedule = () => {
