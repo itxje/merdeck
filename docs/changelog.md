@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-01 06:35 [progress]
+
+The first complete local preparation for automatic Codex discovery failed one browser audit after real session revocation; the other artifact suite passed. Preserve the failure and make the logout/poll ordering deterministic. The corrected scenario explicitly checks that a genuine background poll is refused after server logout, declaring expected authenticated-read/cleanup 401 responses only in its final logout phase. Runtime authentication is unchanged. Focused red/green browser proof and frontend lint/types pass; fresh complete acceptance remains required. See [the configuration task](task/20261001-0618-discover-codex-on-path.md).
+
 ## 2026-10-01 06:23 [progress]
 
 Remove the explicit Codex executable-setting prerequisite: startup now discovers `codex` from the service PATH, retaining canonical executable validation and optional overrides. Claude and Antigravity remain explicitly configured. Six new configuration/API cases and controlled-provider browser editing pass; source acceptance fixtures isolate discovery from installed logged-in CLIs. Complete local/source/native acceptance and v0.19.19 publication remain pending. See [the configuration task](task/20261001-0618-discover-codex-on-path.md).

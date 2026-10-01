@@ -15,7 +15,7 @@ Resolve the standard codex command from the supplied service environment's PATH 
 
 ## Scope
 
-Codex startup resolution, focused configuration/API regressions, relevant fixture environment isolation and configuration documentation. Claude and Antigravity discovery, authentication, provider protocols and deployment credentials are unchanged.
+Codex startup resolution, focused configuration/API regressions, relevant fixture environment isolation and configuration documentation. Complete local acceptance exposed a missing expected-response declaration for background polling after explicit logout; preserve its failure and cover real server revocation before logout response delivery. Runtime authentication, Claude and Antigravity discovery, provider protocols and deployment credentials are unchanged.
 
 ## Risks
 

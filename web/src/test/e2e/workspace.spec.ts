@@ -34,7 +34,7 @@ test.afterAll(async () => {
   await writeFile(join(root, 'docs/overview.md'), original)
 })
 
-test('real files, independent Markdown drafts, save snapshots, conflicts, responsive preview and safe rendering', async ({ page }) => {
+test('real files, independent Markdown drafts, save snapshots, conflicts, responsive preview and safe rendering', async ({ page, audit }) => {
   test.setTimeout(120000)
   await page.setViewportSize({ width: 1440, height: 920 })
   await login(page)
@@ -158,7 +158,32 @@ test('real files, independent Markdown drafts, save snapshots, conflicts, respon
   await expect(editor).toHaveValue(/Project files/)
   await overflow.click()
   await page.getByRole('menu').getByRole('button', { name: 'Log out', exact: true }).click()
-  await page.getByRole('button', { name: 'Discard drafts and log out' }).click()
+  let releaseLogout: () => void = () => {}
+  const logoutGate = new Promise<void>((resolve) => {
+    releaseLogout = resolve
+  })
+  await page.route('**/api/session', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.continue()
+      return
+    }
+    const response = await route.fetch()
+    expect(response.status()).toBe(200)
+    // The server has revoked the session while the browser is still waiting for logout.
+    await logoutGate
+    await route.fulfill({ response })
+  })
+  const revokedPoll = page.waitForResponse(response => response.status() === 401
+    && ['/api/diagrams/revision', '/api/diagrams/directory/revision'].includes(new URL(response.url()).pathname))
+  for (const path of ['/api/diagrams/directory', '/api/diagrams/directory/revision', '/api/diagrams/directory/close', '/api/diagrams/document', '/api/diagrams/revision'])
+    audit.allowHttp(401, path)
+  try {
+    await page.getByRole('button', { name: 'Discard drafts and log out' }).click()
+    await revokedPoll
+  }
+  finally {
+    releaseLogout()
+  }
   await expect(page.getByRole('heading', { name: 'Open your diagram workspace' })).toBeVisible()
 })
 
