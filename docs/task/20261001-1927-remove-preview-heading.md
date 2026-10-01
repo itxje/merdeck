@@ -29,3 +29,7 @@ Update the existing render/error case to demonstrate absence of the heading and 
 Remove the heading wrapper and static title, and keep the existing render status as sr-only text. Remove its unused live/stale color rules. The visible error alert, empty/loading canvas content, footer, zoom/pan and editing/link handling are unchanged. Existing browser readiness and stale-state assertions now check status presence instead of visibility; the light/dark contrast cases verify the canvas starts at the pane top and the visible error banner retains sufficient contrast.
 
 The updated existing render/error case first failed on the heading assertion, then all six preview cases passed. Frontend lint/types pass with the existing four warnings. Initial local diff review found zero actionable introduced issues. Complete clean-source local/source gates, real screenshot inspection and native release/public acceptance remain pending. Evidence is under /home/alan/warehouse/merdeck-preview-heading/.
+
+## Browser selector correction
+
+The initial complete local browser checks exposed ambiguity in the new status locator: Playwright's default substring match for an empty accessible name also matched the Zoom level output, which has an implicit status role. The light/dark cases failed before their layout and warning assertions. Add exact: true to select the unnamed render status. The initial browser results remain failed; complete clean-source verification will run again at the corrected commit after the current checks finish cleanup. The application change is unchanged.

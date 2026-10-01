@@ -283,7 +283,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(await page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(colorScheme === 'dark')
 
     const preview = page.getByRole('region', { name: 'Diagram preview', exact: true })
-    const status = preview.getByRole('status', { name: '' })
+    const status = preview.getByRole('status', { name: '', exact: true })
     await expect(status).toHaveText('Live preview')
     await expect(status).toHaveClass('sr-only')
     const [paneBounds, canvasBounds] = await Promise.all([
