@@ -1,6 +1,6 @@
 # 20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: pane-notes/session-20261002-0721
 - **createdAt**: 2026-10-02 07:21
@@ -33,3 +33,19 @@ Evidence is under /home/alan/warehouse/merdeck-pane-notes/ (red-unit/browser, gr
 ## Final frontend preparation
 
 Both frozen installs, frontend lint and types, all 622 frontend tests with coverage, production build and git diff --check pass. Four pre-existing unrelated lint warnings remain. Final focused/browser evidence and screenshot inspection pass, and source/native/public delivery acceptance remains pending.
+
+## Complete preparation and delivery
+
+Implementation a26dee0f107278e079a9159bca684ea6ac7d8b36 passed both local frozen installs, frontend lint/types, all 622 frontend cases with coverage, production build and whitespace checks. The 21 focused unit cases and all six affected real-browser cases pass. The initial unit/frontend failure on an obsolete double-click-instruction assertion remains preserved; the corrected existing assertion now checks the requested absence. Inspected desktop and phone screenshots show no idle session subtitle or preview footer, with the canvas reaching the pane edge and contained controls. Implementation review has zero actionable introduced findings. Local evidence is under /home/alan/warehouse/merdeck-pane-notes/.
+
+[Exact source verification](https://github.com/itxje/merdeck/actions/runs/36978593913) passed on the clean candidate with Linux x64/ext4, distinct tmpfs refusal storage and physical source/bundle/compiled adapters verified in downloaded reports.
+
+The immutable annotated v0.19.29 tag resolves to a26dee0f107278e079a9159bca684ea6ac7d8b36. [The tag workflow](https://github.com/itxje/merdeck/actions/runs/36979040550) passed the complete normal Linux x64/ext4 check:ci --native gate and same-run publication on attempt 1. Downloaded reports verify clean source identity, matching held-descriptor ext4 provenance (0xef53), distinct tmpfs refusal storage (0x1021994), all twenty raw storage controls, file/HTTP checks and physical source/bundle/compiled adapters with cleanup. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each, in 4.9m and 5.1m. Native acceptance is explicitly passed.
+
+The publisher downloaded checked artifact 11215117018 from the same run and commit, with verified artifact digest sha256:8ba4ccb527c10668b184890fc7ab8c950ee00fb6503c4855961bed8247b59722. No earlier artifact supplied publication.
+
+[v0.19.29](https://github.com/itxje/merdeck/releases/tag/v0.19.29) is published. Both public attachments match GitHub digests and publisher provenance; SHA256SUMS validates the archive. The 97-file bundle reports version 0.19.29, tag v0.19.29, commit a26dee0f107278e079a9159bca684ea6ac7d8b36, bundle target and Bun 1.4.2. Archive SHA-256: 46155de715bd36ff07fe01e31783234d219fe3d8509944e1377d3164fd8e7e5a.
+
+Release notes describe the removed idle subtitle and preview footer with the documented runtime/platform requirements, retaining the publisher marker and both asset identities. Release evidence is under /home/alan/warehouse/merdeck-release-v0.19.29/. The existing generator wording follow-up remains taskist #61, the earlier local ARM64 timeout remains #64 and the observed narrow source-heading overlap is #65. These deferred items were not changed by this presentation task.
+
+- complete: Published v0.19.29 from a26dee0f107278e079a9159bca684ea6ac7d8b36 after focused red/green, full frontend checks, complete canonical source/native gates, same-run publication and public artifact verification.

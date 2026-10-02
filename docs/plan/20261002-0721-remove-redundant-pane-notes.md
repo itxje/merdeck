@@ -1,6 +1,6 @@
 # 20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-02 07:21
 - **approvedAt**: 2026-10-02 07:21 (explicit removal request and established release authorization)
 - **relatedTask**: 20261002-0721-remove-redundant-pane-notes
@@ -24,3 +24,7 @@ Agent header markup, preview footer markup, two related toolbar offsets, existin
 ## Alternatives
 
 Hiding only the instruction text would leave an empty footer taking space. Removing shared footer CSS would also remove source metadata styling.
+
+## Acceptance
+
+Implemented and published v0.19.29 after focused red/green, full frontend gates, inspected desktop/phone screenshots, implementation review, exact source verification, the complete canonical tag native gate and public artifact verification. [The task](../task/20261002-0721-remove-redundant-pane-notes.md) records the checked candidate and run identities.

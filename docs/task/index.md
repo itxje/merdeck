@@ -207,4 +207,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label**](20261002-0625-theme-control-tooltips.md) `P2`
 
-- [-] [**20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes**](20261002-0721-remove-redundant-pane-notes.md) `P2`
+- [x] [**20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes**](20261002-0721-remove-redundant-pane-notes.md) `P2`
