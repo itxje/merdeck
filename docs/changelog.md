@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 09:05 [implemented]
+
+Move the diagram zoom/Fit toolbar from the bottom center to the bottom left of the preview canvas, retaining desktop/phone bottom spacing. Existing pane acceptance first fails at the centered location and then passes for desktop, resized panes, phone containment and actual zoom/Fit. Both affected browser cases, all 622 frontend cases, frozen installs, lint/types, build, inspected screenshots and implementation review pass. Exact source/native and v0.19.32 delivery checks remain pending. See [the task](task/20261002-0903-preview-controls-bottom-left.md).
+
 ## 2026-10-02 08:53 [release]
 
 Published [v0.19.31](https://github.com/itxje/merdeck/releases/tag/v0.19.31) from `919a40d`, removing the repeated document filename row and lifting the reading body. Markdown/HTML contents now occupy a resizable right column, with spatially matching drag/keys and a right-side phone drawer. Focused red/green, full frontend gates, screenshot inspection, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0822-right-document-contents.md).

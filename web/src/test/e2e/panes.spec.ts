@@ -10,8 +10,10 @@ async function fullCanvas(preview: Locator) {
   const controls = (await preview.locator('.preview-controls').boundingBox())!
   expect(canvas.y + canvas.height).toBeCloseTo(pane.y + pane.height, 0)
   expect(controls.x).toBeGreaterThanOrEqual(canvas.x)
+  expect(controls.x - canvas.x).toBeLessThanOrEqual(24)
   expect(controls.x + controls.width).toBeLessThanOrEqual(canvas.x + canvas.width)
   expect(controls.y + controls.height).toBeLessThan(canvas.y + canvas.height)
+  expect(canvas.y + canvas.height - controls.y - controls.height).toBeLessThanOrEqual(24)
   await expect(preview.getByRole('img', { name: 'Diagram', exact: true })).toBeVisible()
 }
 
@@ -54,6 +56,7 @@ test('source and preview panes resize, collapse and keep their layout', async ({
   await page.mouse.up()
   const dragged = await width(source)
   expect(dragged).toBeGreaterThan(initial + 150)
+  await fullCanvas(preview)
 
   await handle.focus()
   await page.keyboard.press('ArrowLeft')
@@ -90,6 +93,12 @@ test('source and preview panes resize, collapse and keep their layout', async ({
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await live(page)
   await fullCanvas(preview)
+  const zoom = preview.getByLabel('Zoom level', { exact: true })
+  const beforeZoom = await zoom.textContent()
+  await preview.getByRole('button', { name: 'Zoom in', exact: true }).click()
+  await expect(zoom).not.toHaveText(beforeZoom!)
+  await preview.getByRole('button', { name: 'Fit', exact: true }).click()
+  await expect(zoom).toHaveText(beforeZoom!)
   await page.screenshot({ path: test.info().outputPath('preview-without-footer-phone.png') })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })

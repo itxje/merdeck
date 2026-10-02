@@ -336,7 +336,7 @@ button:disabled { cursor: default; }
 .diagram-space { position: relative; flex-shrink: 0; }
 .diagram-graphic { position: absolute; left: 32px; top: 32px; transform-origin: top left; }
 .diagram-graphic svg { width: 100% !important; height: 100% !important; max-width: none !important; }
-.preview-controls { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 3px; align-items: center; border: 1px solid var(--border); padding: 4px; border-radius: var(--radius); background: var(--background); box-shadow: 0 4px 16px var(--overlay); }
+.preview-controls { position: absolute; bottom: 18px; left: 16px; display: flex; gap: 3px; align-items: center; border: 1px solid var(--border); padding: 4px; border-radius: var(--radius); background: var(--background); box-shadow: 0 4px 16px var(--overlay); }
 .preview-controls output { min-width: 45px; text-align: center; font: var(--text-xs) var(--font-mono); }
 .preview-controls button { font-size: var(--text-base); }
 .control-divider { height: 17px; width: 1px; background: var(--border); margin: 0 3px; }

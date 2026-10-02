@@ -210,3 +210,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes**](20261002-0721-remove-redundant-pane-notes.md) `P2`
 
 - [x] [**20261002-0822-right-document-contents Remove the document filename row and move contents right**](20261002-0822-right-document-contents.md) `P2`
+
+- [-] [**20261002-0903-preview-controls-bottom-left Anchor preview controls at the bottom left**](20261002-0903-preview-controls-bottom-left.md) `P2`
