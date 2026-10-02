@@ -1,14 +1,15 @@
 import type { Locator } from '@playwright/test'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
-import { browse, expect, login, test } from './support'
+import { browse, choose, expect, login, test } from './support'
 
 const root = process.env.MERDECK_SMOKE_ROOT
 if (!root)
   throw new Error('An explicit disposable sample root is required')
 
 const longName = 'project-diagram-with-a-continuous-filename-and-a-long-description.mmd'
-const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd', longName, 'project-release-sequence-with-a-deliberately-long-name.mermaid', '项目发布流程与构建环境的完整说明图.mmd']
+const longMermaidName = 'project-release-sequence-with-a-deliberately-long-name.mermaid'
+const names = ['a.mmd', 'flow-decisions.mmd', 'flow-decisions_zh.mmd', 'flow-recovery.mmd', 'flow-recovery_zh.mmd', 'flow-task.mmd', 'flow-task_zh.mmd', longName, longMermaidName, '项目发布流程与构建环境的完整说明图.mmd']
 const singleLineRow = 36
 const nameGapPixels = 4
 
@@ -85,6 +86,28 @@ test('explorer rows keep filenames on one line with visible extensions and full 
       await expect(explorer).toHaveCSS('width', `${width}px`)
       await requireSingleLineNames(listing, folder)
       await page.screenshot({ path: info.outputPath(`single-line-names-${width}.png`) })
+      if (width === 180) {
+        // System fonts differ across hosts; a wider font also exercises extension containment.
+        const font = await page.addStyleTag({ content: '.file-tree .tree-row { font-family: "Liberation Mono", monospace; }' })
+        await requireSingleLineNames(listing, folder)
+        const row = listing.locator(`.tree-row[title="${folder}/${longMermaidName}"]`)
+        await choose(page, `${folder}/${longMermaidName}`)
+        const source = page.getByLabel('Mermaid source', { exact: true })
+        await expect(source).toHaveValue('flowchart LR\n  A --> B\n')
+        await source.fill('flowchart LR\n  A --> B\n  C --> D\n')
+        await expect(row.locator('.dirty-dot')).toBeVisible()
+        expect((await row.locator('.dirty-dot').boundingBox())!.width).toBe(6)
+        await expect(row).toHaveAccessibleName(`${longMermaidName} Unsaved changes`)
+        const geometry = await nameGeometry(row)
+        expect(geometry.rowHeight).toBe(singleLineRow)
+        expect(geometry.extRight).toBeLessThanOrEqual(geometry.actionLeft)
+        await page.screenshot({ path: info.outputPath('single-line-names-wide-font-dirty.png') })
+        await source.fill('flowchart LR\n  A --> B\n')
+        await expect(row.locator('.dirty-dot')).toHaveCount(0)
+        await font.evaluate((element) => {
+          element.parentNode!.removeChild(element)
+        })
+      }
     }
     await listing.getByRole('button', { name: longName, exact: true }).click()
     await expect(page.getByLabel('Mermaid source', { exact: true })).toHaveValue('flowchart LR\n  A --> B\n')

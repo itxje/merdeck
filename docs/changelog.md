@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-02 11:24 [implemented]
+
+Compact only filename-row gaps and preserve the 6px unsaved marker without shrinking, keeping extensions clear of row actions at the supported minimum rail width. A wider-font reproducer first reports the exact hosted overlap, then all nine affected browser cases pass, including actual edit/reset of a long .mermaid filename. Both frozen installs, lint/types, all 622 frontend cases, build, whitespace checks, six inspected screenshots and correction review pass. The failed v0.19.33 tag stays unchanged and unpublished; exact corrected-candidate source/native and v0.19.34 publication remain pending. See [the task](task/20261002-1051-single-line-filenames.md).
+
+## 2026-10-02 11:15 [progress]
+
+Preserve the unpublished v0.19.33 tag at `15b6101`: both complete artifact browser suites caught extension/action overlap at the supported 180px rail under hosted font metrics, after passing 107 other cases each. Publication was skipped; native acceptance remains pending. Exact source acceptance passed. Extend the existing case for a wider font and dirty .mermaid row, reproduce the allocation failure, tighten row gaps and prepare a new v0.19.34 candidate. No acceptance checks, timeouts or audits are weakened. See [the task](task/20261002-1051-single-line-filenames.md).
+
 ## 2026-10-02 10:56 [implemented]
 
 Keep explorer filenames on one line on desktop and phones, with ordinary ellipsis for overflowing stems and visible extensions. Complete accessible names/path titles and file selection remain intact. The existing filename acceptance first fails on wrapping, then all nine related navigation/name/density/drawer cases and all 622 frontend cases pass. Frozen installs, lint/types, build, five inspected screenshots and implementation review pass. Exact source/native and v0.19.33 delivery checks remain pending. See [the task](task/20261002-1051-single-line-filenames.md).

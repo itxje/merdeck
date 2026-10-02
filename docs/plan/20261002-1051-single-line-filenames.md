@@ -28,3 +28,7 @@ Clipping without ellipsis would hide overflow without an indication. Continuing 
 ## Acceptance
 
 Focused browser red/green; default/minimum/wide desktop and phone screenshots; retained extension, title, accessible name and selection; relevant hierarchy, density and drawer checks; full frontend gates; review; exact source and normal tag native acceptance; verified public artifacts.
+
+## Acceptance-driven correction
+
+The first v0.19.33 native run failed extension/action containment at the supported 180px width with the hosted font, after each artifact suite passed 107 other cases. The unchanged failed tag remains unpublished. Tighten the shared row's fixed gaps so complete extensions and actions fit at that width; preserve icon sizes and row semantics. Add wider-font and dirty-file coverage to the same existing browser case, reproduce locally, and run full acceptance for a new v0.19.34 candidate. This corrects the approved one-line layout's containment requirement without widening product scope or changing verification policy.

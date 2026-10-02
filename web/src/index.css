@@ -233,7 +233,8 @@ button:disabled { cursor: default; }
 .tree-name-ext { flex: none; white-space: nowrap; }
 /* Row actions stay out of the way until the row is hovered or focused, or its menu is open. */
 .tree-item { position: relative; }
-.tree-item > .tree-row { padding-right: 30px; }
+/* Compact filename gaps leave room for extensions, file-state markers and the row action. */
+.tree-item > .tree-row { padding-right: 30px; gap: 2px; }
 .tree-item .row-actions { position: absolute; top: 50%; right: 3px; translate: 0 -50%; opacity: 0; color: var(--muted-foreground); }
 .tree-item:hover .row-actions, .tree-item:focus-within .row-actions, .tree-item .row-actions[data-popup-open] { opacity: 1; }
 .tree-item .row-actions:hover { color: var(--foreground); }
@@ -244,6 +245,7 @@ button:disabled { cursor: default; }
 .file-tree .tree-row[data-open] { color: var(--foreground); font-weight: 600; }
 .file-tree .tree-row:has(.folder-icon):not(:hover) { background: transparent; }
 .tree-row .block-number { font: var(--text-xs) var(--font-mono); color: var(--muted-foreground); }
+.tree-row .dirty-dot { flex: none; }
 /* Always present, even where invisible, so a row's name stays aligned with siblings whichever state they carry. */
 .unopened-dot { flex: none; width: 5px; height: 5px; border-radius: 50%; background: transparent; }
 .unopened-dot[data-shown] { background: var(--muted-foreground); opacity: .55; }
