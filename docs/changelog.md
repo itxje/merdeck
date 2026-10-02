@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-02 05:23 [implemented]
+
+Pause document/revision observers while current-workspace entry mutations are pending, preserving active-read cancellation and observation after success or failure. Two deterministic regressions first failed, then all 22 affected workspace cases passed, including existing save races. Match header glyphs to 20px and desktop copy height to 32px, retaining aligned 44px phone controls; four affected production browser cases pass at 320/360/390px with zero unexpected errors and confirmed cleanup. Inspected screenshots and implementation review pass; complete release checks remain pending. See [the delivery task](task/20261002-0321-release-brand-wordmark.md).
+
+## 2026-10-02 05:16 [approved]
+
+Approved the additional entry-mutation polling fix after two preserved local acceptance failures, and requested consistent sizes for the phone header controls. Reproduce overlapping reads before implementing observer suspension and retain active-read cancellation, resumed observation, save race behavior and filesystem validation. Match header action glyphs to the existing 20px copy/synchronization size with 44px phone touch targets. Complete v0.19.27 acceptance remains required. See [the approved proposal](plan/20261002-0321-release-brand-wordmark.md).
+
 ## 2026-10-02 03:42 [progress]
 
 The wordmark color is committed and pushed at `a4a92d5`, and exact hosted source acceptance passed. Two complete local checks failed the existing compiled-artifact file-operation browser audit on revision HTTP 403 and then HTTP 409; both bundled browser suites and all operation assertions passed, with fixture cleanup confirmed. Preserve both failures and leave v0.19.27 untagged and unpublished. Record taskist #62 and an additional proposal to reproduce and suspend document/revision observation during entry mutations, pending owner approval. No polling or repository validation code has changed. See [the delivery task](task/20261002-0321-release-brand-wordmark.md) and [the proposal](plan/20261002-0321-release-brand-wordmark.md).

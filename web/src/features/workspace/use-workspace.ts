@@ -1,7 +1,7 @@
 import type { CreateEntryRequest, DeleteEntryRequest, DiagramDocument, DocumentRevision, MoveEntryRequest, SaveDiagramRequest } from '../../../../src/shared/contracts'
 import type { Session } from './api'
 import type { DraftAction, Drafts } from './drafts'
-import { onlineManager, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { onlineManager, useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as React from 'react'
 import { protectedWork } from '@/features/update/reload-guard'
 import { HttpError } from '@/shared/lib/http'
@@ -99,13 +99,15 @@ export function useWorkspace(path: string, block: number, directory = '', agent:
   const listing = useDirectory(directory, epoch, !!session, session ? sessionCsrf(session) : undefined, interval)
   const restartDirectory = listing.restart
   const suspendDirectory = listing.suspend
+  const entryMutationKey = ['entries', epoch] as const
+  const changingEntries = useIsMutating({ mutationKey: entryMutationKey, exact: true }) > 0
   const revisionKey = ['revision', epoch, path] as const
-  const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : agent.active ? 500 : interval, retry: false })
+  const revision = useQuery({ queryKey: revisionKey, queryFn: ({ signal }) => api.revision(path, signal), enabled: !!session && !!path && !changingEntries, refetchInterval: query => query.state.error ? Math.min(interval * 4, 30000) : agent.active ? 500 : interval, retry: false })
   const observed = revision.data?.state === 'present' ? revision.data.version : ''
   const documentQuery = useQuery({
     queryKey: ['document', epoch, path, observed],
     queryFn: ({ signal }) => api.document(path, signal),
-    enabled: !!session && !!path && revision.data?.state === 'present',
+    enabled: !!session && !!path && !changingEntries && revision.data?.state === 'present',
     staleTime: Infinity,
     retry: false,
   })
@@ -227,6 +229,7 @@ export function useWorkspace(path: string, block: number, directory = '', agent:
     },
   })
   const entries = useMutation({
+    mutationKey: entryMutationKey,
     networkMode: 'always',
     onMutate: () => ({ generation: generationRef.current }),
     mutationFn: async (operation: EntryOperation) => {

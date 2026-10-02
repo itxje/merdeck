@@ -1,6 +1,6 @@
-import type { DiagramDocument } from '../../../../src/shared/contracts'
+import type { DiagramDocument, EntryChange } from '../../../../src/shared/contracts'
 import type { Session } from './api'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { focusManager, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
 import { HttpError } from '@/shared/lib/http'
@@ -67,4 +67,75 @@ it('reads an unopened file version before a mutation and refuses a failed prefli
   expect(remove).toHaveBeenCalledOnce()
   unmount()
   client.clear()
+})
+
+it.each(['success', 'failure'] as const)('cancels active reads and suspends observation until an entry mutation settles with %s', async (outcome) => {
+  vi.useFakeTimers()
+  const client = createQueryClient()
+  vi.spyOn(api, 'session').mockResolvedValue({ ...session, pollIntervalMs: 20 })
+  vi.spyOn(api, 'directory').mockResolvedValue({ path: '', parent: null, entries: [], revision: version, complete: true, nextCursor: null, expiresAt: null, stoppedBy: null, visited: 0, excluded: 0, limit: 100, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'directoryRevision').mockResolvedValue({ path: '', revision: version, maxPathDepth: 64, pollIntervalMs: 30000 })
+  vi.spyOn(api, 'closeDirectory').mockResolvedValue({ closed: true })
+  const revision = vi.spyOn(api, 'revision').mockImplementation(async path => ({ path, version, state: 'present' }))
+  const document = vi.spyOn(api, 'document').mockImplementation(async path => doc(path))
+  const refusal = new HttpError(409, 'conflict', 'The file changed.')
+  let finish = () => {}
+  let activeSignal!: AbortSignal
+  const move = vi.spyOn(api, 'moveEntry').mockImplementation(request => new Promise<EntryChange>((resolve, reject) => {
+    expect(activeSignal.aborted).toBe(true)
+    finish = () => outcome === 'success' ? resolve({ kind: request.kind, path: request.to }) : reject(refusal)
+  }))
+  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  const { result, rerender, unmount } = renderHook(({ path }) => useWorkspace(path, 0), { wrapper, initialProps: { path: 'docs/a.mmd' } })
+  let mutation: Promise<EntryChange | HttpError> | undefined
+  try {
+    await act(() => vi.advanceTimersByTimeAsync(50))
+    expect(result.current.file?.baseline.path).toBe('docs/a.mmd')
+    revision.mockImplementationOnce((_path, signal) => new Promise((_resolve, reject) => {
+      activeSignal = signal
+      signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true })
+    }))
+    await act(async () => {
+      void client.refetchQueries({ queryKey: ['revision'] })
+    })
+    expect(activeSignal.aborted).toBe(false)
+    await act(async () => {
+      mutation = result.current.entries.mutateAsync({ type: 'move', request: { kind: 'file', from: 'docs/a.mmd', to: 'guides/a.mmd', expectedVersion: version } }).catch(error => error)
+    })
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(move).toHaveBeenCalledOnce()
+    expect(result.current.entries.isPending).toBe(true)
+    const reads = { revisions: revision.mock.calls.length, documents: document.mock.calls.length }
+
+    // Intervals, focus and invalidation must not restart canceled reads during the move.
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    await act(async () => {
+      focusManager.setFocused(false)
+      focusManager.setFocused(true)
+      await client.invalidateQueries({ queryKey: ['revision'] })
+      await client.invalidateQueries({ queryKey: ['document'] })
+    })
+    rerender({ path: 'other.mmd' })
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    expect(revision).toHaveBeenCalledTimes(reads.revisions)
+    expect(document).toHaveBeenCalledTimes(reads.documents)
+
+    await act(async () => {
+      finish()
+      expect(await mutation).toEqual(outcome === 'success' ? { kind: 'file', path: 'guides/a.mmd' } : refusal)
+    })
+    await act(() => vi.advanceTimersByTimeAsync(50))
+    expect(result.current.entries.isPending).toBe(false)
+    expect(result.current.file?.baseline.path).toBe('other.mmd')
+    expect(revision.mock.calls.length).toBeGreaterThan(reads.revisions)
+    expect(document).toHaveBeenLastCalledWith('other.mmd', expect.any(AbortSignal))
+  }
+  finally {
+    finish()
+    await mutation
+    unmount()
+    client.clear()
+    focusManager.setFocused(undefined)
+    vi.useRealTimers()
+  }
 })

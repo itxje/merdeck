@@ -183,6 +183,7 @@ button:disabled { cursor: default; }
 .brand-name { color: var(--primary); font-size: var(--text-lg); font-weight: 650; letter-spacing: -.6px; }
 .brand-symbol { background: var(--primary); color: var(--primary-foreground); padding: 7px; width: 32px; height: 32px; border-radius: var(--radius-md); }
 .header-actions { gap: 8px; }
+.header-actions button > svg, .header-file > button > svg { width: 20px; height: 20px; }
 .header-actions .control-divider { height: 20px; }
 .theme-switch { gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
 /* The overflow menu stacks the same controls it replaces in the header, rather than a horizontal row. */
@@ -295,6 +296,7 @@ button:disabled { cursor: default; }
 .agent-attachment svg { flex: none; width: 12px; }
 .agent-attachment code { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-mono); }
 .header-file-copy { min-width: 0; flex: 1; display: flex; align-items: center; gap: 4px; }
+.header-path-copy { width: 32px; height: 32px; }
 .header-file-text { min-width: 0; }
 .header-path-status { color: var(--muted-foreground); font-size: var(--text-xs); white-space: nowrap; }
 .header-file-meta { min-width: 0; display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); color: var(--muted-foreground); }

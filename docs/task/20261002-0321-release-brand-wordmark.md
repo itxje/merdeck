@@ -11,7 +11,7 @@ Match the header Merdeck text to the logo's primary theme color. Verify actual l
 
 ## ActiveForm
 
-Matching the wordmark color and verifying release delivery.
+Verifying entry polling, consistent header sizes and release delivery.
 
 ## Dependencies
 
@@ -36,4 +36,12 @@ Both complete local acceptance attempts failed the existing compiled-artifact fi
 
 Read-only investigation found that entry mutations cancel current revision/document requests without disabling their polling observers for the duration of the operation. Repository moves create a temporary second link while enforcing file identity/version checks. The exact origin of the observed responses remains unproven. Taskist #62 records the follow-up and both failed results.
 
-The plan now contains a concrete additional concurrency proposal for approval, covering a deterministic reproducer, observer suspension during entry mutations, cancellation of active reads, resumption after success/failure and preservation of save/external-observation behavior. This exceeds the original stylesheet scope; no polling code or filesystem guard has been changed. v0.19.27 is not tagged or published. Delivery awaits the owner's scope decision.
+The owner approved the additional concurrency proposal on 2026-10-02 05:16 and requested matching sizes for the circled phone header controls. Continue the Full-tier delivery with a deterministic entry-polling reproducer, query observer suspension during entry mutations, cancellation of active reads and resumption after success/failure. Preserve save/external-observation behavior and filesystem guards. Match header action glyphs to the existing 20px copy/synchronization glyphs while retaining 44px phone touch targets and the Save label; verify the existing header browser case at 320/360/390px. Taskist #62 is in progress. v0.19.27 remains untagged and unpublished until final acceptance.
+
+## Approved extension: implementation and focused acceptance
+
+Two deterministic unit regressions first failed: while a held move was pending, revision reads increased from four to sixteen despite initial cancellation. The final implementation gives entry mutations a workspace-epoch key and uses their pending count to disable revision/document observers. Existing cancellation aborts active reads before the mutation API call; observers resume after successful or refused operations, including selection changes during the pending interval. Save mutation observation remains independent.
+
+All 22 workspace/entry cases pass, including the four existing committed-save race scenarios. Frontend lint and types pass; four pre-existing unrelated lint warnings remain. The existing header browser case first failed on 16px action glyphs, then passed with 20px glyphs, 32px desktop control heights and aligned 44px phone controls at 320/360/390px. Copy, Save, AI and overflow controls fit without overlap or page overflow; theme menu containment and explorer actions still pass. Both inspected phone screenshots show matching sizes. Four affected production browser cases, including normal file operations and storage refusal, pass with zero unexpected errors and confirmed cleanup. The intermediate alignment assertion was corrected to compare control centers with the synchronization indicator, rather than the header's border-box center.
+
+Local implementation review found zero actionable introduced findings. Backend filesystem validation and browser error allowances are unchanged. Focused evidence and review are under /home/alan/warehouse/merdeck-entry-polling/. Complete clean-source local/source/native acceptance and public release verification are still required.

@@ -1,5 +1,5 @@
 import type { Locator } from '@playwright/test'
-import { expect, login, test } from './support'
+import { choose, expect, login, test } from './support'
 
 async function size(locator: Locator) {
   const box = await locator.boundingBox()
@@ -49,8 +49,8 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   expect((await size(theme)).height).toBeCloseTo(32, 0)
   expect((await size(logout)).height).toBeCloseTo(32, 0)
   for (const icon of [light.locator('svg'), logout.locator('svg')]) {
-    expect((await size(icon)).width).toBeCloseTo(16, 0)
-    expect((await size(icon)).height).toBeCloseTo(16, 0)
+    expect((await size(icon)).width).toBeCloseTo(20, 0)
+    expect((await size(icon)).height).toBeCloseTo(20, 0)
   }
 
   await dark.hover()
@@ -88,6 +88,17 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
 
   // The status bar names the running version.
   await expect(page.locator('.status-bar')).toContainText(/Merdeck \S+/)
+  await choose(page, 'welcome.mmd')
+  const copy = header.getByRole('button', { name: 'Copy absolute path', exact: true })
+  const save = header.getByRole('button', { name: /^Save/ })
+  const sync = header.locator('.file-sync-status')
+  await expect(sync).toHaveAttribute('data-sync-state', 'synced')
+  for (const control of [copy, save, agent])
+    expect((await size(control)).height).toBeCloseTo(32, 0)
+  for (const icon of [copy.locator('svg'), sync.locator('.sync-arrows')]) {
+    expect((await size(icon)).width).toBeCloseTo(20, 0)
+    expect((await size(icon)).height).toBeCloseTo(20, 0)
+  }
   await page.mouse.move(1, 1)
 
   // Below the breakpoint the theme switch and log out move into one overflow menu, while the
@@ -102,6 +113,22 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
     await expect(agent).toBeVisible()
     await expect(agent).toHaveAttribute('aria-pressed', 'false')
     await expect.poll(async () => Math.round((await size(agent)).width)).toBeGreaterThanOrEqual(44)
+    const syncBounds = await size(sync)
+    let right = 0
+    for (const control of [copy, save, agent, menuTrigger]) {
+      const box = await size(control)
+      expect(box.height).toBeCloseTo(44, 0)
+      expect(box.width).toBeGreaterThanOrEqual(44)
+      expect(box.y + box.height / 2).toBeCloseTo(syncBounds.y + syncBounds.height / 2, 0)
+      expect(box.x).toBeGreaterThanOrEqual(right)
+      expect(box.x + box.width).toBeLessThanOrEqual(width)
+      right = box.x + box.width
+    }
+    for (const icon of [copy.locator('svg'), sync.locator('.sync-arrows'), agent.locator('svg'), menuTrigger.locator('svg')]) {
+      expect((await size(icon)).width).toBeCloseTo(20, 0)
+      expect((await size(icon)).height).toBeCloseTo(20, 0)
+    }
+    await page.screenshot({ path: info.outputPath(`header-controls-${width}.png`), animations: 'disabled' })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await menuTrigger.click()
     const menu = page.getByRole('menu')
