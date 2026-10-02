@@ -116,6 +116,7 @@ it('keeps directory prefixes out of the header and copies the exact absolute pat
   expect(await screen.findByRole('heading', { name: '流程 guide.md' })).toBeVisible()
   expect(screen.queryByRole('heading', { name: current.path })).toBeNull()
   const copy = await screen.findByRole('button', { name: 'Copy absolute path' })
+  expect(screen.getByRole('button', { name: /^Save/ })).toHaveTextContent(/^Save$/)
   await waitFor(() => expect(copy).toBeEnabled())
   await user.click(copy)
   expect(writeText).toHaveBeenCalledWith('/project root/docs/流程 guide.md')

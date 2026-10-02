@@ -8,6 +8,33 @@ async function size(locator: Locator) {
   return box
 }
 
+async function primaryTooltip(tooltip: Locator) {
+  await expect(tooltip).toBeVisible()
+  const colors = await tooltip.evaluate((element) => {
+    const popup = getComputedStyle(element)
+    const arrow = getComputedStyle(element.lastElementChild!)
+    const logo = getComputedStyle(document.querySelector('.brand-symbol')!)
+    const luminance = (color: string) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = color
+      context.fillRect(0, 0, 1, 1)
+      const pixel = context.getImageData(0, 0, 1, 1).data
+      const channel = (value: number) => value / 255 <= 0.04045 ? value / 255 / 12.92 : ((value / 255 + 0.055) / 1.055) ** 2.4
+      return 0.2126 * channel(pixel[0]!) + 0.7152 * channel(pixel[1]!) + 0.0722 * channel(pixel[2]!)
+    }
+    const ink = luminance(popup.color)
+    const paper = luminance(popup.backgroundColor)
+    return { background: popup.backgroundColor, foreground: popup.color, arrowBackground: arrow.backgroundColor, arrowFill: arrow.fill, primary: logo.backgroundColor, primaryForeground: logo.color, contrast: (Math.max(ink, paper) + 0.05) / (Math.min(ink, paper) + 0.05) }
+  })
+  expect(colors.background).toBe(colors.primary)
+  expect(colors.foreground).toBe(colors.primaryForeground)
+  expect(colors.arrowBackground).toBe(colors.primary)
+  expect(colors.arrowFill).toBe(colors.primary)
+  expect(colors.contrast).toBeGreaterThanOrEqual(4.5)
+}
+
 test('header keeps the brand, file controls and a complete phone theme menu, and the explorer exposes its actions', async ({ page }, info) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
@@ -54,11 +81,18 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   }
 
   await dark.hover()
-  await expect(page.locator('[data-slot="tooltip-content"]', { hasText: 'Dark theme' })).toBeVisible()
+  const themeTooltip = page.locator('[data-slot="tooltip-content"]', { hasText: 'Dark theme' })
+  await primaryTooltip(themeTooltip)
+  await page.screenshot({ path: info.outputPath('primary-tooltip-light.png'), animations: 'disabled' })
   await dark.click()
   await expect(page.locator('html')).toHaveClass('dark')
   await expect(dark).toHaveAttribute('aria-pressed', 'true')
   await expect(system).toHaveAttribute('aria-pressed', 'false')
+  await page.mouse.move(1, 1)
+  await expect(themeTooltip).toBeHidden()
+  await dark.hover()
+  await primaryTooltip(themeTooltip)
+  await page.screenshot({ path: info.outputPath('primary-tooltip-dark.png'), animations: 'disabled' })
   // Pressing the current preference keeps it.
   await dark.click()
   await expect(dark).toHaveAttribute('aria-pressed', 'true')
@@ -71,7 +105,7 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   await expect(light).toHaveAttribute('aria-pressed', 'true')
 
   await logout.hover()
-  await expect(page.locator('[data-slot="tooltip-content"]', { hasText: 'Log out' })).toBeVisible()
+  await primaryTooltip(page.locator('[data-slot="tooltip-content"]', { hasText: 'Log out' }))
 
   const explorer = page.getByRole('complementary', { name: 'Project files', exact: true })
   const search = explorer.getByRole('textbox', { name: 'Filter files', exact: true })
@@ -81,7 +115,7 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   await page.keyboard.press('Shift+Tab')
   await expect(explorer.getByRole('button', { name: 'Restart listing', exact: true })).toBeFocused()
   await refresh.hover()
-  await expect(page.locator('[data-slot="tooltip-content"]', { hasText: 'Refresh files' })).toBeVisible()
+  await primaryTooltip(page.locator('[data-slot="tooltip-content"]', { hasText: 'Refresh files' }))
   const request = page.waitForRequest(item => new URL(item.url()).pathname === '/api/diagrams/directory')
   await refresh.click()
   await request
@@ -91,6 +125,7 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   await choose(page, 'welcome.mmd')
   const copy = header.getByRole('button', { name: 'Copy absolute path', exact: true })
   const save = header.getByRole('button', { name: /^Save/ })
+  await expect(save).toHaveText('Save')
   const sync = header.locator('.file-sync-status')
   await expect(sync).toHaveAttribute('data-sync-state', 'synced')
   for (const control of [copy, save, agent])
@@ -99,6 +134,9 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
     expect((await size(icon)).width).toBeCloseTo(20, 0)
     expect((await size(icon)).height).toBeCloseTo(20, 0)
   }
+  await light.hover()
+  await primaryTooltip(page.locator('[data-slot="tooltip-content"]', { hasText: 'Light theme' }))
+  await page.screenshot({ path: info.outputPath('save-primary-tooltip.png'), animations: 'disabled' })
   await page.mouse.move(1, 1)
 
   // Below the breakpoint the theme switch and log out move into one overflow menu, while the

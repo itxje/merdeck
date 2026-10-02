@@ -311,7 +311,6 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
             <>
               <Button disabled={!canSave} aria-describedby={diagramContext ? contextId : undefined} onClick={doSave}>
                 {file.saving ? 'Saving…' : 'Save'}
-                <kbd>⌘ / Ctrl S</kbd>
               </Button>
               <span className="control-divider" aria-hidden="true" />
             </>

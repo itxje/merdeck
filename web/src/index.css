@@ -315,7 +315,6 @@ button:disabled { cursor: default; }
   .file-sync-status[data-sync-state="saving"] .sync-arrows { animation: none; }
 }
 .dirty-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); }
-.header-actions kbd { opacity: .6; font-size: var(--text-xs); margin-left: 12px; }
 .panes { flex: 1; min-height: 0; }
 .pane-slot { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .pane-slot > section { flex: 1; }
@@ -390,7 +389,7 @@ button:disabled { cursor: default; }
   .brand { gap: 8px; }
   /* The mark stays as the header's identity anchor; the text label yields its width to the file name. */
   .brand-name { display: none; }
-  .prototype-tag, .header-actions .theme-label, .header-actions kbd, .status-bar .desktop-only { display: none; }
+  .prototype-tag, .header-actions .theme-label, .status-bar .desktop-only { display: none; }
   .header-actions { gap: 2px; }
   .theme-switch button { width: 44px; height: 44px; }
   .tree-item > .tree-row { padding-right: 46px; }
@@ -600,7 +599,7 @@ button:disabled { cursor: default; }
 .diagram-space { margin: auto; }
 .render-scratch { position: fixed; left: -100000px; top: 0; width: 1600px; visibility: hidden; pointer-events: none; }
 @media (max-width: 700px) {
-  .header-file .desktop-only, .header-actions kbd, .pane-footer .desktop-only { display: none; }
+  .header-file .desktop-only, .pane-footer .desktop-only { display: none; }
   .header-file-meta { gap: 6px; font-size: var(--text-xs); }
   .header-path-copy { width: 44px; height: 44px; }
   .agent-pane.agent-unavailable { left: auto; right: 12px; bottom: 12px; height: auto; border: 0; }
