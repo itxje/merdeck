@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 03:23 [implemented]
+
+Match the header Merdeck wordmark to the logo and header icons using the shared primary theme variable. A disposable real-browser check first failed on the previous foreground color, then passed in light and dark modes with matching colors, text contrast 4.62/8.32, zero unexpected errors and confirmed cleanup. Both screenshots have been inspected; the minimal style review found no actionable issues. Complete local/source/native acceptance and v0.19.27 delivery remain pending. See [the delivery task](task/20261002-0321-release-brand-wordmark.md).
+
 ## 2026-10-01 20:06 [release]
 
 Published [v0.19.26](https://github.com/itxje/merdeck/releases/tag/v0.19.26) from `f0d517b`, removing the redundant preview heading, fitting every phone theme control and exposing New folder and Restart listing directly as explorer icons. Focused red/green, complete local/source/native checks, desktop/phone screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261001-1927-remove-preview-heading.md).
