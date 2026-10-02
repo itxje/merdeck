@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 05:38 [release]
+
+Published [v0.19.27](https://github.com/itxje/merdeck/releases/tag/v0.19.27) from `0cb26f6`, matching the Merdeck wordmark to the logo theme color, aligning header icon sizes and pausing revision/document observers during entry mutations. Deterministic polling regressions, actual light/dark color and contrast checks, complete local/source/native gates, screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0321-release-brand-wordmark.md).
+
 ## 2026-10-02 05:23 [implemented]
 
 Pause document/revision observers while current-workspace entry mutations are pending, preserving active-read cancellation and observation after success or failure. Two deterministic regressions first failed, then all 22 affected workspace cases passed, including existing save races. Match header glyphs to 20px and desktop copy height to 32px, retaining aligned 44px phone controls; four affected production browser cases pass at 320/360/390px with zero unexpected errors and confirmed cleanup. Inspected screenshots and implementation review pass; complete release checks remain pending. See [the delivery task](task/20261002-0321-release-brand-wordmark.md).

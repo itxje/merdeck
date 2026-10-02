@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 
 ## Usage
 
@@ -203,4 +203,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261001-1927-remove-preview-heading Remove the redundant preview heading**](20261001-1927-remove-preview-heading.md) `P2`
 
-- [-] [**20261002-0321-release-brand-wordmark Match the brand wordmark color and publish v0.19.27**](20261002-0321-release-brand-wordmark.md) `P2`
+- [x] [**20261002-0321-release-brand-wordmark Match the brand wordmark color and publish v0.19.27**](20261002-0321-release-brand-wordmark.md) `P2`

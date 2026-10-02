@@ -1,6 +1,6 @@
 # 20261002-0321-release-brand-wordmark Match the brand wordmark color and publish v0.19.27
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-02 03:21
 - **approvedAt**: 2026-10-02 05:16 (entry polling and header sizing extension; original color/publication scope approved at 03:21)
 - **relatedTask**: 20261002-0321-release-brand-wordmark
