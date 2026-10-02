@@ -1,6 +1,6 @@
 import { browse, expect, login, test } from './support'
 
-test('Markdown opens directly in the reader with no extra mode row on a phone', async ({ page }) => {
+test('Markdown opens directly in the reader with no extra mode row on a phone', async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await login(page)
   await browse(page, 'docs')
@@ -9,8 +9,9 @@ test('Markdown opens directly in the reader with no extra mode row on a phone', 
   await expect(article).toBeVisible()
   await expect(page.getByRole('tablist', { name: 'Markdown view' })).toHaveCount(0)
   const header = (await page.locator('.app-header').boundingBox())!
-  const toolbar = (await page.locator('.document-reader-toolbar').boundingBox())!
-  expect(toolbar.y).toBeCloseTo(header.y + header.height, 0)
-  expect((await article.boundingBox())!.y).toBeCloseTo(toolbar.y + toolbar.height, 0)
+  await expect(page.locator('.document-reader-toolbar')).toHaveCount(0)
+  await expect(page.locator('.document-reader').getByText('overview.md', { exact: true })).toHaveCount(0)
+  expect((await article.boundingBox())!.y).toBeCloseTo(header.y + header.height, 0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({ path: info.outputPath('phone-reader-without-contents.png') })
 })

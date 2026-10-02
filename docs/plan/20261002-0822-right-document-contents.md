@@ -28,3 +28,7 @@ Removing only the filename text would retain the unused full-width row. A perman
 ## Acceptance
 
 Focused red/green tests for filename absence, right-hand rail/drawer, reclaimed article height, spatial resize directions and retained navigation/scroll state; full frontend checks; inspected desktop/phone screenshots; implementation review; exact hosted source gate; normal tag native gate and verified public artifacts.
+
+## Delivery revision
+
+The initial v0.19.30 native run caught the old phone-mode browser assertion still waiting for the deleted filename toolbar. Correct that existing assertion to verify its removal and the raised article. Keep the production layout unchanged, preserve the failed annotated tag and reports, and deliver the checked correction with a new v0.19.31 tag. Re-run expanded local browser/frontend verification and exact source/native gates without reducing coverage or changing time limits.

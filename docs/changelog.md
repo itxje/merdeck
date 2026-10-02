@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 08:39 [implemented]
+
+Update the existing phone reader assertion to require no repeated filename toolbar and an article directly beneath the application header. Both v0.19.30 artifact suites caught the obsolete assertion after passing 107 cases each; its failed tag and evidence remain unchanged and unpublished. The production layout is unchanged by this test correction. All 12 affected production browser cases, all 622 frontend cases, frozen installs, lint/types, build, the no-contents phone screenshot and correction review pass. Exact new-candidate source/native and v0.19.31 delivery checks remain pending. See [the task](task/20261002-0822-right-document-contents.md).
+
 ## 2026-10-02 08:22 [implemented]
 
 Remove the repeated document filename row, lift the article and move Markdown/HTML contents to a resizable right column. Align drag and keyboard resize directions, preserve scroll/width state, and open phone contents from the right with a compact trigger. Focused red/green, 43 unit cases, 11 production browser cases, all 622 frontend cases, frozen installs, lint/types, build, screenshot inspection and implementation review pass. Canonical source/native acceptance and v0.19.30 delivery remain pending. See [the task](task/20261002-0822-right-document-contents.md).
