@@ -431,13 +431,6 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
           Fit
         </Button>
       </div>
-      <div className="pane-footer">
-        <span>{title}</span>
-        <span>
-          Drag to pan, scroll to zoom
-          {labelEditing && <span className="desktop-only">, double-click a node to edit</span>}
-        </span>
-      </div>
     </section>
   )
 }

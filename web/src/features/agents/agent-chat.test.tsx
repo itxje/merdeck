@@ -437,8 +437,9 @@ it('reports a retrying stream and settles the panel when the stream is dropped f
   expect(await screen.findByText('Reconnecting…')).toBeVisible()
   // The service drops an expired conversation, so the retry cannot succeed and the panel must settle.
   source.fail(FakeEventSource.CLOSED)
-  expect(await screen.findByText('Direct local CLI session')).toBeVisible()
   await waitFor(() => expect(screen.getByLabelText('Model')).toBeEnabled())
+  expect(screen.queryByText('Direct local CLI session')).toBeNull()
+  expect(screen.queryByText('Reconnecting…')).toBeNull()
   client.clear()
 })
 

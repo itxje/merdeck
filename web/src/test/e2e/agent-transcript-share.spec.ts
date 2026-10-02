@@ -56,6 +56,8 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport)
     await page.goto(url!)
     await openPanel(page)
+    await expect(page.getByText('Direct local CLI session', { exact: true })).toHaveCount(0)
+    await page.screenshot({ path: test.info().outputPath('editor-without-idle-note.png') })
     const measured = await geometry(page)
 
     // Control: two facts known independently of anything the panel computes — the phone header is

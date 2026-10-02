@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 07:26 [implemented]
+
+Remove the idle local-session subtitle from the file editor and the entire preview footer, allowing the canvas to use its height. Keep actionable editing/reconnection status and accessible diagram naming, and adjust the toolbar offsets to the new canvas edge. Existing unit/browser assertions first failed; after updating the obsolete double-click hint assertion, 21 focused cases, six affected production browser cases and all 622 frontend tests pass. Frozen installs, lint/types, build, inspected desktop/phone screenshots and implementation review pass. Canonical source/native acceptance and v0.19.29 delivery remain pending. See [the task](task/20261002-0721-remove-redundant-pane-notes.md).
+
 ## 2026-10-02 07:00 [release]
 
 Published [v0.19.28](https://github.com/itxje/merdeck/releases/tag/v0.19.28) from `01ff817`, using primary colors for control tooltips and their arrows and removing the Save shortcut hint. Focused red/green, actual light/dark color and contrast checks, complete canonical source/native gates, screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0625-theme-control-tooltips.md).

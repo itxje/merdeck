@@ -31,6 +31,8 @@ test('an agent edit changes exact bytes and rerenders live', async ({ page }) =>
     await expect(engine).toHaveValue('codex')
     await expect(model).toHaveValue('browser-model')
     await expect(model.getByRole('option', { name: 'Browser model', exact: true })).toHaveCount(1)
+    await expect(editor.getByText('Direct local CLI session', { exact: true })).toHaveCount(0)
+    await page.screenshot({ path: test.info().outputPath('editor-without-idle-note-desktop.png') })
     await editor.getByLabel('Agent instruction', { exact: true }).fill('Update the diagram through the configured provider.')
     await expect(editor.getByRole('button', { name: 'Send', exact: true })).toBeDisabled()
     await expect(editor.getByText('Save or discard browser drafts before starting an agent turn.', { exact: true })).toBeVisible()

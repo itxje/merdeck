@@ -131,3 +131,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261002-0321-release-brand-wordmark Match the brand wordmark color and publish v0.19.27**](20261002-0321-release-brand-wordmark.md) `2026-10-02`
 
 - [x] [**20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label**](20261002-0625-theme-control-tooltips.md) `2026-10-02`
+
+- [-] [**20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes**](20261002-0721-remove-redundant-pane-notes.md) `2026-10-02`

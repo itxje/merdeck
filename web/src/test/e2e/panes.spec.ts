@@ -3,6 +3,18 @@ import { choose, expect, live, login, test } from './support'
 
 const width = async (locator: Locator) => (await locator.boundingBox())!.width
 
+async function fullCanvas(preview: Locator) {
+  await expect(preview.locator('.pane-footer')).toHaveCount(0)
+  const pane = (await preview.boundingBox())!
+  const canvas = (await preview.getByRole('region', { name: 'Scrollable diagram canvas' }).boundingBox())!
+  const controls = (await preview.locator('.preview-controls').boundingBox())!
+  expect(canvas.y + canvas.height).toBeCloseTo(pane.y + pane.height, 0)
+  expect(controls.x).toBeGreaterThanOrEqual(canvas.x)
+  expect(controls.x + controls.width).toBeLessThanOrEqual(canvas.x + canvas.width)
+  expect(controls.y + controls.height).toBeLessThan(canvas.y + canvas.height)
+  await expect(preview.getByRole('img', { name: 'Diagram', exact: true })).toBeVisible()
+}
+
 test('choose opens a newly selected file from a collapsed source pane', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await login(page, true)
@@ -25,6 +37,7 @@ test('source and preview panes resize, collapse and keep their layout', async ({
   const preview = page.getByRole('region', { name: 'Diagram preview', exact: true })
   const handle = page.getByRole('separator', { name: 'Resize source and preview', exact: true })
 
+  await fullCanvas(preview)
   await expect(source).toBeHidden()
   const showSource = page.getByRole('button', { name: 'Show source', exact: true })
   await expect(showSource).toBeVisible()
@@ -76,5 +89,7 @@ test('source and preview panes resize, collapse and keep their layout', async ({
   await expect(editor).toHaveValue(draft)
   await page.getByRole('tab', { name: 'Preview', exact: true }).click()
   await live(page)
+  await fullCanvas(preview)
+  await page.screenshot({ path: test.info().outputPath('preview-without-footer-phone.png') })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })

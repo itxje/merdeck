@@ -238,7 +238,7 @@ export function AgentChat({ session, open, blockedReason, activePath, onClose, o
           <Bot aria-hidden="true" />
           <div>
             <strong>AI file editor</strong>
-            <span>{chat.active ? 'Editing project files…' : chat.connection === 'reconnecting' ? 'Reconnecting…' : 'Direct local CLI session'}</span>
+            {(chat.active || chat.connection === 'reconnecting') && <span>{chat.active ? 'Editing project files…' : 'Reconnecting…'}</span>}
           </div>
         </div>
         <div className="agent-header-actions">
