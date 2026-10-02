@@ -1,6 +1,6 @@
 # 20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-02 06:25
 - **approvedAt**: 2026-10-02 06:25 (explicit tooltip-color and Save-label request; established release authorization)
 - **relatedTask**: 20261002-0625-theme-control-tooltips
@@ -24,3 +24,9 @@ Existing tooltip primitive, workspace Save markup, related stylesheet selectors,
 ## Alternatives
 
 Hardcoded tooltip teal would lose the theme contract. Changing popup or dialog surfaces globally would exceed the screenshot's control-tooltip request.
+
+## Acceptance
+
+Implemented and published v0.19.28 after focused red/green, inspected light/dark/phone screenshots, implementation review, complete clean canonical source/native gates and public artifact verification. [The task](../task/20261002-0625-theme-control-tooltips.md) records the checked candidate and run identities.
+
+The local ARM64 compiled browser run hit its unchanged execution budget and remains failed in preserved evidence, tracked as taskist #64. Complete normal pre-tag Linux x64/ext4 acceptance passed on the same clean candidate before tagging; the tag workflow independently checked and published its own artifact. Application behavior and verification assertions were not changed to address the local timeout.

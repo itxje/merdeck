@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 07:00 [release]
+
+Published [v0.19.28](https://github.com/itxje/merdeck/releases/tag/v0.19.28) from `01ff817`, using primary colors for control tooltips and their arrows and removing the Save shortcut hint. Focused red/green, actual light/dark color and contrast checks, complete canonical source/native gates, screenshot inspection and implementation review pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0625-theme-control-tooltips.md).
+
 ## 2026-10-02 06:29 [implemented]
 
 Use primary theme colors for shared control tooltips and their arrows, with matching foreground text, and remove the Save shortcut hint and obsolete header-only CSS. Existing unit/browser assertions first failed, then 19 affected frontend cases, lint/types and both affected production browser cases passed. Actual light/dark popup and arrow colors match the theme, with at least 4.5:1 text contrast; desktop/phone screenshots and implementation review pass. Complete acceptance and v0.19.28 delivery remain pending. See [the delivery task](task/20261002-0625-theme-control-tooltips.md).

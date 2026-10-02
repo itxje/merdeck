@@ -205,4 +205,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261002-0321-release-brand-wordmark Match the brand wordmark color and publish v0.19.27**](20261002-0321-release-brand-wordmark.md) `P2`
 
-- [-] [**20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label**](20261002-0625-theme-control-tooltips.md) `P2`
+- [x] [**20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label**](20261002-0625-theme-control-tooltips.md) `P2`
