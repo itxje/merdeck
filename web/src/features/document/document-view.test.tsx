@@ -495,6 +495,7 @@ it('omits the contents list from a document with fewer than two listed headings'
 
 it('offers a contents toggle without removing the Markdown article or its scroll position', async () => {
   render(<DocumentView path="guide.md" text={'# Guide\n\n## Install\n\nSteps.'} blocks={[]} sources={[]} selected={0} onOpenFile={vi.fn()} />)
+  expect(screen.queryByText('guide.md', { exact: true })).toBeNull()
   const article = screen.getByRole('article', { name: 'Markdown document' })
   const resetScroll = vi.fn((options: ScrollToOptions) => {
     article.scrollTop = options.top ?? article.scrollTop

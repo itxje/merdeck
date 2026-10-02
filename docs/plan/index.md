@@ -133,3 +133,5 @@ Each plan links to a detail file. Update only existing markers; append new plans
 - [x] [**20261002-0625-theme-control-tooltips Use primary tooltips and simplify the Save label**](20261002-0625-theme-control-tooltips.md) `2026-10-02`
 
 - [x] [**20261002-0721-remove-redundant-pane-notes Remove redundant editor and preview notes**](20261002-0721-remove-redundant-pane-notes.md) `2026-10-02`
+
+- [-] [**20261002-0822-right-document-contents Remove the document filename row and move contents right**](20261002-0822-right-document-contents.md) `2026-10-02`

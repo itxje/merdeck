@@ -187,6 +187,7 @@ it('lifts the contents list beside one body column and frames tables for scrolli
   } } as MessageEvent)
   const article = await screen.findByRole('article', { name: 'HTML document' })
   // Contents scroll independently outside the article; all other nodes share its body.
+  expect(screen.queryByText('page.html', { exact: true })).toBeNull()
   expect([...article.children].map(child => child.tagName.toLowerCase())).toEqual(['div'])
   expect(article.contains(screen.getByRole('navigation'))).toBe(false)
   expect(screen.getByRole('navigation')).toHaveAttribute('id', 'toc')

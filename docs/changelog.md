@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 08:22 [implemented]
+
+Remove the repeated document filename row, lift the article and move Markdown/HTML contents to a resizable right column. Align drag and keyboard resize directions, preserve scroll/width state, and open phone contents from the right with a compact trigger. Focused red/green, 43 unit cases, 11 production browser cases, all 622 frontend cases, frozen installs, lint/types, build, screenshot inspection and implementation review pass. Canonical source/native acceptance and v0.19.30 delivery remain pending. See [the task](task/20261002-0822-right-document-contents.md).
+
 ## 2026-10-02 07:40 [release]
 
 Published [v0.19.29](https://github.com/itxje/merdeck/releases/tag/v0.19.29) from `a26dee0`, removing the idle file-editor session subtitle and the diagram footer so the canvas uses its height. Focused red/green, full frontend gates, screenshot inspection, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0721-remove-redundant-pane-notes.md).

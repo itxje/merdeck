@@ -115,7 +115,7 @@ export function DocumentReader({ path, contents, contentsTargets = emptyTargets,
     const origin = event.clientX
     const start = contentsWidth
     handle.setPointerCapture(event.pointerId)
-    const move = (moved: PointerEvent) => resizeContents(start + moved.clientX - origin)
+    const move = (moved: PointerEvent) => resizeContents(start + origin - moved.clientX)
     const stop = () => {
       handle.removeEventListener('pointermove', move)
       handle.removeEventListener('pointerup', stop)
@@ -127,7 +127,6 @@ export function DocumentReader({ path, contents, contentsTargets = emptyTargets,
   }, [contentsWidth, resizeContents])
   const hasContents = !!contents
   const railVisible = hasContents && !narrow && !collapsed
-  const label = path.split('/').pop() ?? path
   return (
     <Dialog
       open={narrow && drawerOpen}
@@ -137,23 +136,24 @@ export function DocumentReader({ path, contents, contentsTargets = emptyTargets,
           revealCurrentContents()
       }}
     >
-      <div ref={frameRef} className="document-reader" data-contents={railVisible ? 'visible' : 'hidden'} style={{ '--contents-width': `${contentsWidth}px` } as React.CSSProperties}>
-        <div className="document-reader-toolbar">
-          {hasContents && (narrow
-            ? (
-                <DialogTrigger render={<Button variant="ghost" className="document-contents-toggle" aria-label="Open contents" />}>
-                  <MenuIcon aria-hidden="true" />
-                  <span>Contents</span>
-                </DialogTrigger>
-              )
-            : (
-                <Button variant="ghost" className="document-contents-toggle" aria-label="Toggle contents" aria-expanded={!collapsed} aria-controls={contentsId} onClick={() => setCollapsed(value => !value)}>
-                  <MenuIcon aria-hidden="true" />
-                  <span>Contents</span>
-                </Button>
-              ))}
-          <span className="document-reader-title" title={path}>{label}</span>
-        </div>
+      <div ref={frameRef} className="document-reader" data-contents={hasContents ? railVisible ? 'visible' : 'hidden' : 'none'} style={{ '--contents-width': `${contentsWidth}px` } as React.CSSProperties}>
+        {hasContents && (
+          <div className="document-reader-toolbar">
+            {narrow
+              ? (
+                  <DialogTrigger render={<Button variant="ghost" className="document-contents-toggle" aria-label="Open contents" />}>
+                    <MenuIcon aria-hidden="true" />
+                    <span>Contents</span>
+                  </DialogTrigger>
+                )
+              : (
+                  <Button variant="ghost" className="document-contents-toggle" aria-label="Toggle contents" aria-expanded={!collapsed} aria-controls={contentsId} onClick={() => setCollapsed(value => !value)}>
+                    <MenuIcon aria-hidden="true" />
+                    <span>Contents</span>
+                  </Button>
+                )}
+          </div>
+        )}
         {railVisible && <div id={contentsId} className="document-reader-contents">{contents?.(currentSection)}</div>}
         {railVisible && (
           <div
@@ -169,7 +169,7 @@ export function DocumentReader({ path, contents, contentsTargets = emptyTargets,
             onPointerDown={dragContents}
             onDoubleClick={() => resizeContents(defaultContentsWidth)}
             onKeyDown={(event) => {
-              const step = event.key === 'ArrowLeft' ? -16 : event.key === 'ArrowRight' ? 16 : 0
+              const step = event.key === 'ArrowLeft' ? 16 : event.key === 'ArrowRight' ? -16 : 0
               if (!step)
                 return
               event.preventDefault()
