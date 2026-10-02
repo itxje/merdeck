@@ -1,6 +1,6 @@
 # 20261002-1051-single-line-filenames Keep explorer filenames on one line
 
-- **status**: in_progress
+- **status**: completed
 - **createdAt**: 2026-10-02 10:51
 - **approvedAt**: 2026-10-02 10:51 (explicit single-line request and established release authorization)
 - **relatedTask**: 20261002-1051-single-line-filenames
@@ -32,3 +32,7 @@ Focused browser red/green; default/minimum/wide desktop and phone screenshots; r
 ## Acceptance-driven correction
 
 The first v0.19.33 native run failed extension/action containment at the supported 180px width with the hosted font, after each artifact suite passed 107 other cases. The unchanged failed tag remains unpublished. Tighten the shared row's fixed gaps so complete extensions and actions fit at that width; preserve icon sizes and row semantics. Add wider-font and dirty-file coverage to the same existing browser case, reproduce locally, and run full acceptance for a new v0.19.34 candidate. This corrects the approved one-line layout's containment requirement without widening product scope or changing verification policy.
+
+## Acceptance result
+
+The approved one-line CSS and existing acceptance changes are implemented at f6fc6dece51d16762c6fa143c9d03d6de66e332a. Focused red/green, all nine affected browser cases, all 622 frontend cases, frozen installs, lint/types, build, whitespace checks, six inspected filename screenshots and implementation review pass. [Exact source verification](https://github.com/itxje/merdeck/actions/runs/37000875455) and [complete normal tag-native acceptance and same-run publication](https://github.com/itxje/merdeck/actions/runs/37001287855) pass on Linux x64/ext4 with distinct refusal storage. Public v0.19.34 assets, digests, publisher provenance and bundle identity are verified. Full evidence lives in [the task](../task/20261002-1051-single-line-filenames.md). Taskist #51 remains open for existing minimum-width stem allocation; no changes to parsing, markup, file operations or verification policy were required.

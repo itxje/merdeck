@@ -136,4 +136,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 
 - [x] [**20261002-0822-right-document-contents Remove the document filename row and move contents right**](20261002-0822-right-document-contents.md) `2026-10-02`
 
-- [-] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `2026-10-02`
+- [x] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `2026-10-02`

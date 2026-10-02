@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 11:37 [release]
+
+Published [v0.19.34](https://github.com/itxje/merdeck/releases/tag/v0.19.34) from `f6fc6de`, keeping explorer filenames on one line on desktop and phones with ellipsized stems, visible extensions and complete accessible names/path titles. Focused red/green, nine affected browser cases, full frontend gates, six inspected screenshots, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-1051-single-line-filenames.md).
+
 ## 2026-10-02 11:24 [implemented]
 
 Compact only filename-row gaps and preserve the 6px unsaved marker without shrinking, keeping extensions clear of row actions at the supported minimum rail width. A wider-font reproducer first reports the exact hosted overlap, then all nine affected browser cases pass, including actual edit/reset of a long .mermaid filename. Both frozen installs, lint/types, all 622 frontend cases, build, whitespace checks, six inspected screenshots and correction review pass. The failed v0.19.33 tag stays unchanged and unpublished; exact corrected-candidate source/native and v0.19.34 publication remain pending. See [the task](task/20261002-1051-single-line-filenames.md).

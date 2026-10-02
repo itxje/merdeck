@@ -213,4 +213,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261002-0903-preview-controls-bottom-left Anchor preview controls at the bottom left**](20261002-0903-preview-controls-bottom-left.md) `P2`
 
-- [-] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `P2`
+- [x] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `P2`

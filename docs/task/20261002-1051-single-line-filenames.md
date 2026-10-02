@@ -1,6 +1,6 @@
 # 20261002-1051-single-line-filenames Keep explorer filenames on one line
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: filename-line/session-20261002-1051
 - **createdAt**: 2026-10-02 10:51
@@ -41,3 +41,19 @@ The same supported 180px layout needs less fixed inter-item spacing to fit wider
 An explicit Liberation Mono font reproduces the exact hosted failure locally: extension endpoint 147.21875px, action start 142px. The shared filename-row gaps are now 2px, scoped to .tree-item rows so diagram-list spacing remains unchanged. Unsaved markers use non-shrinking 6px boxes. Stem ellipsis, visible extensions, full labels/path titles, icon size, row height, file actions and actual selection/editing remain intact.
 
 The focused allocation reproducer fails once before CSS changes (eight other cases pass). Final frozen installs, lint/types, all 622 frontend cases with unchanged coverage, build and whitespace checks pass. All nine final browser cases pass with zero unexpected errors and confirmed cleanup, including actual wider-font selection/edit/reset and the preserved 6px dirty marker. Six final filename screenshots in tmp/e2e-m7qbEH/ have been inspected; implementation review has zero actionable introduced findings. Original and probe evidence remains under /home/alan/warehouse/merdeck-filename-line/. Corrected exact source/native and v0.19.34 public delivery remain pending.
+
+## Complete preparation and delivery
+
+Implementation f6fc6dece51d16762c6fa143c9d03d6de66e332a passed both frozen installs, frontend lint/types, all 622 frontend cases with coverage, build and whitespace checks. The initial multiline failure and a reproduced wider-font extension/action overlap preceded the CSS changes; all nine final affected browser cases pass. Desktop 180/232/440px and phone 320/390px checks confirm single-line geometry, ordinary ellipsis, visible extensions, action containment including a wider-font dirty .mermaid row with a preserved 6px marker, complete accessible names/path titles and actual file selection. Every case reports zero unexpected errors and confirmed service/fixture cleanup. All six filename screenshots have been inspected. Implementation review has zero actionable introduced findings. Local evidence is under /home/alan/warehouse/merdeck-filename-line/ and tmp/e2e-m7qbEH/.
+
+[Exact source verification](https://github.com/itxje/merdeck/actions/runs/37000875455) passed on the clean candidate with Linux x64/ext4, separate tmpfs refusal storage and physical source/bundle/compiled adapters verified in downloaded reports.
+
+The immutable annotated v0.19.34 tag resolves to f6fc6dece51d16762c6fa143c9d03d6de66e332a. [The tag workflow](https://github.com/itxje/merdeck/actions/runs/37001287855) passed the complete normal Linux x64/ext4 check:ci --native gate and same-run publication on attempt 1. Downloaded reports verify clean identity, matching held-descriptor ext4 provenance (0xef53), distinct tmpfs refusal storage (0x1021994), all twenty raw storage controls, file/HTTP checks and physical source/bundle/compiled adapters with cleanup. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each, in 4.4m and 4.5m. Native acceptance is explicitly passed.
+
+The publisher downloaded checked artifact 11223933988 from the same run and commit, with verified artifact digest sha256:173b032061c955da3538ff9f0ca6ed90787ca1ef4ca6a1532522f93111925fb3.
+
+[v0.19.34](https://github.com/itxje/merdeck/releases/tag/v0.19.34) is published. Both public attachments match GitHub digests and publisher provenance; SHA256SUMS validates the archive. The 97-file bundle reports version 0.19.34, tag v0.19.34, commit f6fc6dece51d16762c6fa143c9d03d6de66e332a, bundle target and Bun 1.4.2. Archive SHA-256: ef3cadaf5c47aaac023c0ebfd04d67fcc1d7b9fc81bcb5b6c7aedd56a215d98b.
+
+Release notes describe single-line filenames and the documented runtime/platform requirements, retaining the publisher marker and both asset identities. Release evidence is under /home/alan/warehouse/merdeck-release-v0.19.34/. Existing taskist #51 remains open for minimum-width stem readability; wrapping and extension/action overlap are removed, while narrow stems can still be truncated. Existing #61 (generated support wording), #64 (local ARM64 compiled-browser budget) and #65 (narrow source heading) remain deferred outside this change.
+
+- complete: Single-line filenames and minimum-width extension/action containment verified; v0.19.34 is published after complete source/native acceptance and public asset checks. The failed v0.19.33 tag and evidence remain unchanged.
