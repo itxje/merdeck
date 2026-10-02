@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 03:42 [progress]
+
+The wordmark color is committed and pushed at `a4a92d5`, and exact hosted source acceptance passed. Two complete local checks failed the existing compiled-artifact file-operation browser audit on revision HTTP 403 and then HTTP 409; both bundled browser suites and all operation assertions passed, with fixture cleanup confirmed. Preserve both failures and leave v0.19.27 untagged and unpublished. Record taskist #62 and an additional proposal to reproduce and suspend document/revision observation during entry mutations, pending owner approval. No polling or repository validation code has changed. See [the delivery task](task/20261002-0321-release-brand-wordmark.md) and [the proposal](plan/20261002-0321-release-brand-wordmark.md).
+
 ## 2026-10-02 03:23 [implemented]
 
 Match the header Merdeck wordmark to the logo and header icons using the shared primary theme variable. A disposable real-browser check first failed on the previous foreground color, then passed in light and dark modes with matching colors, text contrast 4.62/8.32, zero unexpected errors and confirmed cleanup. Both screenshots have been inspected; the minimal style review found no actionable issues. Complete local/source/native acceptance and v0.19.27 delivery remain pending. See [the delivery task](task/20261002-0321-release-brand-wordmark.md).
