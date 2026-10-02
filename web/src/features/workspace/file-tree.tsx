@@ -111,7 +111,7 @@ function byName(a: { kind: string, path: string }, b: { kind: string, path: stri
   return names.compare(a.path.slice(a.path.lastIndexOf('/') + 1), b.path.slice(b.path.lastIndexOf('/') + 1)) || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
 }
 
-// The extension comes from the last path segment, so a search result's slashes stay part of the wrapping stem.
+// The extension comes from the last path segment, so a search result's slashes stay part of the stem.
 function splitName(value: string): { stem: string, extension: string } {
   const base = value.slice(value.lastIndexOf('/') + 1)
   const dot = base.lastIndexOf('.')
@@ -121,7 +121,7 @@ function splitName(value: string): { stem: string, extension: string } {
   return { stem: value.slice(0, value.length - extension.length), extension }
 }
 
-// A row name wraps by its stem; the extension is a held, non-breaking item on the row's first line.
+// A row name stays on one line with an ellipsizing stem and a non-breaking extension.
 // The stem and extension are separate flex items for layout, so the wrapper carries an explicit
 // aria-label: without it, the browser's accessible name joins the two boxes with an inserted space.
 function RowName({ value }: { value: string }) {

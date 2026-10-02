@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 10:56 [implemented]
+
+Keep explorer filenames on one line on desktop and phones, with ordinary ellipsis for overflowing stems and visible extensions. Complete accessible names/path titles and file selection remain intact. The existing filename acceptance first fails on wrapping, then all nine related navigation/name/density/drawer cases and all 622 frontend cases pass. Frozen installs, lint/types, build, five inspected screenshots and implementation review pass. Exact source/native and v0.19.33 delivery checks remain pending. See [the task](task/20261002-1051-single-line-filenames.md).
+
 ## 2026-10-02 09:18 [release]
 
 Published [v0.19.32](https://github.com/itxje/merdeck/releases/tag/v0.19.32) from `94377f3`, anchoring the diagram zoom/Fit toolbar at the canvas bottom left on desktop and phones. Focused red/green, full frontend gates, pane resize and actual zoom/Fit checks, inspected screenshots, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0903-preview-controls-bottom-left.md).

@@ -102,7 +102,7 @@ it('marks an unopened file with a decorative dot before its name, leaving the ac
   unmount()
 })
 
-it('renders a file name as a wrapping stem and a held, non-breaking extension, and keeps the full path in the row title', () => {
+it('renders a file name with a separate stem and extension, and keeps the full path in the row title', () => {
   const { unmount } = renderTree('all')
   const row = screen.getByRole('button', { name: 'welcome.mmd' })
   expect(row).toHaveAttribute('title', 'welcome.mmd')
