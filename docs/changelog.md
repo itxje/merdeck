@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-02 08:53 [release]
+
+Published [v0.19.31](https://github.com/itxje/merdeck/releases/tag/v0.19.31) from `919a40d`, removing the repeated document filename row and lifting the reading body. Markdown/HTML contents now occupy a resizable right column, with spatially matching drag/keys and a right-side phone drawer. Focused red/green, full frontend gates, screenshot inspection, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-0822-right-document-contents.md).
+
 ## 2026-10-02 08:39 [implemented]
 
 Update the existing phone reader assertion to require no repeated filename toolbar and an article directly beneath the application header. Both v0.19.30 artifact suites caught the obsolete assertion after passing 107 cases each; its failed tag and evidence remain unchanged and unpublished. The production layout is unchanged by this test correction. All 12 affected production browser cases, all 622 frontend cases, frozen installs, lint/types, build, the no-contents phone screenshot and correction review pass. Exact new-candidate source/native and v0.19.31 delivery checks remain pending. See [the task](task/20261002-0822-right-document-contents.md).

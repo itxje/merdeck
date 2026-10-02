@@ -1,6 +1,6 @@
 # 20261002-0822-right-document-contents Remove the document filename row and move contents right
 
-- **status**: in_progress
+- **status**: completed
 - **priority**: P2
 - **owner**: reader-right/session-20261002-0822
 - **createdAt**: 2026-10-02 08:19
@@ -37,3 +37,19 @@ Correct the existing phone assertion to require no document toolbar/filename and
 ## Corrected local preparation
 
 All 12 expanded production browser cases pass with zero unexpected errors and confirmed cleanup. The inspected no-contents phone screenshot in tmp/e2e-8PESu1/ shows the article directly below the application header, with no repeated filename or contents toolbar. Both frozen installs, frontend lint/types, all 622 frontend cases with coverage, build and whitespace checks pass after the test correction. The production layout is unchanged, and correction review has zero actionable introduced findings. Exact new-candidate source/native and v0.19.31 public delivery checks remain pending.
+
+## Complete preparation and delivery
+
+Implementation 919a40d705329b135b3bbeed6f20ed770da28429 passed both local frozen installs, frontend lint/types, all 622 frontend cases with coverage, production build and whitespace checks. All 43 focused unit cases and 12 affected real-browser cases pass after initial failures on the repeated filename. The initial formatting-only frontend failure and the failed v0.19.30 native gate remain preserved. The old phone-mode test still expected the removed filename toolbar; its corrected assertion now requires no toolbar and places the article directly beneath the application header. The production reader implementation is unchanged by that test correction. Inspected desktop, collapsed and phone screenshots show the raised article, right contents and unobstructed compact trigger. Browser cases verify right-column/drawer geometry, spatial drag and keyboard resizing, restored width, independent scrolling, collapse, current-section navigation, focus return and table overflow. Implementation review has zero actionable introduced findings. Local evidence is under /home/alan/warehouse/merdeck-reader-right/ and the browser evidence directories recorded above.
+
+[Exact source verification](https://github.com/itxje/merdeck/actions/runs/36985248666) passed on the clean candidate with Linux x64/ext4, distinct tmpfs refusal storage and physical source/bundle/compiled adapters verified in downloaded reports.
+
+The immutable annotated v0.19.31 tag resolves to 919a40d705329b135b3bbeed6f20ed770da28429. [The tag workflow](https://github.com/itxje/merdeck/actions/runs/36985695811) passed the complete normal Linux x64/ext4 check:ci --native gate and same-run publication on attempt 1. Downloaded reports verify clean source identity, matching held-descriptor ext4 provenance (0xef53), distinct tmpfs refusal storage (0x1021994), all twenty raw storage controls, file/HTTP checks and physical source/bundle/compiled adapters with cleanup. Both artifact browser suites passed 108 cases with 17 configuration-dependent skips each, in 5.0m and 5.1m. Native acceptance is explicitly passed.
+
+The publisher downloaded checked artifact 11217447307 from the same run and commit, with verified artifact digest sha256:01dd7fb7a2a7ffb8dc4742e49a659544dcaab1d4f4b68376066eb4df6f1134e1.
+
+[v0.19.31](https://github.com/itxje/merdeck/releases/tag/v0.19.31) is published. Both public attachments match GitHub digests and publisher provenance; SHA256SUMS validates the archive. The 97-file bundle reports version 0.19.31, tag v0.19.31, commit 919a40d705329b135b3bbeed6f20ed770da28429, bundle target and Bun 1.4.2. Archive SHA-256: 7a91d43a80d579657b2bcc8227d36cb17fc8d180889c76149bc22e2899a98ce5.
+
+Release notes describe the removed filename row, raised body and right-hand contents with the documented runtime/platform requirements, retaining the publisher marker and both asset identities. Release evidence is under /home/alan/warehouse/merdeck-release-v0.19.31/. The failed v0.19.30 tag remains at 976fe2ec488d6df7b5209944b691536d1bb5510d and was not published or moved. [Its failed native workflow](https://github.com/itxje/merdeck/actions/runs/36984097855) remains recorded; this release uses a new immutable tag and exact candidate. Existing deferred taskist #61 (generated support wording), #64 (local ARM64 compiled-browser budget) and #65 (narrow source heading) remain outside this layout change.
+
+- complete: Published v0.19.31 from 919a40d705329b135b3bbeed6f20ed770da28429 after corrected local checks, complete source/native gates, same-run publication and public artifact verification. The failed v0.19.30 tag and reports remain unchanged and unpublished.

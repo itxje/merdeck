@@ -1,6 +1,6 @@
 # 20261002-0822-right-document-contents Remove the document filename row and move contents right
 
-- **status**: in_progress
+- **status**: completed
 - **createdAt**: 2026-10-02 08:19
 - **approvedAt**: 2026-10-02 08:19 (explicit layout request and established release authorization)
 - **relatedTask**: 20261002-0822-right-document-contents
@@ -27,7 +27,7 @@ Removing only the filename text would retain the unused full-width row. A perman
 
 ## Acceptance
 
-Focused red/green tests for filename absence, right-hand rail/drawer, reclaimed article height, spatial resize directions and retained navigation/scroll state; full frontend checks; inspected desktop/phone screenshots; implementation review; exact hosted source gate; normal tag native gate and verified public artifacts.
+Implemented and published v0.19.31 after focused red/green, full frontend gates, inspected desktop/phone screenshots, implementation review, exact source verification, the complete canonical tag native gate and public artifact verification. [The task](../task/20261002-0822-right-document-contents.md) records the checked candidate and run identities.
 
 ## Delivery revision
 
