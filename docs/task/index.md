@@ -1,6 +1,6 @@
 # Merdeck - Task List
 
-> Updated: 2026-10-02
+> Updated: 2026-10-03
 
 ## Usage
 
@@ -214,3 +214,5 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 - [x] [**20261002-0903-preview-controls-bottom-left Anchor preview controls at the bottom left**](20261002-0903-preview-controls-bottom-left.md) `P2`
 
 - [x] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `P2`
+
+- [-] [**20261003-0459-mobile-header-control-sizes Unify mobile header control sizes**](20261003-0459-mobile-header-control-sizes.md) `P2`

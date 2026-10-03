@@ -386,6 +386,7 @@ button:disabled { cursor: default; }
   .workspace { min-height: 400px; }
   .app-header { padding: 0 12px; height: 58px; gap: 8px; }
   .brand { gap: 8px; }
+  .brand-symbol { width: 44px; height: 44px; padding: 12px; }
   /* The mark stays as the header's identity anchor; the text label yields its width to the file name. */
   .brand-name { display: none; }
   .prototype-tag, .header-actions .theme-label, .status-bar .desktop-only { display: none; }

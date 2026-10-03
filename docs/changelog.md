@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 05:01 [implemented]
+
+Align the phone header brand with its 44px controls and 20px action-icon viewport. The existing header browser case first fails on the original 32px logo, then both header cases pass with aligned, contained controls at 320/360/390px, working menus and no unexpected errors. Three inspected header screenshots, full frontend gates and implementation review pass. Canonical source/native acceptance and publication remain pending. See [the delivery task](task/20261003-0459-mobile-header-control-sizes.md).
+
 ## 2026-10-02 11:37 [release]
 
 Published [v0.19.34](https://github.com/itxje/merdeck/releases/tag/v0.19.34) from `f6fc6de`, keeping explorer filenames on one line on desktop and phones with ellipsized stems, visible extensions and complete accessible names/path titles. Focused red/green, nine affected browser cases, full frontend gates, six inspected screenshots, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261002-1051-single-line-filenames.md).

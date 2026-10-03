@@ -130,6 +130,7 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
   await expect(sync).toHaveAttribute('data-sync-state', 'synced')
   for (const control of [copy, save, agent])
     expect((await size(control)).height).toBeCloseTo(32, 0)
+  expect((await size(header.locator('.brand-symbol'))).height).toBeCloseTo(32, 0)
   for (const icon of [copy.locator('svg'), sync.locator('.sync-arrows')]) {
     expect((await size(icon)).width).toBeCloseTo(20, 0)
     expect((await size(icon)).height).toBeCloseTo(20, 0)
@@ -152,6 +153,19 @@ test('header keeps the brand, file controls and a complete phone theme menu, and
     await expect(agent).toHaveAttribute('aria-pressed', 'false')
     await expect.poll(async () => Math.round((await size(agent)).width)).toBeGreaterThanOrEqual(44)
     const syncBounds = await size(sync)
+    const brand = header.locator('.brand-symbol')
+    const brandBounds = await size(brand)
+    expect(brandBounds.width).toBeCloseTo(44, 0)
+    expect(brandBounds.height).toBeCloseTo(44, 0)
+    expect(brandBounds.y + brandBounds.height / 2).toBeCloseTo(syncBounds.y + syncBounds.height / 2, 0)
+    const brandViewport = await brand.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return {
+        width: element.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight),
+        height: element.clientHeight - Number.parseFloat(style.paddingTop) - Number.parseFloat(style.paddingBottom),
+      }
+    })
+    expect(brandViewport).toEqual({ width: 20, height: 20 })
     let right = 0
     for (const control of [copy, save, agent, menuTrigger]) {
       const box = await size(control)
