@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 05:47 [implemented]
+
+Unify persistent selections and toolbar glyphs with the primary palette, compact desktop and phone control sizes, native input skin, phone entry text and dialog alignment. Fit narrow source headings and single-line footer statistics while preserving complete metadata and block/line location. All 622 frontend cases, 39 affected browser cases with three configuration-dependent skips, preserved focused failures, inspected representative screenshots and local diff review pass. Exact source/native acceptance and v0.19.36 publication remain pending. See [the task](task/20261003-0516-ui-consistency-audit.md) and [the approved plan](plan/20261003-0522-ui-consistency-audit.md).
+
 ## 2026-10-03 05:13 [release]
 
 Published [v0.19.35](https://github.com/itxje/merdeck/releases/tag/v0.19.35) from `adc2d25`, aligning the phone header logo with 44px controls and 20px action-icon viewports. Focused red/green, both header browser cases, full frontend gates, three inspected phone screenshots, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 108 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261003-0459-mobile-header-control-sizes.md).

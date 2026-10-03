@@ -451,11 +451,10 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                         <section className="source-pane" aria-label="Source editor" data-collapsed={sourceCollapsed || undefined}>
                                           <div className="pane-heading">
                                             <label htmlFor="diagram-source">
-                                              Source
+                                              <span className="source-title">Source</span>
                                               {diagramContext && <span className="source-context" title={diagramContext}>{diagramContext}</span>}
                                             </label>
                                             <span className="pane-actions">
-                                              <span className="muted">Mermaid</span>
                                               <Button className="pane-collapse" variant="ghost" size="icon-xs" aria-label="Hide source" title="Hide source" onClick={() => sourcePanel.current?.collapse()}><PanelLeftClose /></Button>
                                             </span>
                                           </div>
@@ -485,7 +484,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                             </div>
                                           )}
                                           <div className="pane-footer">
-                                            <span>
+                                            <span title={`${source.split('\n').length} lines · UTF-8 · ${sourceBytes.toLocaleString()} bytes`}>
                                               {source.split('\n').length}
                                               {' '}
                                               lines · UTF-8 ·
