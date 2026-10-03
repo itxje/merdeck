@@ -422,13 +422,14 @@ export function Preview({ source, title, onError, onSourceChange, onLocate, onOp
         <span className="control-divider" />
         <Button
           variant="ghost"
+          aria-label="Fit"
           onClick={() => {
             setZoom(null)
             surfaceRef.current?.scrollTo({ top: 0, left: 0 })
           }}
         >
           <Maximize />
-          Fit
+          <span className="fit-label">Fit</span>
         </Button>
       </div>
     </section>

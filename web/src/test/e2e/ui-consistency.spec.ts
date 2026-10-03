@@ -82,6 +82,50 @@ for (const scheme of ['light', 'dark'] as const) {
       await contained(item, footer)
     }
     await page.screenshot({ path: info.outputPath(`narrow-source-${scheme}-1440.png`), animations: 'disabled' })
+    const resizeAgent = page.getByRole('separator', { name: 'Resize AI file editor', exact: true })
+    for (let step = 0; step < 17; step++)
+      await resizeAgent.press('ArrowLeft')
+    await expect(resizeAgent).toHaveAttribute('aria-valuenow', '560')
+    for (const width of [1440, 1101, 1100, 901, 768, 701]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
+      await expect.poll(async () => {
+        const panel = await box(page.locator('#source-panel'))
+        return await page.locator('.source-pane').isVisible()
+          ? panel.width >= 63.5
+          : Math.abs(panel.width - 40) <= 0.5
+      }).toBe(true)
+      if (!await page.locator('.source-pane').isVisible()) {
+        const show = page.getByRole('button', { name: 'Show source', exact: true })
+        await contained(show, page.locator('.source-rail'))
+        await show.click()
+      }
+      await expect.poll(async () => (await heading.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(63.5)
+      await contained(page.getByRole('button', { name: 'Hide source', exact: true }), heading)
+      for (const item of await footer.locator('span').all()) {
+        await contained(item, footer)
+        expect.soft(await item.getAttribute('title')).toBe(await item.textContent())
+      }
+      await page.getByRole('button', { name: 'Hide source', exact: true }).click()
+      const show = page.getByRole('button', { name: 'Show source', exact: true })
+      await expect(show).toBeVisible()
+      await contained(show, page.locator('.source-rail'))
+      await show.click()
+      await expect(page.getByLabel('Mermaid source', { exact: true })).toBeVisible()
+      const preview = page.locator('.preview-pane')
+      const controls = preview.locator('.preview-controls')
+      await contained(controls, preview)
+      for (const control of await controls.locator('button, output').all())
+        await contained(control, controls)
+      const zoom = preview.getByLabel('Zoom level', { exact: true })
+      const before = await zoom.textContent()
+      await preview.getByRole('button', { name: 'Zoom in', exact: true }).click()
+      await expect(zoom).not.toHaveText(before!)
+      await preview.getByRole('button', { name: 'Fit', exact: true }).click()
+      await expect(zoom).toHaveText(before!)
+      await page.screenshot({ path: info.outputPath(`wide-assistant-${scheme}-${width}.png`), animations: 'disabled' })
+    }
+    await page.setViewportSize({ width: 1440, height: 900 })
     await page.getByRole('complementary', { name: 'AI file editor', exact: true }).getByRole('button', { name: 'Close AI file editor', exact: true }).click()
     await page.screenshot({ path: info.outputPath(`shell-${scheme}-1440.png`), animations: 'disabled' })
     for (const width of [390, 320]) {

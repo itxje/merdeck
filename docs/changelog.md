@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-03 06:26 [implemented]
+
+Correct extreme desktop pane allocation with the widest assistant: keep the expanded source at its existing percentage minimum with a 64px control floor, retain the 40px collapsed rail and restore the last expanded ratio within current bounds. Make both metadata fields shrink and retain full titles. Bound the preview toolbar to the pane and arrange compact icon controls in rows, preserving zoom output and accessible Fit. Focused failures, all 622 frontend cases, 39 affected browser cases with three configuration-dependent skips, actual zoom/Fit and collapse/expand at six desktop widths, inspected screenshots and local review pass. Preserve v0.19.36; fresh v0.19.37 source/native and publication checks remain pending. See [the task](task/20261003-0516-ui-consistency-audit.md).
+
+## 2026-10-03 06:04 [progress]
+
+[v0.19.36](https://github.com/itxje/merdeck/releases/tag/v0.19.36) at `500760a` passed exact source/native gates and same-run publication, with verified public checksums and build identity. Both artifact suites passed 112 cases with 17 configuration-dependent skips. A late maximum-assistant-width probe reproduced source-heading/footer and collapsed-rail overflow at desktop breakpoints; it finished after publication. Preserve the immutable release and prepare v0.19.37 with a source-pane control-width floor and shrinkable metadata. See [the task](task/20261003-0516-ui-consistency-audit.md).
+
 ## 2026-10-03 05:47 [implemented]
 
 Unify persistent selections and toolbar glyphs with the primary palette, compact desktop and phone control sizes, native input skin, phone entry text and dialog alignment. Fit narrow source headings and single-line footer statistics while preserving complete metadata and block/line location. All 622 frontend cases, 39 affected browser cases with three configuration-dependent skips, preserved focused failures, inspected representative screenshots and local diff review pass. Exact source/native acceptance and v0.19.36 publication remain pending. See [the task](task/20261003-0516-ui-consistency-audit.md) and [the approved plan](plan/20261003-0522-ui-consistency-audit.md).

@@ -31,6 +31,8 @@ import { useWorkspace } from './use-workspace'
 
 const introduction = 'Browse, edit and preview diagrams in your project files.'
 const collapsedSourceWidth = 40
+// Reserve the 32px close control, an 8px gap and two 12px heading insets.
+const minimumSourceWidth = 64
 // Below this width the header controls collapse into an overflow menu, the pane tabs move into a
 // bottom bar, and the assistant docks to the bottom edge instead of the side.
 const narrowViewportQuery = '(max-width: 700px)'
@@ -88,6 +90,27 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
     editor.scrollTop = Math.max(0, line * (Number.parseFloat(getComputedStyle(editor).lineHeight) || 26) - editor.clientHeight / 3)
   }, [])
   const sourcePanel = usePanelRef()
+  const [sourceMinimum, setSourceMinimum] = React.useState('20%')
+  const sourceGroupWidthRef = React.useRef(0)
+  const sourceExpandedPercentRef = React.useRef(0)
+  const sourceGroupObserverRef = React.useRef<ResizeObserver | null>(null)
+  const observeSourceGroup = React.useCallback((element: HTMLDivElement | null) => {
+    sourceGroupObserverRef.current?.disconnect()
+    sourceGroupObserverRef.current = null
+    if (!element)
+      return
+    const update = () => {
+      const width = Array.from(element.querySelectorAll<HTMLElement>(':scope > [data-panel]'))
+        .reduce((total, panel) => total + panel.offsetWidth, 0)
+      sourceGroupWidthRef.current = width
+      if (width > 0)
+        setSourceMinimum(`${Math.max(20, minimumSourceWidth / width * 100)}%`)
+    }
+    const observer = new ResizeObserver(update)
+    sourceGroupObserverRef.current = observer
+    observer.observe(element)
+    update()
+  }, [])
   // The default panel layout starts collapsed; match it before the first resize observation.
   const [sourceCollapsed, setSourceCollapsed] = React.useState(true)
   const [explorerWidth, resizeExplorer] = useExplorerWidth()
@@ -108,7 +131,11 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
   }, [explorerWidth, resizeExplorer])
   const paneLayout = useDefaultLayout({ id: 'merdeck-panes', storage: localStorage })
   const showSource = React.useCallback(() => {
-    sourcePanel.current?.expand()
+    const panel = sourcePanel.current
+    if (panel && (panel.isCollapsed() || panel.getSize().inPixels <= collapsedSourceWidth)) {
+      const width = sourceGroupWidthRef.current
+      panel.resize(Math.max(minimumSourceWidth, width * 0.2, width * sourceExpandedPercentRef.current / 100))
+    }
     setSourceCollapsed(false)
   }, [sourcePanel])
   const file = state.file
@@ -440,8 +467,22 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                     />
                                   )
                                 : (
-                                    <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
-                                      <ResizablePanel id="source-panel" className="pane-slot" panelRef={sourcePanel} collapsible collapsedSize={collapsedSourceWidth} minSize="20%" defaultSize={collapsedSourceWidth} onResize={size => setSourceCollapsed(size.inPixels <= collapsedSourceWidth)}>
+                                    <ResizablePanelGroup className="panes" data-pane={pane} orientation="horizontal" elementRef={observeSourceGroup} defaultLayout={paneLayout.defaultLayout} onLayoutChanged={paneLayout.onLayoutChanged}>
+                                      <ResizablePanel
+                                        id="source-panel"
+                                        className="pane-slot"
+                                        panelRef={sourcePanel}
+                                        collapsible
+                                        collapsedSize={collapsedSourceWidth}
+                                        minSize={sourceMinimum}
+                                        defaultSize={collapsedSourceWidth}
+                                        onResize={(size) => {
+                                          const collapsed = size.inPixels <= collapsedSourceWidth
+                                          if (!collapsed && !sourcePanel.current?.isCollapsed())
+                                            sourceExpandedPercentRef.current = size.asPercentage
+                                          setSourceCollapsed(collapsed)
+                                        }}
+                                      >
                                         {sourceCollapsed && (
                                           <div className="source-rail">
                                             <Button variant="ghost" size="icon-sm" aria-label="Show source" title="Show source" onClick={showSource}><PanelLeftOpen /></Button>
@@ -493,7 +534,7 @@ export function Workspace({ path, block, directory = parentDirectory(path), brow
                                               {' '}
                                               bytes
                                             </span>
-                                            <span>{file.baseline.kind === 'markdown' ? `Line ${selected?.lineStart ?? 1}` : 'Entire file'}</span>
+                                            <span title={file.baseline.kind === 'markdown' ? `Line ${selected?.lineStart ?? 1}` : 'Entire file'}>{file.baseline.kind === 'markdown' ? `Line ${selected?.lineStart ?? 1}` : 'Entire file'}</span>
                                           </div>
                                         </section>
                                       </ResizablePanel>

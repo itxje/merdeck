@@ -11,7 +11,7 @@ The shared teal primary palette already drives brand, Save, selected file rows a
 
 ## Proposal
 
-Use primary/primary-foreground for persistent selections across theme, file types, pane tabs and current document contents; retain neutral surfaces and destructive/warning semantics. Align toolbar action glyphs to primary and retain 20px main-header glyphs and 16px panel/toolbar glyphs. Standardize compact desktop toolbar and popup-close targets to 32px, with 44px phone targets, including wrapped triggers, form inputs, menus and contents navigation. Use 16px phone input text and shared input border/radius/focus treatment for existing native engine/model selectors, with native color scheme matching the chosen theme. Give visible dialog titles the 15px heading step and close-button clearance, and align footer actions to the trailing edge. Remove the repeated source-language badge and use a shrinkable single-line source title/context so narrow headings keep their close action contained. Keep source-footer statistics on one line with ordinary ellipsis and a full-text title; retain the block/line location. Preserve existing controls, accessible labels, backend behavior, source editing, panel resizing, reading layout and dense full-width file rows.
+Use primary/primary-foreground for persistent selections across theme, file types, pane tabs and current document contents; retain neutral surfaces and destructive/warning semantics. Align toolbar action glyphs to primary and retain 20px main-header glyphs and 16px panel/toolbar glyphs. Standardize compact desktop toolbar and popup-close targets to 32px, with 44px phone targets, including wrapped triggers, form inputs, menus and contents navigation. Use 16px phone input text and shared input border/radius/focus treatment for existing native engine/model selectors, with native color scheme matching the chosen theme. Give visible dialog titles the 15px heading step and close-button clearance, and align footer actions to the trailing edge. Remove the repeated source-language badge and use a shrinkable single-line source title/context so narrow headings keep their close action contained. Keep source-footer statistics on one line with ordinary ellipsis and a full-text title; retain the block/line location. Preserve the original 20% source-pane minimum on roomy layouts, with a 64px floor for the 32px close action, 8px gap and 12px side insets; observe the actual group panel width and keep the 40px collapsed rail. Let both footer fields shrink and retain complete titles. Preserve existing controls, accessible labels, backend behavior, source editing, panel resizing, reading layout and dense full-width file rows.
 
 ## Risks
 
@@ -19,7 +19,7 @@ Larger phone controls may reduce space in assistant sheets and menus; verify 320
 
 ## Scope
 
-Shared composition CSS, source-heading/footer markup, targeted browser acceptance, tracking and release documentation. Inspect header, explorer, editor, preview, document reader, assistant, menus, entry/login/review/logout dialogs and update notices. No backend, provider logic, dependency, persistence, rendering-policy or release-policy changes.
+Shared composition CSS, source-heading/footer markup, targeted browser acceptance, tracking and release documentation. Inspect header, explorer, editor, preview, document reader, assistant, menus, entry/login/review/logout dialogs and update notices. No backend, provider logic, dependency, stored-layout format, rendering-policy or release-policy changes.
 
 ## Alternatives
 
@@ -32,3 +32,11 @@ Preserved browser RED before CSS changes, targeted GREEN in light/dark schemes, 
 ## Annotations
 
 The owner explicitly requests identification, correction and completed release. Routine choices follow the existing palette, component system and established dense/phone layouts.
+
+## Boundary correction
+
+A late independent probe at the maximum 560px assistant width reproduced footer overflow at 1101px and 901px, header/metadata overflow at 768px, and a 32px collapsed action outside a 28px source rail at 701px. The percent-only expanded minimum may fall below the 40px collapsed size and the space required for controls. Correct the actual source-pane constraint using the observed sum of panel widths, keeping the original 20% rule with a 64px floor, and make both footer fields shrink. Extend existing light/dark acceptance across these breakpoints, actual assistant resize and source collapse/expand. This is within the owner's explicit control-size/layout correction request.
+
+v0.19.36 completed canonical source/native verification and publication before the probe finished; its tag and release remain unchanged. Complete the correction and publish v0.19.37 with fresh exact-candidate gates.
+
+The preview navigation also overflows at narrow desktop pane widths. Keep the existing bottom-left horizontal toolbar in roomy panes; use the pane's container width to bound its insets and lay out compact icon controls in rows when needed. Preserve 32px desktop/44px phone targets, the complete zoom output and the accessible Fit action. Verify actual zoom/Fit and containment at every wide-assistant breakpoint. The expanded source size restores its most recent ratio bounded by the current minimum; observers disconnect when the group detaches.
