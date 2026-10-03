@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-03 06:38 [release]
+
+Published [v0.19.37](https://github.com/itxje/merdeck/releases/tag/v0.19.37) from `a29cecc`, unifying primary selections and toolbar colors, 32px compact desktop controls, 44px phone controls/inputs/menus, native input skin and dialog alignment, with a source control-width floor, shrinkable complete metadata and preview controls that wrap within narrow panes. All 622 frontend cases, 39 affected browser cases with three configuration-dependent skips, inspected representative screenshots, implementation review and complete canonical source/native gates pass. The tag workflow passed on attempt 1 and published its own checked artifact; both artifact browser suites passed 112 cases with 17 configuration-dependent skips each. Public digests, SHA256SUMS, the annotated tag and the 97-file bundle's build identity are verified. See [the acceptance record](task/20261003-0516-ui-consistency-audit.md).
+
 ## 2026-10-03 06:26 [implemented]
 
 Correct extreme desktop pane allocation with the widest assistant: keep the expanded source at its existing percentage minimum with a 64px control floor, retain the 40px collapsed rail and restore the last expanded ratio within current bounds. Make both metadata fields shrink and retain full titles. Bound the preview toolbar to the pane and arrange compact icon controls in rows, preserving zoom output and accessible Fit. Focused failures, all 622 frontend cases, 39 affected browser cases with three configuration-dependent skips, actual zoom/Fit and collapse/expand at six desktop widths, inspected screenshots and local review pass. Preserve v0.19.36; fresh v0.19.37 source/native and publication checks remain pending. See [the task](task/20261003-0516-ui-consistency-audit.md).

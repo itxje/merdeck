@@ -217,4 +217,4 @@ Claim before investigation: change the pending index marker to `[-]`, set the de
 
 - [x] [**20261003-0459-mobile-header-control-sizes Unify mobile header control sizes**](20261003-0459-mobile-header-control-sizes.md) `P2`
 
-- [-] [**20261003-0516-ui-consistency-audit Audit and unify interface styles**](20261003-0516-ui-consistency-audit.md) `P2`
+- [x] [**20261003-0516-ui-consistency-audit Audit and unify interface styles**](20261003-0516-ui-consistency-audit.md) `P2`

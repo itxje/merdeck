@@ -138,4 +138,4 @@ Each plan links to a detail file. Update only existing markers; append new plans
 
 - [x] [**20261002-1051-single-line-filenames Keep explorer filenames on one line**](20261002-1051-single-line-filenames.md) `2026-10-02`
 
-- [-] [**20261003-0522-ui-consistency-audit Unify interface control styles**](20261003-0522-ui-consistency-audit.md) `2026-10-03`
+- [x] [**20261003-0522-ui-consistency-audit Unify interface control styles**](20261003-0522-ui-consistency-audit.md) `2026-10-03`

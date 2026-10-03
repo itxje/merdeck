@@ -1,6 +1,6 @@
 # 20261003-0522-ui-consistency-audit Unify interface control styles
 
-- **status**: implementing
+- **status**: completed
 - **createdAt**: 2026-10-03 05:22
 - **approvedAt**: 2026-10-03 05:22 (explicit audit, correction and release request)
 - **relatedTask**: 20261003-0516-ui-consistency-audit
@@ -40,3 +40,7 @@ A late independent probe at the maximum 560px assistant width reproduced footer 
 v0.19.36 completed canonical source/native verification and publication before the probe finished; its tag and release remain unchanged. Complete the correction and publish v0.19.37 with fresh exact-candidate gates.
 
 The preview navigation also overflows at narrow desktop pane widths. Keep the existing bottom-left horizontal toolbar in roomy panes; use the pane's container width to bound its insets and lay out compact icon controls in rows when needed. Preserve 32px desktop/44px phone targets, the complete zoom output and the accessible Fit action. Verify actual zoom/Fit and containment at every wide-assistant breakpoint. The expanded source size restores its most recent ratio bounded by the current minimum; observers disconnect when the group detaches.
+
+## Acceptance result
+
+Completed the approved primary-color, desktop/phone control-size and responsive-layout corrections. Final frontend and 39 affected browser cases pass, with three configuration-dependent skips. The four new light/dark cases are included in both complete native artifact suites (112 passed, 17 skipped each). Exact source verification, normal Linux x64/ext4 native acceptance, implementation review, inspected representative screenshots, same-run publication, public checksums and build identity all pass. The published release is [v0.19.37](https://github.com/itxje/merdeck/releases/tag/v0.19.37); [the task](../task/20261003-0516-ui-consistency-audit.md) records the implementation and downloaded evidence.
